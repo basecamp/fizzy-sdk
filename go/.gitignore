@@ -1,0 +1,7 @@
+# Test artifacts
+coverage.out
+coverage.html
+
+# Benchmark comparison files (generated, not committed)
+bench-baseline.txt
+bench-current.txt
