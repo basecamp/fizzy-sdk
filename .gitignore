@@ -1,0 +1,56 @@
+# Build artifacts
+spec/build/
+*.class
+
+# Smithy plugin build artifacts
+spec/smithy-bare-arrays/build/
+spec/smithy-bare-arrays/.gradle/
+
+# Dependencies
+node_modules/
+vendor/
+.bundle/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Go
+go/pkg/generated/client.gen.go
+
+# TypeScript
+typescript/dist/
+typescript/coverage/
+
+# Ruby
+ruby/.yardoc/
+ruby/doc/
+ruby/coverage/
+ruby/pkg/
+*.gem
+
+# Swift
+.build/
+.swiftpm/
+Package.resolved
+
+# Kotlin
+.gradle/
+kotlin/sdk/build/
+kotlin/generator/build/
+kotlin/conformance/build/
+build/
+
+# Conformance
+conformance/runner/go/conformance-runner
+conformance/runner/ruby/Gemfile.lock
+conformance/runner/typescript/node_modules/
+
+# Claude
+.claude/*
+!.claude/skills/
