@@ -16,7 +16,7 @@ jobs:
     name: Verify Swift release
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Extract version
         id: version
