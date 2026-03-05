@@ -1,0 +1,141 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  smithy:
+    name: Smithy Verify
+    uses: ./.github/workflows/smithy-verify.yml
+
+  test-go:
+    name: Go
+    runs-on: ubuntu-latest
+    needs: smithy
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+      - name: Check service drift
+        run: ./scripts/check-service-drift.sh
+      - name: Test
+        run: cd go && go test ./pkg/fizzy/... -count=1 -race -coverprofile=coverage.out
+      - name: Coverage
+        run: |
+          cd go
+          COVERAGE=$(go tool cover -func=coverage.out | tail -1 | awk '{print $3}' | tr -d '%')
+          echo "Coverage: ${COVERAGE}%"
+          if (( $(echo "$COVERAGE < 25" | bc -l) )); then
+            echo "Coverage below 25% threshold"
+            exit 1
+          fi
+
+  test-typescript:
+    name: TypeScript
+    runs-on: ubuntu-latest
+    needs: smithy
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install
+        run: cd typescript && npm ci
+      - name: Lint
+        run: cd typescript && npm run lint
+      - name: Typecheck
+        run: cd typescript && npm run typecheck
+      - name: Test
+        run: cd typescript && npm test
+      - name: Build
+        run: cd typescript && npm run build
+      - name: Verify root pack
+        run: npm pack --dry-run
+
+  test-ruby:
+    name: Ruby (${{ matrix.ruby }})
+    runs-on: ubuntu-latest
+    needs: smithy
+    strategy:
+      matrix:
+        ruby: ['3.2', '3.3', '3.4', '4.0', 'head']
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+          working-directory: ruby
+      - name: Lint
+        if: matrix.ruby == '3.3'
+        run: cd ruby && bundle exec rubocop
+      - name: Test
+        run: cd ruby && bundle exec rake test
+
+  test-swift:
+    name: Swift
+    runs-on: macos-15
+    needs: smithy
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: cd swift && swift build
+      - name: Test
+        run: cd swift && swift test
+
+  test-kotlin:
+    name: Kotlin
+    runs-on: ubuntu-latest
+    needs: smithy
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: '17'
+      - name: Build
+        run: cd kotlin && ./gradlew :fizzy-sdk:compileKotlinJvm
+      - name: Check drift
+        run: ./scripts/check-kotlin-service-drift.sh
+
+  conformance:
+    name: Conformance (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    needs: [test-go, test-typescript, test-ruby, test-kotlin]
+    strategy:
+      matrix:
+        language: [go, typescript, ruby, kotlin]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        if: matrix.language == 'go'
+        with:
+          go-version: '1.26'
+      - uses: actions/setup-node@v4
+        if: matrix.language == 'typescript'
+        with:
+          node-version: '20'
+      - uses: ruby/setup-ruby@v1
+        if: matrix.language == 'ruby'
+        with:
+          ruby-version: '3.3'
+      - uses: actions/setup-java@v4
+        if: matrix.language == 'kotlin'
+        with:
+          distribution: corretto
+          java-version: '17'
+      - name: Run conformance
+        run: make conformance-${{ matrix.language }}
+
+  rubric-check:
+    name: Rubric Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check rubric audit
+        run: make audit-check

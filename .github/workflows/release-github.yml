@@ -1,0 +1,102 @@
+name: Release GitHub
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to create release for'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine tag
+        id: tag
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ inputs.tag }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Wait for release workflows
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          WORKFLOWS="release-go release-typescript release-ruby release-kotlin release-swift"
+          MAX_WAIT=1800
+          POLL_INTERVAL=30
+          ELAPSED=0
+
+          for WORKFLOW in $WORKFLOWS; do
+            echo "Waiting for ${WORKFLOW}..."
+            while [ $ELAPSED -lt $MAX_WAIT ]; do
+              STATUS=$(gh run list --workflow="${WORKFLOW}.yml" --limit=1 --json headSha,conclusion -q ".[0] | select(.headSha == \"$GITHUB_SHA\") | .conclusion")
+              if [[ "$STATUS" == "success" ]]; then
+                echo "  ${WORKFLOW}: success"
+                break
+              elif [[ "$STATUS" == "failure" ]]; then
+                echo "::error::${WORKFLOW} failed"
+                exit 1
+              fi
+              sleep $POLL_INTERVAL
+              ELAPSED=$((ELAPSED + POLL_INTERVAL))
+            done
+
+            if [ $ELAPSED -ge $MAX_WAIT ]; then
+              echo "::error::Timed out waiting for ${WORKFLOW}"
+              exit 1
+            fi
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create release
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          VERSION="${TAG#v}"
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            DRAFT="--draft"
+          else
+            DRAFT=""
+          fi
+
+          gh release create "$TAG" $DRAFT --generate-notes --title "$TAG" --notes-start-tag "$TAG" --notes "## Installation
+
+          ### Go
+          \`\`\`
+          go get github.com/basecamp/fizzy-sdk/go@${TAG}
+          \`\`\`
+
+          ### TypeScript
+          \`\`\`
+          npm install @basecamp/fizzy-sdk@${VERSION}
+          \`\`\`
+
+          ### Ruby
+          \`\`\`
+          gem install fizzy-sdk -v ${VERSION}
+          \`\`\`
+
+          ### Kotlin
+          \`\`\`kotlin
+          implementation(\"com.basecamp:fizzy-sdk:${VERSION}\")
+          \`\`\`
+
+          ### Swift
+          \`\`\`swift
+          .package(url: \"https://github.com/basecamp/fizzy-sdk.git\", from: \"${VERSION}\")
+          \`\`\`
+          "
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

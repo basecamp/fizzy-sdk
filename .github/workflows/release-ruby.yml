@@ -1,0 +1,65 @@
+name: Release Ruby
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (skip publish)'
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  release:
+    name: Publish to RubyGems
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+          working-directory: ruby
+
+      - name: Test
+        run: |
+          cd ruby
+          bundle exec rake test
+          bundle exec rubocop
+
+      - name: Build gem
+        run: cd ruby && gem build fizzy-sdk.gemspec
+
+      - name: Configure credentials
+        if: github.event_name == 'push' || inputs.dry_run == false
+        uses: rubygems/configure-rubygems-credentials@main
+        with:
+          role-to-assume: ${{ secrets.RUBYGEMS_ROLE_ARN }}
+
+      - name: Publish
+        if: github.event_name == 'push' || inputs.dry_run == false
+        run: |
+          cd ruby
+          GEM_FILE=$(ls *.gem | head -1)
+          gem push "$GEM_FILE" || true
+
+      - name: Wait for availability
+        if: github.event_name == 'push'
+        run: |
+          VERSION=$(grep VERSION ruby/lib/fizzy/version.rb | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          for i in $(seq 1 30); do
+            if gem info fizzy-sdk -r -v "$VERSION" 2>/dev/null | grep -q "$VERSION"; then
+              echo "Version $VERSION available"
+              exit 0
+            fi
+            echo "Waiting for $VERSION to appear on RubyGems (attempt $i)..."
+            sleep 10
+          done
+          echo "Timed out waiting for gem availability"

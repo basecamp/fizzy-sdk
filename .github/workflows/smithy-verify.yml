@@ -1,0 +1,46 @@
+name: Smithy Verify
+
+on:
+  workflow_call:
+
+jobs:
+  verify:
+    name: Verify Smithy spec
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: '17'
+
+      - name: Build Smithy mapper plugin
+        run: make smithy-mapper
+
+      - name: Install Smithy CLI
+        run: |
+          SMITHY_VERSION="1.66.0"
+          curl -sL "https://github.com/smithy-lang/smithy/releases/download/${SMITHY_VERSION}/smithy-cli-linux-x86_64.zip" -o smithy-cli.zip
+          unzip -q smithy-cli.zip
+          echo "${PWD}/smithy-cli-linux-x86_64/bin" >> $GITHUB_PATH
+
+      - name: Validate spec
+        run: cd spec && smithy validate
+
+      - name: Build OpenAPI
+        run: make smithy-build
+
+      - name: Check freshness
+        run: |
+          if ! git diff --quiet openapi.json; then
+            echo "::error::openapi.json is out of date. Run 'make smithy-build' and commit."
+            git diff openapi.json
+            exit 1
+          fi
+
+      - name: Store operation count
+        run: |
+          OP_COUNT=$(jq '[.paths | to_entries[] | .value | keys[] | select(. != "parameters")] | length' openapi.json)
+          echo "operation_count=$OP_COUNT" >> $GITHUB_OUTPUT
+          echo "Operation count: $OP_COUNT"

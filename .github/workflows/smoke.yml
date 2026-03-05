@@ -1,0 +1,89 @@
+name: Smoke Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      auth_method:
+        description: 'Auth method to test'
+        required: true
+        default: 'bearer'
+        type: choice
+        options:
+          - bearer
+          - cookie
+          - both
+
+jobs:
+  smoke:
+    name: Live API Smoke Tests
+    runs-on: ubuntu-latest
+    environment: smoke
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - name: Smoke test (Bearer auth)
+        if: inputs.auth_method == 'bearer' || inputs.auth_method == 'both'
+        env:
+          FIZZY_TOKEN: ${{ secrets.FIZZY_TOKEN }}
+          FIZZY_ACCOUNT: ${{ secrets.FIZZY_ACCOUNT }}
+        run: |
+          cd go
+          go test ./pkg/fizzy/... -run TestSmoke -count=1 -v
+
+      - name: Smoke test (Cookie auth)
+        if: inputs.auth_method == 'cookie' || inputs.auth_method == 'both'
+        env:
+          FIZZY_SESSION_TOKEN: ${{ secrets.FIZZY_SESSION_TOKEN }}
+          FIZZY_ACCOUNT: ${{ secrets.FIZZY_ACCOUNT }}
+        run: |
+          cd go
+          go test ./pkg/fizzy/... -run TestSmokeCookie -count=1 -v
+
+      - name: Verify URI .json suffix equivalence
+        env:
+          FIZZY_TOKEN: ${{ secrets.FIZZY_TOKEN }}
+          FIZZY_ACCOUNT: ${{ secrets.FIZZY_ACCOUNT }}
+          FIZZY_API_URL: ${{ secrets.FIZZY_API_URL || 'https://fizzy.do' }}
+        run: |
+          ACCT="${FIZZY_ACCOUNT}"
+          BASE="${FIZZY_API_URL}"
+          AUTH="Authorization: Bearer ${FIZZY_TOKEN}"
+
+          echo "==> Testing list endpoint (with .json suffix)..."
+          LIST_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -H "$AUTH" "${BASE}/${ACCT}/boards.json")
+          echo "  GET /${ACCT}/boards.json → $LIST_STATUS"
+          [ "$LIST_STATUS" = "200" ] || { echo "FAIL: list endpoint returned $LIST_STATUS"; exit 1; }
+
+          # Extract first board ID for resource endpoint test
+          BOARD_ID=$(curl -s -H "$AUTH" "${BASE}/${ACCT}/boards.json" | jq -r '.[0].id // empty')
+          if [ -z "$BOARD_ID" ]; then
+            echo "SKIP: No boards found, cannot test resource endpoint"
+            exit 0
+          fi
+
+          echo "==> Testing resource endpoint without .json suffix..."
+          NO_JSON=$(curl -s -o /dev/null -w '%{http_code}' -H "$AUTH" "${BASE}/${ACCT}/boards/${BOARD_ID}")
+          echo "  GET /${ACCT}/boards/${BOARD_ID} → $NO_JSON"
+
+          echo "==> Testing resource endpoint with .json suffix..."
+          WITH_JSON=$(curl -s -o /dev/null -w '%{http_code}' -H "$AUTH" "${BASE}/${ACCT}/boards/${BOARD_ID}.json")
+          echo "  GET /${ACCT}/boards/${BOARD_ID}.json → $WITH_JSON"
+
+          echo "==> Testing user endpoint without .json suffix..."
+          USER_ID=$(curl -s -H "$AUTH" "${BASE}/${ACCT}/users.json" | jq -r '.[0].id // empty')
+          if [ -n "$USER_ID" ]; then
+            NO_JSON_USER=$(curl -s -o /dev/null -w '%{http_code}' -H "$AUTH" "${BASE}/${ACCT}/users/${USER_ID}")
+            WITH_JSON_USER=$(curl -s -o /dev/null -w '%{http_code}' -H "$AUTH" "${BASE}/${ACCT}/users/${USER_ID}.json")
+            echo "  GET /${ACCT}/users/${USER_ID} → $NO_JSON_USER"
+            echo "  GET /${ACCT}/users/${USER_ID}.json → $WITH_JSON_USER"
+          fi
+
+          # Both forms must return 200
+          for code in $NO_JSON $WITH_JSON; do
+            [ "$code" = "200" ] || { echo "FAIL: expected 200, got $code"; exit 1; }
+          done
+          echo "==> URI .json suffix equivalence confirmed"

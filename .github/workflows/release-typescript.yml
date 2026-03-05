@@ -1,0 +1,70 @@
+name: Release TypeScript
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (skip publish)'
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  release:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Extract version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          else
+            VERSION="0.0.0-dryrun"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Install and test
+        run: |
+          cd typescript
+          npm ci
+          npm test
+          npm run build
+
+      - name: Check if already published
+        id: check
+        run: |
+          PKG_VERSION=$(jq -r .version typescript/package.json)
+          if npm view "@basecamp/fizzy-sdk@$PKG_VERSION" version 2>/dev/null; then
+            echo "already_published=true" >> $GITHUB_OUTPUT
+          else
+            echo "already_published=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish
+        if: steps.check.outputs.already_published == 'false' && (github.event_name == 'push' || inputs.dry_run == false)
+        run: |
+          cd typescript
+          PKG_VERSION=$(jq -r .version package.json)
+          if [[ "$PKG_VERSION" == *"-"* ]]; then
+            npm publish --provenance --tag next
+          else
+            npm publish --provenance --tag latest
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

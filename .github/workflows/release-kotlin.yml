@@ -1,0 +1,40 @@
+name: Release Kotlin
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (skip publish)'
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  release:
+    name: Publish to GitHub Packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: '17'
+
+      - name: Test
+        run: cd kotlin && ./gradlew :fizzy-sdk:test
+
+      - name: Check drift
+        run: ./scripts/check-kotlin-service-drift.sh
+
+      - name: Publish
+        if: github.event_name == 'push' || inputs.dry_run == false
+        run: cd kotlin && ./gradlew :fizzy-sdk:publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

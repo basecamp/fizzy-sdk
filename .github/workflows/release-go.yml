@@ -1,0 +1,75 @@
+name: Release Go
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (skip tag push)'
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Publish Go module
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - name: Extract version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          else
+            VERSION="0.0.0-dryrun"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Verify version matches
+        run: |
+          GO_VERSION=$(grep 'Version = ' go/pkg/fizzy/version.go | sed 's/.*"\(.*\)".*/\1/')
+          if [[ "$GO_VERSION" != "${{ steps.version.outputs.version }}" ]] && [[ "${{ github.event_name }}" == "push" ]]; then
+            echo "::error::version.go ($GO_VERSION) does not match tag (${{ steps.version.outputs.version }})"
+            exit 1
+          fi
+
+      - name: Verify go.mod module path
+        run: |
+          MODULE=$(head -1 go/go.mod | awk '{print $2}')
+          if [[ "$MODULE" != "github.com/basecamp/fizzy-sdk/go" ]]; then
+            echo "::error::go.mod module path ($MODULE) is incorrect"
+            exit 1
+          fi
+
+      - name: Test
+        run: cd go && go test ./pkg/fizzy/... -count=1 -race
+
+      - name: Create Go sub-tag
+        if: github.event_name == 'push'
+        run: |
+          GO_TAG="go/v${{ steps.version.outputs.version }}"
+          # Check if tag already exists
+          if git rev-parse "$GO_TAG" >/dev/null 2>&1; then
+            EXISTING_SHA=$(git rev-parse "$GO_TAG")
+            if [[ "$EXISTING_SHA" != "$GITHUB_SHA" ]]; then
+              echo "::error::$GO_TAG already exists at $EXISTING_SHA (current: $GITHUB_SHA). Must not force-move. Create a new patch release."
+              exit 1
+            fi
+            echo "$GO_TAG already exists at correct SHA"
+          else
+            git tag "$GO_TAG" "$GITHUB_SHA"
+            git push origin "$GO_TAG"
+            echo "Created $GO_TAG"
+          fi

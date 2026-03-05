@@ -1,0 +1,46 @@
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /go
+    schedule:
+      interval: weekly
+    groups:
+      go-deps:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /typescript
+    schedule:
+      interval: weekly
+    groups:
+      npm-deps:
+        patterns: ["*"]
+
+  - package-ecosystem: bundler
+    directory: /ruby
+    schedule:
+      interval: weekly
+    groups:
+      ruby-deps:
+        patterns: ["*"]
+
+  - package-ecosystem: gradle
+    directory: /kotlin
+    schedule:
+      interval: weekly
+    groups:
+      kotlin-deps:
+        patterns: ["*"]
+
+  - package-ecosystem: swift
+    directory: /swift
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
