@@ -1,0 +1,12 @@
+{
+  "fizzy": {
+    "repo": "basecamp/fizzy",
+    "branch": "main",
+    "paths": {
+      "routes": "config/routes.rb",
+      "controllers": "app/controllers/",
+      "views": "app/views/",
+      "models": "app/models/"
+    }
+  }
+}

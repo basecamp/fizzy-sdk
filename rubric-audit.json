@@ -1,0 +1,23 @@
+{
+  "profile": "full-sdk",
+  "date": "2026-03-04",
+  "reviewer": "agent:rubric-audit",
+  "criteria": {
+    "1A.6": { "pass": true, "note": "All 70 operations generated from Smithy model via per-language generators" },
+    "1B.2": { "pass": true, "note": "Request/response types generated from OpenAPI schema, not hand-constructed" },
+    "1B.4": { "pass": true, "note": "Optional fields use pointers (Go), optional (TS/Swift/Kotlin), nilable (Ruby)" },
+    "1B.5": { "pass": true, "note": "ISO 8601 date strings used for all timestamp fields" },
+    "1C.1": { "pass": true, "note": "All API paths verified against Fizzy routes.rb" },
+    "1C.3": { "pass": true, "note": "All paths generated from OpenAPI spec; no manual fmt.Sprintf or string interpolation for paths" },
+    "2A.6": { "pass": true, "note": "Error bodies truncated to 10KB in all languages" },
+    "2D.5": { "pass": true, "note": "Resilience patterns isolated per-client instance, not per-operation" },
+    "3A.4": { "pass": false, "note": "OAuth PKCE deferred — Fizzy does not implement OAuth" },
+    "3A.5": { "pass": false, "note": "OAuth PKCE deferred — Fizzy does not implement OAuth" },
+    "3A.6": { "pass": false, "note": "Token auto-refresh deferred — Fizzy uses session tokens, not refresh tokens" },
+    "3C.2": { "pass": true, "note": "Response body limited to 10MB in all languages" },
+    "3C.3": { "pass": true, "note": "Error messages truncated to prevent unbounded memory" },
+    "3C.4": { "pass": true, "note": "Authorization and Cookie headers redacted in all logging hooks" },
+    "4B.5": { "pass": true, "note": "All operations have corresponding conformance tests" },
+    "4C.4": { "pass": true, "note": "Release workflows are idempotent; Go sub-tag creation checks for existing tags" }
+  }
+}

@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Generate url-routes.json from openapi.json.
+# Input:  openapi.json
+# Output: go/pkg/fizzy/url-routes.json
+
+OPENAPI="openapi.json"
+OUTPUT="go/pkg/fizzy/url-routes.json"
+
+if [ ! -f "$OPENAPI" ]; then
+  echo "ERROR: openapi.json not found. Run 'make smithy-build' first." >&2
+  exit 1
+fi
+
+jq '{
+  routes: [
+    .paths | to_entries[] | . as $path |
+    {
+      pattern: ($path.key | sub("\\.json$"; "")),
+      resource: (
+        [$path.value | to_entries[] | select(.key != "parameters") | .value.tags[0]] | first // "unknown"
+      ),
+      operations: (
+        [$path.value | to_entries[] | select(.key != "parameters") |
+          {key: (.key | ascii_upcase), value: .value.operationId}
+        ] | from_entries
+      ),
+      params: (
+        [$path.key | scan("\\{([^}]+)\\}"; "") | .[0]] |
+        map({
+          key: .,
+          value: {
+            role: (
+              if . == "accountId" then "account"
+              else "resource" end
+            ),
+            type: (
+              if . == "accountId" then "string"
+              else "integer" end
+            )
+          }
+        }) | from_entries
+      )
+    }
+  ]
+}' "$OPENAPI" > "$OUTPUT"
+
+echo "Generated $OUTPUT"
