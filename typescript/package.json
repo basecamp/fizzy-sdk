@@ -49,7 +49,7 @@
     "openapi-fetch": "^0.17.0"
   },
   "devDependencies": {
-    "@types/node": "^25.3.2",
+    "@types/node": "^25.3.4",
     "@vitest/coverage-v8": "^4.0.18",
     "msw": "^2.12.10",
     "openapi-typescript": "^7.13.0",
