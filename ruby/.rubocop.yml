@@ -1,0 +1,14 @@
+# 37signals house style
+inherit_gem:
+  rubocop-37signals: rubocop.yml
+
+AllCops:
+  TargetRubyVersion: 3.2
+  Exclude:
+    - "vendor/**/*"
+    - "lib/fizzy/generated/**/*"
+
+# Documentation not required for tests
+Style/Documentation:
+  Exclude:
+    - "test/**/*"
