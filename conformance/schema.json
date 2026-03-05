@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Conformance Test",
+  "description": "Schema for Fizzy SDK conformance test files",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["name", "operation", "assertions"],
+    "properties": {
+      "name": { "type": "string", "description": "Human-readable test name" },
+      "description": { "type": "string" },
+      "operation": { "type": "string", "description": "Operation ID from the Smithy spec" },
+      "method": { "type": "string", "enum": ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"] },
+      "path": { "type": "string", "description": "URI template for the operation" },
+      "pathParams": { "type": "object", "additionalProperties": true },
+      "queryParams": { "type": "object", "additionalProperties": true },
+      "requestBody": { "type": "object" },
+      "configOverrides": {
+        "type": "object",
+        "properties": {
+          "baseUrl": { "type": "string" }
+        }
+      },
+      "mockResponses": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "status": { "type": "integer" },
+            "headers": { "type": "object", "additionalProperties": { "type": "string" } },
+            "body": {},
+            "delay": { "type": "integer", "description": "Delay in milliseconds before responding" }
+          }
+        }
+      },
+      "assertions": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "requestCount", "delayBetweenRequests", "statusCode",
+                "noError", "errorCode", "errorField",
+                "headerPresent", "headerValue",
+                "requestPath", "urlOrigin",
+                "responseMeta"
+              ]
+            },
+            "expected": {},
+            "path": { "type": "string" },
+            "min": { "type": "integer" }
+          }
+        }
+      },
+      "tags": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    }
+  }
+}

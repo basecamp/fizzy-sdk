@@ -1,0 +1,100 @@
+[
+  {
+    "name": "GET retries on 503 with exponential backoff",
+    "description": "GET requests should retry up to maxAttempts on 503, with at least 1000ms between attempts",
+    "operation": "ListBoards",
+    "method": "GET",
+    "path": "/{accountId}/boards.json",
+    "pathParams": { "accountId": "999" },
+    "mockResponses": [
+      {
+        "status": 503,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Service unavailable" }
+      },
+      {
+        "status": 503,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Service unavailable" }
+      },
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": []
+      }
+    ],
+    "assertions": [
+      { "type": "requestCount", "expected": 3 },
+      { "type": "delayBetweenRequests", "min": 1000 },
+      { "type": "noError" }
+    ],
+    "tags": ["retry"]
+  },
+  {
+    "name": "GET retries on 429 with Retry-After header",
+    "description": "429 responses with Retry-After should wait at least that many seconds",
+    "operation": "GetBoard",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}.json",
+    "pathParams": { "accountId": "999", "boardId": 1 },
+    "mockResponses": [
+      {
+        "status": 429,
+        "headers": { "Content-Type": "application/json", "Retry-After": "2" },
+        "body": { "error": "Rate limited" }
+      },
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "id": 1, "name": "Test", "all_access": true, "created_at": "2026-01-01T00:00:00Z", "url": "https://fizzy.do/999/boards/1" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestCount", "expected": 2 },
+      { "type": "delayBetweenRequests", "min": 2000 },
+      { "type": "noError" }
+    ],
+    "tags": ["retry"]
+  },
+  {
+    "name": "POST does NOT retry on 503",
+    "description": "POST create operations must not be retried (rubric 2B.4)",
+    "operation": "CreateBoard",
+    "method": "POST",
+    "path": "/{accountId}/boards.json",
+    "pathParams": { "accountId": "999" },
+    "requestBody": { "name": "Test Board" },
+    "mockResponses": [
+      {
+        "status": 503,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Service unavailable" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestCount", "expected": 1 },
+      { "type": "statusCode", "expected": 503 }
+    ],
+    "tags": ["retry", "idempotency"]
+  },
+  {
+    "name": "GET 404 is NOT retried",
+    "description": "Client errors (4xx except 429) should never be retried",
+    "operation": "GetBoard",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}.json",
+    "pathParams": { "accountId": "999", "boardId": 99999 },
+    "mockResponses": [
+      {
+        "status": 404,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Not found" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestCount", "expected": 1 },
+      { "type": "errorCode", "expected": "not_found" }
+    ],
+    "tags": ["retry"]
+  }
+]

@@ -1,0 +1,118 @@
+[
+  {
+    "name": "Cross-origin Link header rejected",
+    "description": "Pagination must reject Link headers pointing to a different origin (SSRF guard)",
+    "operation": "ListBoards",
+    "method": "GET",
+    "path": "/{accountId}/boards.json",
+    "pathParams": { "accountId": "999" },
+    "configOverrides": { "baseUrl": "http://localhost:3000" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json",
+          "Link": "<https://evil.example.com/999/boards.json?page=2>; rel=\"next\""
+        },
+        "body": [
+          { "id": 1, "name": "Board 1", "all_access": true, "created_at": "2026-01-01T00:00:00Z", "url": "http://localhost:3000/999/boards/1" }
+        ]
+      }
+    ],
+    "assertions": [
+      { "type": "urlOrigin", "expected": "rejected" }
+    ],
+    "tags": ["security", "pagination"]
+  },
+  {
+    "name": "HTTPS enforced for non-localhost",
+    "description": "SDK must reject HTTP base URLs for non-localhost origins",
+    "operation": "ListBoards",
+    "method": "GET",
+    "path": "/{accountId}/boards.json",
+    "pathParams": { "accountId": "999" },
+    "configOverrides": { "baseUrl": "http://evil.example.com" },
+    "mockResponses": [],
+    "assertions": [
+      { "type": "errorCode", "expected": "usage" },
+      { "type": "requestCount", "expected": 0 }
+    ],
+    "tags": ["security"]
+  },
+  {
+    "name": "HTTP allowed for localhost",
+    "description": "HTTP is allowed for localhost/127.0.0.1 for local development",
+    "operation": "ListBoards",
+    "method": "GET",
+    "path": "/{accountId}/boards.json",
+    "pathParams": { "accountId": "999" },
+    "configOverrides": { "baseUrl": "http://localhost:3000" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": []
+      }
+    ],
+    "assertions": [
+      { "type": "noError" }
+    ],
+    "tags": ["security"]
+  },
+  {
+    "name": "Same-origin pagination follows relative Link",
+    "description": "Relative Link URLs should be resolved against the original origin",
+    "operation": "ListBoards",
+    "method": "GET",
+    "path": "/{accountId}/boards.json",
+    "pathParams": { "accountId": "999" },
+    "configOverrides": { "baseUrl": "http://localhost:3000" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json",
+          "Link": "</999/boards.json?page=2>; rel=\"next\""
+        },
+        "body": [
+          { "id": 1, "name": "Board 1", "all_access": true, "created_at": "2026-01-01T00:00:00Z", "url": "http://localhost:3000/999/boards/1" }
+        ]
+      },
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": []
+      }
+    ],
+    "assertions": [
+      { "type": "requestCount", "expected": 2 },
+      { "type": "noError" }
+    ],
+    "tags": ["security", "pagination"]
+  },
+  {
+    "name": "Protocol downgrade in Link header rejected",
+    "description": "HTTPS to HTTP downgrade in pagination Link must be rejected",
+    "operation": "ListBoards",
+    "method": "GET",
+    "path": "/{accountId}/boards.json",
+    "pathParams": { "accountId": "999" },
+    "configOverrides": { "baseUrl": "https://fizzy.do" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json",
+          "Link": "<http://fizzy.do/999/boards.json?page=2>; rel=\"next\""
+        },
+        "body": [
+          { "id": 1, "name": "Board 1", "all_access": true, "created_at": "2026-01-01T00:00:00Z", "url": "https://fizzy.do/999/boards/1" }
+        ]
+      }
+    ],
+    "assertions": [
+      { "type": "urlOrigin", "expected": "rejected" }
+    ],
+    "tags": ["security", "pagination"]
+  }
+]

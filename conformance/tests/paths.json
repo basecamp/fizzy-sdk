@@ -1,0 +1,157 @@
+[
+  {
+    "name": "GetBoard path construction",
+    "operation": "GetBoard",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}.json",
+    "pathParams": { "accountId": "999", "boardId": 42 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "id": 42, "name": "Test", "all_access": true, "created_at": "2026-01-01T00:00:00Z", "url": "https://fizzy.do/999/boards/42" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/boards/42.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "GetCard uses cardNumber not ID",
+    "operation": "GetCard",
+    "method": "GET",
+    "path": "/{accountId}/cards/{cardNumber}.json",
+    "pathParams": { "accountId": "999", "cardNumber": 123 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "id": 1, "number": 123, "title": "Test", "status": "active", "has_attachments": false, "closed": false, "postponed": false, "golden": false, "created_at": "2026-01-01T00:00:00Z", "url": "https://fizzy.do/999/cards/123" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/cards/123.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "ListWebhooks path with boardId",
+    "operation": "ListWebhooks",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}/webhooks.json",
+    "pathParams": { "accountId": "999", "boardId": 456 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": []
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/boards/456/webhooks.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "CreateWebhook path",
+    "operation": "CreateWebhook",
+    "method": "POST",
+    "path": "/{accountId}/boards/{boardId}/webhooks.json",
+    "pathParams": { "accountId": "999", "boardId": 456 },
+    "requestBody": { "name": "Test", "url": "https://example.com/hook" },
+    "mockResponses": [
+      {
+        "status": 201,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "id": 1, "name": "Test", "url": "https://example.com/hook", "subscribed_actions": [], "signing_secret": "secret", "active": true, "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/boards/456/webhooks.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "Comment reaction path",
+    "operation": "ListCommentReactions",
+    "method": "GET",
+    "path": "/{accountId}/cards/{cardNumber}/comments/{commentId}/reactions.json",
+    "pathParams": { "accountId": "999", "cardNumber": 123, "commentId": 456 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": []
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/cards/123/comments/456/reactions.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "CreateDirectUpload path has no .json suffix",
+    "operation": "CreateDirectUpload",
+    "method": "POST",
+    "path": "/{accountId}/rails/active_storage/direct_uploads",
+    "pathParams": { "accountId": "999" },
+    "requestBody": { "filename": "test.png", "content_type": "image/png", "byte_size": 1024, "checksum": "abc123" },
+    "mockResponses": [
+      {
+        "status": 201,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "id": 1, "key": "abc", "filename": "test.png", "content_type": "image/png", "byte_size": 1024, "checksum": "abc123", "direct_upload": { "url": "https://storage.example.com/upload", "headers": { "Content-Type": "image/png" } } }
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/rails/active_storage/direct_uploads" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "Session path has no account prefix",
+    "operation": "CreateSession",
+    "method": "POST",
+    "path": "/session.json",
+    "requestBody": { "email_address": "test@example.com" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "pending_authentication_token": "pat_12345" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/session.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths", "sessions"]
+  },
+  {
+    "name": "Device registration path has no .json suffix",
+    "operation": "RegisterDevice",
+    "method": "POST",
+    "path": "/{accountId}/devices",
+    "pathParams": { "accountId": "999" },
+    "requestBody": { "token": "apns_token_123", "platform": "ios" },
+    "mockResponses": [
+      {
+        "status": 201,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/devices" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths", "devices"]
+  }
+]

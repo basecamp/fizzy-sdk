@@ -1,0 +1,293 @@
+[
+  {
+    "name": "GET 200 success",
+    "operation": "GetBoard",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}.json",
+    "pathParams": { "accountId": "999", "boardId": 1 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "id": 1, "name": "Test", "all_access": true, "created_at": "2026-01-01T00:00:00Z", "url": "https://fizzy.do/999/boards/1" }
+      }
+    ],
+    "assertions": [
+      { "type": "statusCode", "expected": 200 },
+      { "type": "noError" }
+    ],
+    "tags": ["status-codes"]
+  },
+  {
+    "name": "PATCH 200 success",
+    "operation": "UpdateBoard",
+    "method": "PATCH",
+    "path": "/{accountId}/boards/{boardId}.json",
+    "pathParams": { "accountId": "999", "boardId": 1 },
+    "requestBody": { "name": "Updated" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "id": 1, "name": "Updated", "all_access": true, "created_at": "2026-01-01T00:00:00Z", "url": "https://fizzy.do/999/boards/1" }
+      }
+    ],
+    "assertions": [
+      { "type": "statusCode", "expected": 200 },
+      { "type": "noError" }
+    ],
+    "tags": ["status-codes"]
+  },
+  {
+    "name": "POST 201 created (Board)",
+    "operation": "CreateBoard",
+    "method": "POST",
+    "path": "/{accountId}/boards.json",
+    "pathParams": { "accountId": "999" },
+    "requestBody": { "name": "New Board" },
+    "mockResponses": [
+      {
+        "status": 201,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "id": 2, "name": "New Board", "all_access": true, "created_at": "2026-01-01T00:00:00Z", "url": "https://fizzy.do/999/boards/2" }
+      }
+    ],
+    "assertions": [
+      { "type": "statusCode", "expected": 201 },
+      { "type": "noError" }
+    ],
+    "tags": ["status-codes"]
+  },
+  {
+    "name": "POST 201 created (Card)",
+    "operation": "CreateCard",
+    "method": "POST",
+    "path": "/{accountId}/cards.json",
+    "pathParams": { "accountId": "999" },
+    "requestBody": { "title": "New Card" },
+    "mockResponses": [
+      {
+        "status": 201,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "id": 1, "number": 1, "title": "New Card", "status": "active", "has_attachments": false, "closed": false, "postponed": false, "golden": false, "created_at": "2026-01-01T00:00:00Z", "url": "https://fizzy.do/999/cards/1" }
+      }
+    ],
+    "assertions": [
+      { "type": "statusCode", "expected": 201 },
+      { "type": "noError" }
+    ],
+    "tags": ["status-codes"]
+  },
+  {
+    "name": "DELETE 204 no content",
+    "operation": "DeleteBoard",
+    "method": "DELETE",
+    "path": "/{accountId}/boards/{boardId}.json",
+    "pathParams": { "accountId": "999", "boardId": 1 },
+    "mockResponses": [
+      {
+        "status": 204,
+        "headers": {},
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "statusCode", "expected": 204 },
+      { "type": "noError" }
+    ],
+    "tags": ["status-codes"]
+  },
+  {
+    "name": "GET 404 not found",
+    "operation": "GetBoard",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}.json",
+    "pathParams": { "accountId": "999", "boardId": 99999 },
+    "mockResponses": [
+      {
+        "status": 404,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Not found" }
+      }
+    ],
+    "assertions": [
+      { "type": "statusCode", "expected": 404 },
+      { "type": "errorCode", "expected": "not_found" }
+    ],
+    "tags": ["status-codes"]
+  },
+  {
+    "name": "POST 422 validation error",
+    "operation": "CreateBoard",
+    "method": "POST",
+    "path": "/{accountId}/boards.json",
+    "pathParams": { "accountId": "999" },
+    "requestBody": { "name": "" },
+    "mockResponses": [
+      {
+        "status": 422,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Name can't be blank" }
+      }
+    ],
+    "assertions": [
+      { "type": "statusCode", "expected": 422 },
+      { "type": "errorCode", "expected": "validation" }
+    ],
+    "tags": ["status-codes"]
+  },
+  {
+    "name": "GET 401 unauthorized",
+    "operation": "GetBoard",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}.json",
+    "pathParams": { "accountId": "999", "boardId": 1 },
+    "mockResponses": [
+      {
+        "status": 401,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Unauthorized" }
+      }
+    ],
+    "assertions": [
+      { "type": "statusCode", "expected": 401 },
+      { "type": "errorCode", "expected": "auth_required" }
+    ],
+    "tags": ["status-codes"]
+  },
+  {
+    "name": "GET 403 forbidden",
+    "operation": "GetBoard",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}.json",
+    "pathParams": { "accountId": "999", "boardId": 1 },
+    "mockResponses": [
+      {
+        "status": 403,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Forbidden" }
+      }
+    ],
+    "assertions": [
+      { "type": "statusCode", "expected": 403 },
+      { "type": "errorCode", "expected": "forbidden" }
+    ],
+    "tags": ["status-codes"]
+  },
+  {
+    "name": "GET 429 rate limit exhausted",
+    "operation": "GetBoard",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}.json",
+    "pathParams": { "accountId": "999", "boardId": 1 },
+    "mockResponses": [
+      {
+        "status": 429,
+        "headers": { "Content-Type": "application/json", "Retry-After": "1" },
+        "body": { "error": "Rate limited" }
+      },
+      {
+        "status": 429,
+        "headers": { "Content-Type": "application/json", "Retry-After": "1" },
+        "body": { "error": "Rate limited" }
+      },
+      {
+        "status": 429,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Rate limited" }
+      }
+    ],
+    "assertions": [
+      { "type": "errorCode", "expected": "rate_limit" }
+    ],
+    "tags": ["status-codes"]
+  },
+  {
+    "name": "GET 500 internal server error",
+    "operation": "GetBoard",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}.json",
+    "pathParams": { "accountId": "999", "boardId": 1 },
+    "mockResponses": [
+      {
+        "status": 500,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Internal error" }
+      },
+      {
+        "status": 500,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Internal error" }
+      },
+      {
+        "status": 500,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Internal error" }
+      }
+    ],
+    "assertions": [
+      { "type": "errorCode", "expected": "api_error" }
+    ],
+    "tags": ["status-codes"]
+  },
+  {
+    "name": "List GET 200 success",
+    "operation": "ListBoards",
+    "method": "GET",
+    "path": "/{accountId}/boards.json",
+    "pathParams": { "accountId": "999" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": [
+          { "id": 1, "name": "Board 1", "all_access": true, "created_at": "2026-01-01T00:00:00Z", "url": "https://fizzy.do/999/boards/1" }
+        ]
+      }
+    ],
+    "assertions": [
+      { "type": "statusCode", "expected": 200 },
+      { "type": "noError" }
+    ],
+    "tags": ["status-codes"]
+  },
+  {
+    "name": "401 not retried (non-retryable client error)",
+    "operation": "GetBoard",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}.json",
+    "pathParams": { "accountId": "999", "boardId": 1 },
+    "mockResponses": [
+      {
+        "status": 401,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Unauthorized" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestCount", "expected": 1 },
+      { "type": "errorCode", "expected": "auth_required" }
+    ],
+    "tags": ["status-codes", "retry"]
+  },
+  {
+    "name": "422 on POST not retried",
+    "operation": "CreateBoard",
+    "method": "POST",
+    "path": "/{accountId}/boards.json",
+    "pathParams": { "accountId": "999" },
+    "requestBody": { "name": "" },
+    "mockResponses": [
+      {
+        "status": 422,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Validation failed" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestCount", "expected": 1 },
+      { "type": "errorCode", "expected": "validation" }
+    ],
+    "tags": ["status-codes"]
+  }
+]

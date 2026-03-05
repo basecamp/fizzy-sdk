@@ -1,0 +1,161 @@
+[
+  {
+    "name": "401 maps to auth_required error",
+    "operation": "GetBoard",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}.json",
+    "pathParams": { "accountId": "999", "boardId": 1 },
+    "mockResponses": [
+      {
+        "status": 401,
+        "headers": { "Content-Type": "application/json", "X-Request-Id": "req-401" },
+        "body": { "error": "Unauthorized" }
+      }
+    ],
+    "assertions": [
+      { "type": "errorCode", "expected": "auth_required" },
+      { "type": "requestCount", "expected": 1 }
+    ],
+    "tags": ["errors"]
+  },
+  {
+    "name": "403 maps to forbidden error",
+    "operation": "GetBoard",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}.json",
+    "pathParams": { "accountId": "999", "boardId": 1 },
+    "mockResponses": [
+      {
+        "status": 403,
+        "headers": { "Content-Type": "application/json", "X-Request-Id": "req-403" },
+        "body": { "error": "Forbidden" }
+      }
+    ],
+    "assertions": [
+      { "type": "errorCode", "expected": "forbidden" },
+      { "type": "requestCount", "expected": 1 }
+    ],
+    "tags": ["errors"]
+  },
+  {
+    "name": "404 maps to not_found error",
+    "operation": "GetBoard",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}.json",
+    "pathParams": { "accountId": "999", "boardId": 1 },
+    "mockResponses": [
+      {
+        "status": 404,
+        "headers": { "Content-Type": "application/json", "X-Request-Id": "req-404" },
+        "body": { "error": "Not found" }
+      }
+    ],
+    "assertions": [
+      { "type": "errorCode", "expected": "not_found" },
+      { "type": "requestCount", "expected": 1 }
+    ],
+    "tags": ["errors"]
+  },
+  {
+    "name": "422 maps to validation error",
+    "operation": "CreateBoard",
+    "method": "POST",
+    "path": "/{accountId}/boards.json",
+    "pathParams": { "accountId": "999" },
+    "requestBody": { "name": "" },
+    "mockResponses": [
+      {
+        "status": 422,
+        "headers": { "Content-Type": "application/json", "X-Request-Id": "req-422" },
+        "body": { "error": "Name can't be blank" }
+      }
+    ],
+    "assertions": [
+      { "type": "errorCode", "expected": "validation" },
+      { "type": "requestCount", "expected": 1 }
+    ],
+    "tags": ["errors"]
+  },
+  {
+    "name": "429 maps to rate_limit error and is retryable",
+    "operation": "GetBoard",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}.json",
+    "pathParams": { "accountId": "999", "boardId": 1 },
+    "mockResponses": [
+      {
+        "status": 429,
+        "headers": { "Content-Type": "application/json", "Retry-After": "1" },
+        "body": { "error": "Rate limited" }
+      },
+      {
+        "status": 429,
+        "headers": { "Content-Type": "application/json", "Retry-After": "1" },
+        "body": { "error": "Rate limited" }
+      },
+      {
+        "status": 429,
+        "headers": { "Content-Type": "application/json", "Retry-After": "1" },
+        "body": { "error": "Rate limited" }
+      },
+      {
+        "status": 429,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Rate limited" }
+      }
+    ],
+    "assertions": [
+      { "type": "errorCode", "expected": "rate_limit" },
+      { "type": "requestCount", "expected": 3 }
+    ],
+    "tags": ["errors", "retry"]
+  },
+  {
+    "name": "500 maps to api_error and is retryable",
+    "operation": "GetBoard",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}.json",
+    "pathParams": { "accountId": "999", "boardId": 1 },
+    "mockResponses": [
+      {
+        "status": 500,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Internal server error" }
+      },
+      {
+        "status": 500,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Internal server error" }
+      },
+      {
+        "status": 500,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Internal server error" }
+      }
+    ],
+    "assertions": [
+      { "type": "errorCode", "expected": "api_error" },
+      { "type": "requestCount", "expected": 3 }
+    ],
+    "tags": ["errors", "retry"]
+  },
+  {
+    "name": "X-Request-Id extracted into error",
+    "operation": "GetBoard",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}.json",
+    "pathParams": { "accountId": "999", "boardId": 1 },
+    "mockResponses": [
+      {
+        "status": 404,
+        "headers": { "Content-Type": "application/json", "X-Request-Id": "fizzy-req-12345" },
+        "body": { "error": "Not found" }
+      }
+    ],
+    "assertions": [
+      { "type": "errorCode", "expected": "not_found" },
+      { "type": "errorField", "path": "requestId", "expected": "fizzy-req-12345" }
+    ],
+    "tags": ["errors"]
+  }
+]
