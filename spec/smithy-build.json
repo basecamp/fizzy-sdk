@@ -1,0 +1,52 @@
+{
+  "version": "1.0",
+  "sources": ["fizzy.smithy", "fizzy-traits.smithy"],
+  "maven": {
+    "dependencies": [
+      "software.amazon.smithy:smithy-openapi:1.66.0",
+      "software.amazon.smithy:smithy-openapi-traits:1.66.0",
+      "software.amazon.smithy:smithy-aws-traits:1.66.0",
+      "com.basecamp:smithy-bare-arrays:1.0.0"
+    ],
+    "repositories": [
+      {
+        "url": "https://repo1.maven.org/maven2"
+      },
+      {
+        "url": "file://~/.m2/repository"
+      }
+    ]
+  },
+  "projections": {
+    "openapi": {
+      "plugins": {
+        "openapi": {
+          "service": "fizzy#Fizzy",
+          "protocol": "aws.protocols#restJson1",
+          "jsonContentType": "application/json",
+          "ignoreUnsupportedTraits": true,
+          "useIntegerType": true,
+          "version": "3.1.0",
+          "jsonAdd": {
+            "/info/contact": {
+              "name": "Basecamp",
+              "url": "https://fizzy.do",
+              "email": "support@basecamp.com"
+            },
+            "/info/license": {
+              "name": "MIT",
+              "url": "https://opensource.org/licenses/MIT"
+            }
+          }
+        }
+      }
+    },
+    "ast": {
+      "plugins": {
+        "model": {
+          "service": "fizzy#Fizzy"
+        }
+      }
+    }
+  }
+}
