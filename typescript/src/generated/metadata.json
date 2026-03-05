@@ -1,0 +1,82 @@
+{
+  "$schema": "https://fizzy.do/schemas/sdk-metadata.json",
+  "version": "1.0.0",
+  "generated": "2026-03-01T00:00:00.000Z",
+  "operations": {
+    "ListBoards": {
+      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] },
+      "pagination": { "style": "link", "pageParam": "page", "maxPageSize": 50 }
+    },
+    "GetBoard": {
+      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] }
+    },
+    "CreateBoard": {
+      "retry": { "maxAttempts": 2, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] }
+    },
+    "ListColumns": {
+      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] },
+      "pagination": { "style": "link", "pageParam": "page", "maxPageSize": 50 }
+    },
+    "ListCards": {
+      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] },
+      "pagination": { "style": "link", "pageParam": "page", "maxPageSize": 50 }
+    },
+    "GetCard": {
+      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] }
+    },
+    "CreateCard": {
+      "retry": { "maxAttempts": 2, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] }
+    },
+    "ListComments": {
+      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] },
+      "pagination": { "style": "link", "pageParam": "page", "maxPageSize": 50 }
+    },
+    "GetComment": {
+      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] }
+    },
+    "ListNotifications": {
+      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] },
+      "pagination": { "style": "link", "pageParam": "page", "maxPageSize": 50 }
+    },
+    "ListTags": {
+      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] },
+      "pagination": { "style": "link", "pageParam": "page", "maxPageSize": 50 }
+    },
+    "ListUsers": {
+      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] },
+      "pagination": { "style": "link", "pageParam": "page", "maxPageSize": 50 }
+    },
+    "ListPins": {
+      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] },
+      "pagination": { "style": "link", "pageParam": "page", "maxPageSize": 50 }
+    },
+    "ListWebhooks": {
+      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] },
+      "pagination": { "style": "link", "pageParam": "page", "maxPageSize": 50 }
+    },
+    "GetWebhook": {
+      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] }
+    },
+    "GetMyIdentity": {
+      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] }
+    },
+    "CloseCard": {
+      "idempotent": { "natural": true }
+    },
+    "ReopenCard": {
+      "idempotent": { "natural": true }
+    },
+    "WatchCard": {
+      "idempotent": { "natural": true }
+    },
+    "UnwatchCard": {
+      "idempotent": { "natural": true }
+    },
+    "PinCard": {
+      "idempotent": { "natural": true }
+    },
+    "UnpinCard": {
+      "idempotent": { "natural": true }
+    }
+  }
+}
