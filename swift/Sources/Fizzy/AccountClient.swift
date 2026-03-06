@@ -9,7 +9,7 @@ import Foundation
 /// ```swift
 /// let client = FizzyClient(accessToken: "token", userAgent: "app/1.0")
 /// // Services are accessed via the client directly:
-/// let boards = try await client.boards.list()
+/// let boards = try await client.boards.list(accountId: "abc123")
 /// ```
 public final class AccountClient: Sendable {
     /// The parent client.

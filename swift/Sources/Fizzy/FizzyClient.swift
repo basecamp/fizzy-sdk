@@ -11,8 +11,8 @@ import Foundation
 ///     userAgent: "my-app/1.0 (you@example.com)"
 /// )
 ///
-/// let identity = try await client.identity.getMyIdentity()
-/// let boards = try await client.boards.list()
+/// let identity = try await client.identity.me()
+/// let boards = try await client.boards.list(accountId: "abc123")
 /// ```
 public final class FizzyClient: Sendable {
     /// The client configuration.

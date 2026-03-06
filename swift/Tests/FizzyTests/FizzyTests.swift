@@ -260,3 +260,42 @@ struct BearerAuthTests {
         #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer tok123")
     }
 }
+
+@Suite("FizzyClient Service Bridge Tests")
+struct FizzyClientServiceBridgeTests {
+    @Test("Service accessors are reachable from FizzyClient")
+    func serviceAccessors() {
+        let client = FizzyClient(
+            auth: BearerAuth(tokenProvider: StaticTokenProvider("test")),
+            userAgent: "test/1.0 (test@example.com)"
+        )
+        // Typed bindings prove the bridge compiles and returns correct types.
+        // If FizzyClient+Services.swift is missing or wrong, this won't compile.
+        let _: BoardsService = client.boards
+        let _: CardsService = client.cards
+        let _: ColumnsService = client.columns
+        let _: CommentsService = client.comments
+        let _: DevicesService = client.devices
+        let _: IdentityService = client.identity
+        let _: NotificationsService = client.notifications
+        let _: PinsService = client.pins
+        let _: ReactionsService = client.reactions
+        let _: SessionsService = client.sessions
+        let _: StepsService = client.steps
+        let _: TagsService = client.tags
+        let _: UploadsService = client.uploads
+        let _: UsersService = client.users
+        let _: WebhooksService = client.webhooks
+    }
+
+    @Test("Service accessors are cached")
+    func servicesCached() {
+        let client = FizzyClient(
+            auth: BearerAuth(tokenProvider: StaticTokenProvider("test")),
+            userAgent: "test/1.0 (test@example.com)"
+        )
+        let boards1 = client.boards
+        let boards2 = client.boards
+        #expect(boards1 === boards2)
+    }
+}
