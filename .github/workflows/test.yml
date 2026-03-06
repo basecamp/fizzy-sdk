@@ -22,6 +22,12 @@ jobs:
           go-version: '1.26'
       - name: Check service drift
         run: ./scripts/check-service-drift.sh
+      - name: Check type freshness
+        run: |
+          cd go && go generate ./...
+          cd ..
+          test -z "$(git status --porcelain go/pkg/generated/)" || \
+            (echo "ERROR: Go generated types are stale. Run 'cd go && go generate ./...'" && git status --porcelain go/pkg/generated/ && exit 1)
       - name: Test
         run: cd go && go test ./pkg/fizzy/... -count=1 -race -coverprofile=coverage.out
       - name: Coverage
@@ -45,6 +51,14 @@ jobs:
           node-version: '20'
       - name: Install
         run: cd typescript && npm ci
+      - name: Check service drift
+        run: ./scripts/check-ts-service-drift.sh
+      - name: Check service freshness
+        run: |
+          cd typescript && npx tsx scripts/generate-services.ts
+          cd ..
+          test -z "$(git status --porcelain typescript/src/generated/services/)" || \
+            (echo "ERROR: TypeScript generated services are stale. Run 'make ts-generate-services'" && git status --porcelain typescript/src/generated/services/ && exit 1)
       - name: Lint
         run: cd typescript && npm run lint
       - name: Typecheck
@@ -71,6 +85,15 @@ jobs:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
           working-directory: ruby
+      - name: Check service drift
+        if: matrix.ruby == '3.3'
+        run: ./scripts/check-rb-service-drift.sh
+      - name: Check service freshness
+        if: matrix.ruby == '3.3'
+        run: |
+          ruby ruby/scripts/generate-services.rb
+          test -z "$(git status --porcelain ruby/lib/fizzy/generated/services/)" || \
+            (echo "ERROR: Ruby generated services are stale. Run 'make rb-generate-services'" && git status --porcelain ruby/lib/fizzy/generated/services/ && exit 1)
       - name: Lint
         if: matrix.ruby == '3.3'
         run: cd ruby && bundle exec rubocop
@@ -85,6 +108,14 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - name: Build
         run: cd swift && swift build
+      - name: Check service drift
+        run: ./scripts/check-swift-service-drift.sh
+      - name: Check service freshness
+        run: |
+          cd swift && swift run FizzyGenerator --openapi ../openapi.json --behavior ../behavior-model.json --output Sources/Fizzy/Generated
+          cd ..
+          test -z "$(git status --porcelain swift/Sources/Fizzy/Generated/)" || \
+            (echo "ERROR: Swift generated services are stale. Run 'make swift-generate'" && git status --porcelain swift/Sources/Fizzy/Generated/ && exit 1)
       - name: Test
         run: cd swift && swift test
 
@@ -100,8 +131,14 @@ jobs:
           java-version: '17'
       - name: Build
         run: cd kotlin && ./gradlew :fizzy-sdk:compileKotlinJvm
-      - name: Check drift
+      - name: Check service drift
         run: ./scripts/check-kotlin-service-drift.sh
+      - name: Check service freshness
+        run: |
+          cd kotlin && ./gradlew :generator:run
+          cd ..
+          test -z "$(git status --porcelain kotlin/sdk/src/commonMain/kotlin/com/basecamp/fizzy/generated/)" || \
+            (echo "ERROR: Kotlin generated services are stale. Run 'make kt-generate-services'" && git status --porcelain kotlin/sdk/src/commonMain/kotlin/com/basecamp/fizzy/generated/ && exit 1)
 
   conformance:
     name: Conformance (${{ matrix.language }})

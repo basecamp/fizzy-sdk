@@ -39,6 +39,18 @@ jobs:
             exit 1
           fi
 
+      - name: Check behavior model freshness
+        run: make behavior-model-check
+
+      - name: Check URL routes freshness
+        run: make url-routes-check
+
+      - name: Check API version sync
+        run: make sync-api-version-check
+
+      - name: Check provenance sync
+        run: make provenance-check
+
       - name: Store operation count
         run: |
           OP_COUNT=$(jq '[.paths | to_entries[] | .value | keys[] | select(. != "parameters")] | length' openapi.json)
