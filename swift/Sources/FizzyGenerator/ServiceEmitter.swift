@@ -170,8 +170,8 @@ private func emitMethod(_ op: ParsedOperation, serviceName: String, schemas: [St
 
     // Build OperationInfo
     let swiftPath = pathToSwiftInterpolation(op.path)
-    let boardParam = op.pathParams.first { $0.name == "boardId" }
-    let resourceParam = op.pathParams.first { $0.name != "boardId" && $0.name.hasSuffix("Id") }
+    let boardParam = op.pathParams.first { $0.name == "boardId" && $0.swiftType == "Int" }
+    let resourceParam = op.pathParams.last { $0.name != "boardId" && $0.name.hasSuffix("Id") && $0.swiftType == "Int" }
 
     var opInfoParts: [String] = []
     opInfoParts.append("service: \"\(serviceName)\"")

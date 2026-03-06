@@ -27,11 +27,18 @@ class MetadataEmitter {
             val obj = config.jsonObject
             val idempotent = obj["idempotent"]?.jsonPrimitive?.boolean ?: false
             val retry = obj["retry"]?.jsonObject?.let { r ->
+                val max = r["max"]?.jsonPrimitive?.intOrNull ?: return@let null
+                val retryOnElement = r["retry_on"]
+                val retryOn = if (retryOnElement is kotlinx.serialization.json.JsonArray) {
+                    retryOnElement.mapNotNull { it.jsonPrimitive.intOrNull }
+                } else {
+                    emptyList()
+                }
                 RetryConfig(
-                    max = r["max"]!!.jsonPrimitive.int,
-                    baseDelayMs = r["base_delay_ms"]!!.jsonPrimitive.long,
-                    backoff = r["backoff"]!!.jsonPrimitive.content,
-                    retryOn = r["retry_on"]!!.jsonArray.map { it.jsonPrimitive.int },
+                    max = max,
+                    baseDelayMs = r["base_delay_ms"]?.jsonPrimitive?.longOrNull ?: 0L,
+                    backoff = r["backoff"]?.jsonPrimitive?.contentOrNull ?: "none",
+                    retryOn = retryOn,
                 )
             }
             OperationConfig(opId, idempotent, retry)

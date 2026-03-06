@@ -156,10 +156,14 @@ class ServiceGenerator
         operation = path_item[method]
         next unless operation
 
-        tag = operation['tags']&.first || 'Untagged'
+        tag = operation['tags']&.first
         parsed = parse_operation(path, method, operation)
 
-        service_name = TAG_TO_SERVICE[tag] || tag.gsub(/\s+/, '')
+        service_name = if tag && TAG_TO_SERVICE.key?(tag)
+          TAG_TO_SERVICE[tag]
+        else
+          derive_service_name(operation['operationId'])
+        end
 
         services[service_name] ||= {
           name: service_name,
@@ -173,6 +177,54 @@ class ServiceGenerator
     end
 
     services
+  end
+
+  # Derive service name from operationId when tags are absent.
+  OPERATION_SERVICE_OVERRIDES = {
+    'GetMyIdentity' => 'Identity',
+    'CreateDirectUpload' => 'Uploads',
+    'RedeemMagicLink' => 'Sessions',
+    'CompleteSignup' => 'Sessions',
+    'GetNotificationTray' => 'Notifications',
+    'BulkReadNotifications' => 'Notifications',
+    'DeleteCardImage' => 'Cards'
+  }.freeze
+
+  SERVICE_SUFFIXES = [
+    ['CommentReactions', 'Reactions'],
+    ['CommentReaction', 'Reactions'],
+    ['CardReactions', 'Reactions'],
+    ['CardReaction', 'Reactions'],
+    ['Notifications', 'Notifications'],
+    ['Notification', 'Notifications'],
+    ['Comments', 'Comments'],
+    ['Comment', 'Comments'],
+    ['Webhooks', 'Webhooks'],
+    ['Webhook', 'Webhooks'],
+    ['Columns', 'Columns'],
+    ['Column', 'Columns'],
+    ['Boards', 'Boards'],
+    ['Board', 'Boards'],
+    ['Cards', 'Cards'],
+    ['Card', 'Cards'],
+    ['Steps', 'Steps'],
+    ['Step', 'Steps'],
+    ['Users', 'Users'],
+    ['User', 'Users'],
+    ['Tags', 'Tags'],
+    ['Pins', 'Pins'],
+    ['Session', 'Sessions'],
+    ['Device', 'Devices']
+  ].freeze
+
+  def derive_service_name(operation_id)
+    return OPERATION_SERVICE_OVERRIDES[operation_id] if OPERATION_SERVICE_OVERRIDES.key?(operation_id)
+
+    SERVICE_SUFFIXES.each do |suffix, service|
+      return service if operation_id.end_with?(suffix)
+    end
+
+    'Miscellaneous'
   end
 
   def parse_operation(path, method, operation)
@@ -440,7 +492,7 @@ class ServiceGenerator
   def build_hook_kwargs(op, service_name)
     kwargs = []
     kwargs << "service: \"#{service_name.downcase}\""
-    kwargs << "operation: \"#{op[:method_name]}\""
+    kwargs << "operation: \"#{op[:operation_id]}\""
     kwargs << "is_mutation: #{op[:is_mutation]}"
 
     resource_param = op[:path_params].last

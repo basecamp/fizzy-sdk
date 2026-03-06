@@ -22,8 +22,55 @@ val TAG_TO_SERVICE = mapOf(
     "Webhooks" to "Webhooks",
     "Sessions" to "Sessions",
     "Devices" to "Devices",
-    "Untagged" to "Miscellaneous",
 )
+
+/** Explicit overrides for operations that don't follow suffix patterns. */
+private val OPERATION_SERVICE_OVERRIDES = mapOf(
+    "GetMyIdentity" to "Identity",
+    "CreateDirectUpload" to "Uploads",
+    "RedeemMagicLink" to "Sessions",
+    "CompleteSignup" to "Sessions",
+    "GetNotificationTray" to "Notifications",
+    "BulkReadNotifications" to "Notifications",
+    "DeleteCardImage" to "Cards",
+)
+
+/** Suffix map for deriving service from operationId (longest match first). */
+private val SERVICE_SUFFIXES = listOf(
+    "CommentReactions" to "Reactions",
+    "CommentReaction" to "Reactions",
+    "CardReactions" to "Reactions",
+    "CardReaction" to "Reactions",
+    "Notifications" to "Notifications",
+    "Notification" to "Notifications",
+    "Comments" to "Comments",
+    "Comment" to "Comments",
+    "Webhooks" to "Webhooks",
+    "Webhook" to "Webhooks",
+    "Columns" to "Columns",
+    "Column" to "Columns",
+    "Boards" to "Boards",
+    "Board" to "Boards",
+    "Cards" to "Cards",
+    "Card" to "Cards",
+    "Steps" to "Steps",
+    "Step" to "Steps",
+    "Users" to "Users",
+    "User" to "Users",
+    "Tags" to "Tags",
+    "Pins" to "Pins",
+    "Session" to "Sessions",
+    "Device" to "Devices",
+)
+
+/** Derives service name from operationId when tags are absent. */
+fun deriveServiceName(operationId: String): String {
+    OPERATION_SERVICE_OVERRIDES[operationId]?.let { return it }
+    for ((suffix, service) in SERVICE_SUFFIXES) {
+        if (operationId.endsWith(suffix)) return service
+    }
+    return "Miscellaneous"
+}
 
 /**
  * Service split configuration -- some tags map to multiple service classes.

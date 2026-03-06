@@ -38,28 +38,86 @@ struct ServiceDefinition {
     var className: String { "\(name)Service" }
 }
 
+// MARK: - OperationId-Based Service Derivation
+
+/// Explicit overrides for operations that don't follow suffix patterns.
+private let operationServiceOverrides: [String: String] = [
+    "GetMyIdentity": "Identity",
+    "CreateDirectUpload": "Uploads",
+    "RedeemMagicLink": "Sessions",
+    "CompleteSignup": "Sessions",
+    "GetNotificationTray": "Notifications",
+    "BulkReadNotifications": "Notifications",
+    "DeleteCardImage": "Cards",
+]
+
+/// Suffix map for deriving service from operationId (longest match first).
+private let serviceSuffixes: [(String, String)] = [
+    ("CommentReactions", "Reactions"),
+    ("CommentReaction", "Reactions"),
+    ("CardReactions", "Reactions"),
+    ("CardReaction", "Reactions"),
+    ("Notifications", "Notifications"),
+    ("Notification", "Notifications"),
+    ("Comments", "Comments"),
+    ("Comment", "Comments"),
+    ("Webhooks", "Webhooks"),
+    ("Webhook", "Webhooks"),
+    ("Columns", "Columns"),
+    ("Column", "Columns"),
+    ("Boards", "Boards"),
+    ("Board", "Boards"),
+    ("Cards", "Cards"),
+    ("Card", "Cards"),
+    ("Steps", "Steps"),
+    ("Step", "Steps"),
+    ("Users", "Users"),
+    ("User", "Users"),
+    ("Tags", "Tags"),
+    ("Pins", "Pins"),
+    ("Session", "Sessions"),
+    ("Device", "Devices"),
+]
+
+/// Derives service name from operationId when tags are absent.
+func deriveServiceName(_ operationId: String) -> String {
+    if let override = operationServiceOverrides[operationId] {
+        return override
+    }
+    for (suffix, service) in serviceSuffixes {
+        if operationId.hasSuffix(suffix) {
+            return service
+        }
+    }
+    return "Miscellaneous"
+}
+
 // MARK: - Grouping
 
-/// Groups parsed operations into services based on tags.
+/// Groups parsed operations into services based on tags, falling back to operationId heuristic.
 func groupOperations(_ operations: [ParsedOperation], schemas: [String: Any]) -> [String: ServiceDefinition] {
     var services: [String: ServiceDefinition] = [:]
 
     for op in operations {
         let tag = op.tag
 
-        // Determine service name
+        // Determine service name: use tag if mapped, otherwise derive from operationId
         let serviceName: String
-        if let splits = serviceSplits[tag], !splits.isEmpty {
-            var matched: String?
-            for svc in splits.keys.sorted() {
-                if splits[svc]!.contains(op.operationId) {
-                    matched = svc
-                    break
+        if let mapped = tagToService[tag], tag != "Untagged" {
+            if let splits = serviceSplits[tag], !splits.isEmpty {
+                var matched: String?
+                for svc in splits.keys.sorted() {
+                    if splits[svc]!.contains(op.operationId) {
+                        matched = svc
+                        break
+                    }
                 }
+                serviceName = matched ?? mapped
+            } else {
+                serviceName = mapped
             }
-            serviceName = matched ?? tagToService[tag] ?? tag.replacingOccurrences(of: " ", with: "")
         } else {
-            serviceName = tagToService[tag] ?? tag.replacingOccurrences(of: " ", with: "")
+            serviceName = deriveServiceName(op.operationId)
         }
 
         if services[serviceName] == nil {
