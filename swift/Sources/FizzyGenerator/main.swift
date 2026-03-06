@@ -151,6 +151,13 @@ func run() throws {
     try extensionCode.write(toFile: extensionPath, atomically: true, encoding: .utf8)
     print("Generated AccountClient+Services.swift")
 
+    // MARK: - Emit FizzyClient+Services.swift
+
+    let fizzyClientCode = emitFizzyClientExtension(services: services)
+    let fizzyClientPath = resolvedOutput + "/FizzyClient+Services.swift"
+    try fizzyClientCode.write(toFile: fizzyClientPath, atomically: true, encoding: .utf8)
+    print("Generated FizzyClient+Services.swift")
+
     // MARK: - Emit Metadata.swift
 
     let metadataCode = emitMetadata(configs: retryConfigs)
