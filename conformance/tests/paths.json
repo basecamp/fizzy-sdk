@@ -153,5 +153,193 @@
       { "type": "noError" }
     ],
     "tags": ["paths", "devices"]
+  },
+  {
+    "name": "GetWebhook path with 3 path params",
+    "operation": "GetWebhook",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}/webhooks/{webhookId}",
+    "pathParams": { "accountId": "999", "boardId": 456, "webhookId": 789 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "id": 789, "name": "Test Hook", "url": "https://example.com/hook", "subscribed_actions": [], "signing_secret": "secret", "active": true, "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/boards/456/webhooks/789" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "DeleteCommentReaction path with 4 path params",
+    "operation": "DeleteCommentReaction",
+    "method": "DELETE",
+    "path": "/{accountId}/cards/{cardNumber}/comments/{commentId}/reactions/{reactionId}",
+    "pathParams": { "accountId": "999", "cardNumber": 123, "commentId": 456, "reactionId": 789 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/cards/123/comments/456/reactions/789" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "GetMyIdentity has no account prefix",
+    "operation": "GetMyIdentity",
+    "method": "GET",
+    "path": "/my/identity.json",
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "id": 1, "name": "Test User", "email_address": "test@example.com", "accounts": [] }
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/my/identity.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "ListPins has no account prefix",
+    "operation": "ListPins",
+    "method": "GET",
+    "path": "/my/pins.json",
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": []
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/my/pins.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "MoveCard uses sub-resource path",
+    "operation": "MoveCard",
+    "method": "PATCH",
+    "path": "/{accountId}/cards/{cardNumber}/board.json",
+    "pathParams": { "accountId": "999", "cardNumber": 123 },
+    "requestBody": { "board_id": 42 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "id": 1, "number": 123, "title": "Test", "status": "active", "has_attachments": false, "closed": false, "postponed": false, "golden": false, "created_at": "2026-01-01T00:00:00Z", "url": "https://fizzy.do/999/cards/123" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/cards/123/board.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "CloseCard uses sub-resource path",
+    "operation": "CloseCard",
+    "method": "POST",
+    "path": "/{accountId}/cards/{cardNumber}/closure.json",
+    "pathParams": { "accountId": "999", "cardNumber": 123 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/cards/123/closure.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "RedeemMagicLink has no account prefix",
+    "operation": "RedeemMagicLink",
+    "method": "POST",
+    "path": "/session/magic_link.json",
+    "requestBody": { "token": "ml_token_123" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "session_token": "st_12345", "requires_signup_completion": false }
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/session/magic_link.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths", "sessions"]
+  },
+  {
+    "name": "DestroySession is DELETE with no account prefix",
+    "operation": "DestroySession",
+    "method": "DELETE",
+    "path": "/session.json",
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/session.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths", "sessions"]
+  },
+  {
+    "name": "CompleteSignup has no account prefix",
+    "operation": "CompleteSignup",
+    "method": "POST",
+    "path": "/signup/completion.json",
+    "requestBody": { "name": "Test User" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "id": 1, "name": "Test User", "email_address": "test@example.com", "role": "member", "created_at": "2026-01-01T00:00:00Z" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/signup/completion.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths", "sessions"]
+  },
+  {
+    "name": "UnregisterDevice DELETE with path params",
+    "operation": "UnregisterDevice",
+    "method": "DELETE",
+    "path": "/{accountId}/devices/{deviceToken}",
+    "pathParams": { "accountId": "999", "deviceToken": "apns_token_123" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/devices/apns_token_123" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths", "devices"]
   }
 ]

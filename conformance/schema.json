@@ -18,7 +18,9 @@
       "configOverrides": {
         "type": "object",
         "properties": {
-          "baseUrl": { "type": "string" }
+          "baseUrl": { "type": "string" },
+          "maxPages": { "type": "integer" },
+          "maxItems": { "type": "integer" }
         }
       },
       "mockResponses": {
@@ -46,7 +48,9 @@
                 "noError", "errorCode", "errorField",
                 "headerPresent", "headerValue",
                 "requestPath", "urlOrigin",
-                "responseMeta"
+                "responseMeta",
+                "responseBody", "errorMessage", "headerInjected",
+                "requestScheme", "responseStatus", "requestBodyField"
               ]
             },
             "expected": {},

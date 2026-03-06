@@ -1,0 +1,122 @@
+[
+  {
+    "name": "CreateSession sends email_address field",
+    "operation": "CreateSession",
+    "method": "POST",
+    "path": "/session.json",
+    "requestBody": { "email_address": "test@example.com" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "pending_authentication_token": "pat_12345" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestBodyField", "expected": "email_address" },
+      { "type": "noError" }
+    ],
+    "tags": ["request-shapes"]
+  },
+  {
+    "name": "CreateCardReaction sends content field",
+    "operation": "CreateCardReaction",
+    "method": "POST",
+    "path": "/{accountId}/cards/{cardNumber}/reactions.json",
+    "pathParams": { "accountId": "999", "cardNumber": 123 },
+    "requestBody": { "content": "👍" },
+    "mockResponses": [
+      {
+        "status": 201,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "id": 1, "content": "👍", "user_id": 1, "created_at": "2026-01-01T00:00:00Z" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestBodyField", "expected": "content" },
+      { "type": "noError" }
+    ],
+    "tags": ["request-shapes"]
+  },
+  {
+    "name": "CreateStep sends content field",
+    "operation": "CreateStep",
+    "method": "POST",
+    "path": "/{accountId}/cards/{cardNumber}/steps.json",
+    "pathParams": { "accountId": "999", "cardNumber": 123 },
+    "requestBody": { "content": "First step" },
+    "mockResponses": [
+      {
+        "status": 201,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "id": 1, "content": "First step", "completed": false, "position": 1, "created_at": "2026-01-01T00:00:00Z" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestBodyField", "expected": "content" },
+      { "type": "noError" }
+    ],
+    "tags": ["request-shapes"]
+  },
+  {
+    "name": "AssignCard sends user_id field",
+    "operation": "AssignCard",
+    "method": "POST",
+    "path": "/{accountId}/cards/{cardNumber}/assignments.json",
+    "pathParams": { "accountId": "999", "cardNumber": 123 },
+    "requestBody": { "user_id": 42 },
+    "mockResponses": [
+      {
+        "status": 201,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestBodyField", "expected": "user_id" },
+      { "type": "noError" }
+    ],
+    "tags": ["request-shapes"]
+  },
+  {
+    "name": "TagCard sends name field",
+    "operation": "TagCard",
+    "method": "POST",
+    "path": "/{accountId}/cards/{cardNumber}/taggings.json",
+    "pathParams": { "accountId": "999", "cardNumber": 123 },
+    "requestBody": { "name": "urgent" },
+    "mockResponses": [
+      {
+        "status": 201,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestBodyField", "expected": "name" },
+      { "type": "noError" }
+    ],
+    "tags": ["request-shapes"]
+  },
+  {
+    "name": "CreateWebhook sends name and url fields",
+    "operation": "CreateWebhook",
+    "method": "POST",
+    "path": "/{accountId}/boards/{boardId}/webhooks.json",
+    "pathParams": { "accountId": "999", "boardId": 456 },
+    "requestBody": { "name": "Test Hook", "url": "https://example.com/hook" },
+    "mockResponses": [
+      {
+        "status": 201,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "id": 1, "name": "Test Hook", "url": "https://example.com/hook", "subscribed_actions": [], "signing_secret": "secret", "active": true, "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestBodyField", "expected": "name" },
+      { "type": "requestBodyField", "expected": "url" },
+      { "type": "noError" }
+    ],
+    "tags": ["request-shapes"]
+  }
+]
