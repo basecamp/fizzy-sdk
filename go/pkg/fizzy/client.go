@@ -12,8 +12,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/basecamp/fizzy-sdk/go/pkg/generated"
 )
 
 // DefaultUserAgent is the default User-Agent header value.
@@ -34,11 +32,7 @@ type Client struct {
 	userAgent     string
 	logger        *slog.Logger
 	httpOpts      HTTPOptions
-	hooks         Hooks
-
-	// Generated client (single shared instance, account passed per operation)
-	genOnce sync.Once
-	gen     *generated.ClientWithResponses
+	hooks Hooks
 
 	// Account-independent services
 	sessionsMu sync.Mutex
@@ -204,19 +198,12 @@ func NewClient(cfg *Config, tokenProvider TokenProvider, opts ...ClientOption) *
 }
 
 // ForAccount returns an AccountClient bound to the specified Fizzy account.
-// The accountID must be a numeric string (e.g., "12345"). ForAccount panics if
-// the accountID is empty or contains non-digit characters.
+// The accountID can be a numeric ID or an account slug. ForAccount panics if
+// the accountID is empty.
 func (c *Client) ForAccount(accountID string) *AccountClient {
 	if accountID == "" {
 		panic("fizzy: ForAccount requires non-empty account ID")
 	}
-	for _, r := range accountID {
-		if r < '0' || r > '9' {
-			panic("fizzy: ForAccount requires numeric account ID, got: " + accountID)
-		}
-	}
-
-	c.initGeneratedClient()
 
 	return &AccountClient{
 		parent:    c,
@@ -242,6 +229,11 @@ func (ac *AccountClient) Post(ctx context.Context, path string, body any) (*Resp
 // Put performs an account-scoped PUT request with a JSON body.
 func (ac *AccountClient) Put(ctx context.Context, path string, body any) (*Response, error) {
 	return ac.parent.doRequest(ctx, "PUT", ac.accountPath(path), body)
+}
+
+// Patch performs an account-scoped PATCH request with a JSON body.
+func (ac *AccountClient) Patch(ctx context.Context, path string, body any) (*Response, error) {
+	return ac.parent.doRequest(ctx, "PATCH", ac.accountPath(path), body)
 }
 
 // Delete performs an account-scoped DELETE request.
@@ -278,31 +270,6 @@ func (ac *AccountClient) accountPath(path string) string {
 	return "/" + ac.accountID + path
 }
 
-// initGeneratedClient initializes the shared generated OpenAPI client.
-func (c *Client) initGeneratedClient() {
-	c.genOnce.Do(func() {
-		serverURL := strings.TrimSuffix(c.cfg.BaseURL, "/")
-		authEditor := func(ctx context.Context, req *http.Request) error {
-			if err := c.authStrategy.Authenticate(ctx, req); err != nil {
-				return err
-			}
-			req.Header.Set("User-Agent", c.userAgent)
-			if req.Header.Get("Content-Type") == "" {
-				req.Header.Set("Content-Type", "application/json")
-			}
-			req.Header.Set("Accept", "application/json")
-			return nil
-		}
-		gen, err := generated.NewClientWithResponses(serverURL,
-			generated.WithHTTPClient(c.httpClient),
-			generated.WithRequestEditorFn(authEditor))
-		if err != nil {
-			panic(fmt.Sprintf("fizzy: failed to create generated client: %v", err))
-		}
-		c.gen = gen
-	})
-}
-
 // discardHandler is a slog.Handler that discards all log records.
 type discardHandler struct{}
 
@@ -324,6 +291,11 @@ func (c *Client) Post(ctx context.Context, path string, body any) (*Response, er
 // Put performs a PUT request with a JSON body.
 func (c *Client) Put(ctx context.Context, path string, body any) (*Response, error) {
 	return c.doRequest(ctx, "PUT", path, body)
+}
+
+// Patch performs a PATCH request with a JSON body.
+func (c *Client) Patch(ctx context.Context, path string, body any) (*Response, error) {
+	return c.doRequest(ctx, "PATCH", path, body)
 }
 
 // Delete performs a DELETE request.
