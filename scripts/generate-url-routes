@@ -6,7 +6,7 @@ set -euo pipefail
 # Output: go/pkg/fizzy/url-routes.json
 
 OPENAPI="openapi.json"
-OUTPUT="go/pkg/fizzy/url-routes.json"
+OUTPUT="${1:-go/pkg/fizzy/url-routes.json}"
 
 if [ ! -f "$OPENAPI" ]; then
   echo "ERROR: openapi.json not found. Run 'make smithy-build' first." >&2

@@ -19,7 +19,7 @@ sedi "s/Version = \"[^\"]*\"/Version = \"$VERSION\"/" go/pkg/fizzy/version.go
 sedi "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" typescript/package.json
 
 # 3. TypeScript — client.ts
-sedi "s/SDK_VERSION = \"[^\"]*\"/SDK_VERSION = \"$VERSION\"/" typescript/src/client.ts
+sedi "s/export const VERSION = \"[^\"]*\"/export const VERSION = \"$VERSION\"/" typescript/src/client.ts
 
 # 4. Ruby — version.rb
 sedi "s/VERSION = \"[^\"]*\"/VERSION = \"$VERSION\"/" ruby/lib/fizzy/version.rb
@@ -31,7 +31,7 @@ sedi "s/sdkVersion = \"[^\"]*\"/sdkVersion = \"$VERSION\"/" swift/Sources/Fizzy/
 sedi "s/version = \"[^\"]*\"/version = \"$VERSION\"/" kotlin/sdk/build.gradle.kts
 
 # 7. Kotlin — FizzyConfig.kt
-sedi "s/SDK_VERSION = \"[^\"]*\"/SDK_VERSION = \"$VERSION\"/" kotlin/sdk/src/commonMain/kotlin/com/basecamp/fizzy/FizzyConfig.kt
+sedi "s/const val VERSION = \"[^\"]*\"/const val VERSION = \"$VERSION\"/" kotlin/sdk/src/commonMain/kotlin/com/basecamp/fizzy/FizzyConfig.kt
 
 # 8. Root — package.json
 sedi "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" package.json

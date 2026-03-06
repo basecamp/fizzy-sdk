@@ -6,7 +6,7 @@ set -euo pipefail
 # Output: behavior-model.json
 
 AST="spec/build/smithy/source/model/model.json"
-OUTPUT="behavior-model.json"
+OUTPUT="${1:-behavior-model.json}"
 
 if [ ! -f "$AST" ]; then
   echo "ERROR: Smithy AST not found at $AST. Run 'make smithy-build' first." >&2

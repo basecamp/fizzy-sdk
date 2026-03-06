@@ -4,11 +4,12 @@
 .PHONY: url-routes url-routes-check
 .PHONY: sync-api-version sync-api-version-check
 .PHONY: go-test go-lint go-check go-clean go-check-drift
-.PHONY: ts-install ts-generate ts-generate-services ts-build ts-test ts-typecheck ts-check ts-clean
-.PHONY: rb-generate rb-generate-services rb-build rb-test rb-check rb-clean
-.PHONY: swift-build swift-test swift-check swift-generate swift-clean
+.PHONY: ts-install ts-generate ts-generate-services ts-build ts-test ts-typecheck ts-check ts-check-drift ts-clean
+.PHONY: rb-generate rb-generate-services rb-build rb-test rb-check rb-check-drift rb-clean
+.PHONY: swift-build swift-test swift-check swift-check-drift swift-generate swift-clean
 .PHONY: kt-generate-services kt-build kt-test kt-check kt-check-drift kt-clean
-.PHONY: conformance-build conformance-go conformance-kotlin conformance-typescript conformance-ruby conformance
+.PHONY: conformance-build conformance-go conformance-kotlin conformance-typescript conformance-ruby conformance-swift conformance
+.PHONY: provenance-sync provenance-check sync-status
 .PHONY: bump release audit-check
 
 # ──────────────────────────────────────────────
@@ -35,10 +36,14 @@ smithy-build: smithy-mapper ## Build OpenAPI from Smithy
 	@cp spec/build/smithy/openapi/openapi/Fizzy.openapi.json openapi.json
 	@echo "==> OpenAPI spec generated: openapi.json"
 
-smithy-check: ## Verify openapi.json is up to date
+smithy-check: smithy-validate smithy-mapper ## Verify openapi.json is up to date
 	@echo "==> Checking OpenAPI freshness..."
-	@$(MAKE) smithy-build
-	@git diff --quiet openapi.json || (echo "ERROR: openapi.json is stale. Run 'make smithy-build'" && exit 1)
+	@cd spec && smithy build
+	@TMPFILE=$$(mktemp) && \
+		cp spec/build/smithy/openapi/openapi/Fizzy.openapi.json "$$TMPFILE" && \
+		(diff -q openapi.json "$$TMPFILE" > /dev/null 2>&1 || \
+			(rm -f "$$TMPFILE" && echo "ERROR: openapi.json is out of date. Run 'make smithy-build'" && exit 1)) && \
+		rm -f "$$TMPFILE"
 	@echo "  openapi.json is fresh"
 
 smithy-clean:
@@ -55,8 +60,11 @@ behavior-model: ## Generate behavior-model.json from Smithy AST
 
 behavior-model-check: ## Verify behavior-model.json is up to date
 	@echo "==> Checking behavior model freshness..."
-	@$(MAKE) behavior-model
-	@git diff --quiet behavior-model.json || (echo "ERROR: behavior-model.json is stale" && exit 1)
+	@TMPFILE=$$(mktemp) && \
+		./scripts/generate-behavior-model "$$TMPFILE" && \
+		(diff -q behavior-model.json "$$TMPFILE" > /dev/null 2>&1 || \
+			(rm -f "$$TMPFILE" && echo "ERROR: behavior-model.json is stale. Run 'make behavior-model'" && exit 1)) && \
+		rm -f "$$TMPFILE"
 	@echo "  behavior-model.json is fresh"
 
 # ──────────────────────────────────────────────
@@ -69,8 +77,11 @@ url-routes: ## Generate url-routes.json from OpenAPI
 
 url-routes-check:
 	@echo "==> Checking URL routes freshness..."
-	@$(MAKE) url-routes
-	@git diff --quiet go/pkg/fizzy/url-routes.json || (echo "ERROR: url-routes.json is stale" && exit 1)
+	@TMPFILE=$$(mktemp) && \
+		./scripts/generate-url-routes "$$TMPFILE" && \
+		(diff -q go/pkg/fizzy/url-routes.json "$$TMPFILE" > /dev/null 2>&1 || \
+			(rm -f "$$TMPFILE" && echo "ERROR: url-routes.json is stale. Run 'make url-routes'" && exit 1)) && \
+		rm -f "$$TMPFILE"
 	@echo "  url-routes.json is fresh"
 
 # ──────────────────────────────────────────────
@@ -81,14 +92,42 @@ sync-api-version: ## Sync API version from openapi.json to all SDKs
 	@echo "==> Syncing API version..."
 	./scripts/sync-api-version.sh
 
-API_VERSION_FILES := go/pkg/fizzy/version.go typescript/src/client.ts ruby/lib/fizzy/version.rb \
-	kotlin/sdk/src/commonMain/kotlin/com/basecamp/fizzy/FizzyConfig.kt swift/Sources/Fizzy/FizzyConfig.swift
-
 sync-api-version-check:
 	@echo "==> Checking API version sync..."
-	@$(MAKE) sync-api-version
-	@git diff --quiet $(API_VERSION_FILES) || (echo "ERROR: API version out of sync" && exit 1)
+	@API_VER=$$(jq -r '.info.version' openapi.json); \
+	ok=true; \
+	grep -q "APIVersion = \"$$API_VER\"" go/pkg/fizzy/version.go || ok=false; \
+	grep -q "API_VERSION = \"$$API_VER\"" typescript/src/client.ts || ok=false; \
+	grep -q "API_VERSION = \"$$API_VER\"" ruby/lib/fizzy/version.rb || ok=false; \
+	grep -q "API_VERSION = \"$$API_VER\"" kotlin/sdk/src/commonMain/kotlin/com/basecamp/fizzy/FizzyConfig.kt || ok=false; \
+	grep -q "apiVersion = \"$$API_VER\"" swift/Sources/Fizzy/FizzyConfig.swift || ok=false; \
+	if [ "$$ok" = false ]; then echo "ERROR: API_VERSION constants out of sync. Run 'make sync-api-version'"; exit 1; fi
 	@echo "  API version is in sync"
+
+# ──────────────────────────────────────────────
+# Provenance
+# ──────────────────────────────────────────────
+
+provenance-sync: ## Sync provenance file to Go SDK
+	@echo "==> Syncing provenance..."
+	@cp spec/api-provenance.json go/pkg/fizzy/api-provenance.json
+	@echo "  Provenance synced"
+
+provenance-check: ## Verify provenance file is in sync
+	@echo "==> Checking provenance..."
+	@diff -q spec/api-provenance.json go/pkg/fizzy/api-provenance.json > /dev/null 2>&1 || \
+		(echo "ERROR: go/pkg/fizzy/api-provenance.json is out of date. Run 'make provenance-sync'" && exit 1)
+	@echo "  Provenance is in sync"
+
+sync-status: ## Show upstream changes since last sync
+	@REV=$$(jq -r '.fizzy.revision' spec/api-provenance.json); \
+	if [ -z "$$REV" ] || [ "$$REV" = "null" ] || [ "$$REV" = "" ]; then \
+		echo "No revision recorded in api-provenance.json. Run provenance-sync after setting revision."; \
+		exit 0; \
+	fi; \
+	echo "==> Checking for upstream changes since $$REV..."; \
+	gh api repos/basecamp/fizzy/compare/$$REV...main --jq '.ahead_by' 2>/dev/null | xargs -I{} echo "  {} commits ahead" || \
+		echo "  Could not query upstream (check gh auth)"
 
 # ──────────────────────────────────────────────
 # Go SDK
@@ -140,7 +179,11 @@ ts-typecheck: ts-install
 	@echo "==> Type-checking TypeScript..."
 	cd typescript && npm run typecheck
 
-ts-check: ts-test ts-typecheck
+ts-check-drift: ## Check TypeScript service drift
+	@echo "==> Checking TypeScript service drift..."
+	./scripts/check-ts-service-drift.sh
+
+ts-check: ts-test ts-typecheck ts-check-drift
 	@echo "==> TypeScript SDK checks passed"
 
 ts-clean:
@@ -162,7 +205,11 @@ rb-test: ## Run Ruby tests
 	@echo "==> Running Ruby tests..."
 	cd ruby && bundle exec rake test
 
-rb-check: rb-test
+rb-check-drift: ## Check Ruby service drift
+	@echo "==> Checking Ruby service drift..."
+	./scripts/check-rb-service-drift.sh
+
+rb-check: rb-test rb-check-drift
 	@echo "==> Ruby SDK checks passed"
 
 rb-clean:
@@ -184,7 +231,11 @@ swift-generate: ## Generate Swift services
 	@echo "==> Generating Swift services..."
 	cd swift && swift run FizzyGenerator --openapi ../openapi.json --behavior ../behavior-model.json --output Sources/Fizzy/Generated
 
-swift-check: swift-build swift-test
+swift-check-drift: ## Check Swift service drift
+	@echo "==> Checking Swift service drift..."
+	./scripts/check-swift-service-drift.sh
+
+swift-check: swift-build swift-test swift-check-drift
 	@echo "==> Swift SDK checks passed"
 
 swift-clean:
@@ -250,7 +301,13 @@ conformance-kotlin:
 		cd kotlin && ./gradlew :conformance:run; \
 	else echo "SKIP: Kotlin conformance runner has no source files"; fi
 
-conformance: conformance-go conformance-typescript conformance-ruby conformance-kotlin
+conformance-swift:
+	@if [ -f conformance/runner/swift/Package.swift ]; then \
+		echo "==> Running Swift conformance..."; \
+		cd conformance/runner/swift && swift run ConformanceRunner ../../tests/; \
+	else echo "SKIP: Swift conformance runner not found"; fi
+
+conformance: conformance-go conformance-typescript conformance-ruby conformance-kotlin conformance-swift
 	@echo "==> All conformance tests passed"
 
 # ──────────────────────────────────────────────
@@ -266,11 +323,22 @@ bump: ## Bump version: make bump VERSION=x.y.z
 release: ## Release: make release VERSION=x.y.z
 	@test -n "$(VERSION)" || (echo "Usage: make release VERSION=x.y.z" && exit 1)
 	@echo "==> Releasing v$(VERSION)..."
-	@test -z "$$(git status --porcelain)" || (echo "ERROR: Working tree is dirty" && exit 1)
+	@grep -qF 'Version = "$(VERSION)"' go/pkg/fizzy/version.go || \
+		{ echo "ERROR: Go version does not match. Run 'make bump VERSION=$(VERSION)' first."; exit 1; }
+	@grep -qF '"version": "$(VERSION)"' typescript/package.json || \
+		{ echo "ERROR: TypeScript version does not match."; exit 1; }
+	@grep -qF 'VERSION = "$(VERSION)"' ruby/lib/fizzy/version.rb || \
+		{ echo "ERROR: Ruby version does not match."; exit 1; }
+	@grep -qF 'sdkVersion = "$(VERSION)"' swift/Sources/Fizzy/FizzyConfig.swift || \
+		{ echo "ERROR: Swift version does not match."; exit 1; }
+	@grep -qF 'VERSION = "$(VERSION)"' kotlin/sdk/src/commonMain/kotlin/com/basecamp/fizzy/FizzyConfig.kt || \
+		{ echo "ERROR: Kotlin version does not match."; exit 1; }
+	@grep -qF 'VERSION = "$(VERSION)"' typescript/src/client.ts || \
+		{ echo "ERROR: TypeScript client.ts version does not match."; exit 1; }
+	@git diff --quiet && git diff --cached --quiet && \
+		test -z "$$(git status --porcelain)" || \
+		{ echo "ERROR: Working tree has uncommitted or untracked changes."; git status --short; exit 1; }
 	$(MAKE) check
-	$(MAKE) bump VERSION=$(VERSION)
-	git add -A
-	git commit -m "Release v$(VERSION)"
 	git tag "v$(VERSION)"
 	git push origin main "v$(VERSION)"
 	@echo "  Released v$(VERSION)"
@@ -295,7 +363,7 @@ audit-check: ## Check rubric audit freshness and must-pass criteria
 # Combined
 # ──────────────────────────────────────────────
 
-check: smithy-check behavior-model-check sync-api-version-check audit-check go-check ts-check rb-check swift-check kt-check conformance ## Run all checks
+check: smithy-check behavior-model-check url-routes-check sync-api-version-check provenance-check audit-check go-check ts-check rb-check swift-check kt-check ## Run all checks
 	@echo "==> All checks passed"
 
 clean: smithy-clean go-clean ts-clean rb-clean swift-clean kt-clean ## Clean all build artifacts
