@@ -470,23 +470,23 @@ func generateDocComment(methodName, serviceName string, op ParsedOp) string {
 
 	// If the method name has a suffix beyond the verb (e.g. DeleteImage, GetTray),
 	// use that suffix as the resource name for a more specific doc comment.
-	// Skip when the remainder contains the service resource (e.g. GetMyIdentity,
-	// CreateDirectUpload) — those should use the service resource.
+	// Skip when:
+	// - the remainder contains the service resource (e.g. GetMyIdentity, CreateDirectUpload)
+	// - the remainder is a top-level resource name (e.g. CreateCard in ReactionsService
+	//   creates a reaction, not a card)
 	if verb != "" {
 		remainder := strings.TrimPrefix(methodName, verb)
 		svcSingular := serviceName
 		if strings.HasSuffix(svcSingular, "s") {
 			svcSingular = svcSingular[:len(svcSingular)-1]
 		}
-		if remainder != "" && !isSimplePlural(remainder, serviceName) && !strings.Contains(remainder, svcSingular) {
+		if remainder != "" && !isSimplePlural(remainder, serviceName) &&
+			!strings.Contains(remainder, svcSingular) && !isTopLevelResource(remainder) {
 			resource = strings.ToLower(remainder[:1]) + remainder[1:]
 		}
 	}
 
-	article := "a"
-	if len(resource) > 0 && strings.ContainsRune("aeiou", rune(resource[0])) {
-		article = "an"
-	}
+	article := indefiniteArticle(resource)
 
 	var comment string
 	switch {
@@ -749,6 +749,36 @@ func isSimplePlural(remainder, serviceName string) bool {
 	sn := strings.ToLower(serviceName)
 	r := strings.ToLower(remainder)
 	return r == sn || r+"s" == sn || r == strings.TrimSuffix(sn, "s")
+}
+
+// isTopLevelResource returns true if the name matches one of the 15 service
+// resource names. Used to avoid doc comments like "creates a card" for
+// ReactionsService.CreateCard (which creates a reaction, not a card).
+func isTopLevelResource(name string) bool {
+	resources := map[string]bool{
+		"Board": true, "Card": true, "Column": true, "Comment": true,
+		"Step": true, "Reaction": true, "Notification": true, "Tag": true,
+		"User": true, "Pin": true, "Webhook": true, "Session": true,
+		"Device": true, "Upload": true, "Identity": true,
+	}
+	return resources[name]
+}
+
+// indefiniteArticle returns "a" or "an" based on the phonetic start of word.
+func indefiniteArticle(word string) string {
+	if len(word) == 0 {
+		return "a"
+	}
+	// Words starting with a vowel letter but consonant sound
+	lower := strings.ToLower(word)
+	if strings.HasPrefix(lower, "uni") || strings.HasPrefix(lower, "use") ||
+		strings.HasPrefix(lower, "user") {
+		return "a"
+	}
+	if strings.ContainsRune("aeiou", rune(lower[0])) {
+		return "an"
+	}
+	return "a"
 }
 
 // toSnakeCase converts PascalCase to snake_case.
