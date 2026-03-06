@@ -2,6 +2,7 @@
  * Pins service for the Fizzy API.
  *
  * @generated from OpenAPI spec - do not edit directly
+ * Run `npm run generate` to regenerate.
  */
 
 import { BaseService, type FetchResponse } from "../../services/base.js";
@@ -12,11 +13,19 @@ export type Pin = components["schemas"]["Pin"];
 
 export class PinsService extends BaseService {
 
-  async list(options?: PaginationOptions): Promise<ListResult<Pin>> {
-    return this.requestPaginated(
-      { service: "Pins", operation: "List", resourceType: "pin", isMutation: false },
-      () => this.client.GET("/pins.json" as never, {} as never),
-      options,
+  /**
+   * ListPins
+   */
+  async list(): Promise<ListResult<Pin>> {
+    return this.request(
+      {
+        service: "Pins",
+        operation: "ListPins",
+        resourceType: "pins",
+        isMutation: false,
+      },
+      () => this.client.GET("/my/pins.json" as never, {
+      } as never),
     );
   }
 }

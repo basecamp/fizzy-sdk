@@ -6,6 +6,7 @@
  */
 
 import { BaseService, type FetchResponse } from "../../services/base.js";
+import { ListResult, type PaginationOptions } from "../../pagination.js";
 import type { components } from "../schema.js";
 
 export type Identity = components["schemas"]["Identity"];
@@ -13,17 +14,18 @@ export type Identity = components["schemas"]["Identity"];
 export class IdentityService extends BaseService {
 
   /**
-   * Get the authenticated user's identity.
+   * GetMyIdentity
    */
   async me(): Promise<Identity> {
     return this.request(
       {
-        service: "Identity",
-        operation: "Me",
-        resourceType: "identity",
+        service: "My identity",
+        operation: "GetMyIdentity",
+        resourceType: "my_identity",
         isMutation: false,
       },
-      () => this.client.GET("/me.json" as never, {} as never),
+      () => this.client.GET("/my/identity.json" as never, {
+      } as never),
     );
   }
 }

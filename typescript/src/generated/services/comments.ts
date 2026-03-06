@@ -2,6 +2,7 @@
  * Comments service for the Fizzy API.
  *
  * @generated from OpenAPI spec - do not edit directly
+ * Run `npm run generate` to regenerate.
  */
 
 import { BaseService, type FetchResponse } from "../../services/base.js";
@@ -17,14 +18,22 @@ export interface CreateCommentRequest {
 
 export interface UpdateCommentRequest {
   /** Body content (Markdown or HTML) */
-  body?: string;
+  body: string;
 }
 
 export class CommentsService extends BaseService {
 
+  /**
+   * ListComments
+   */
   async list(cardNumber: number, options?: PaginationOptions): Promise<ListResult<Comment>> {
     return this.requestPaginated(
-      { service: "Comments", operation: "List", resourceType: "comment", isMutation: false },
+      {
+        service: "Comments",
+        operation: "ListComments",
+        resourceType: "comments",
+        isMutation: false,
+      },
       () => this.client.GET("/cards/{cardNumber}/comments.json" as never, {
         params: { path: { cardNumber } },
       } as never),
@@ -32,9 +41,17 @@ export class CommentsService extends BaseService {
     );
   }
 
+  /**
+   * CreateComment
+   */
   async create(cardNumber: number, body: CreateCommentRequest): Promise<Comment> {
     return this.request(
-      { service: "Comments", operation: "Create", resourceType: "comment", isMutation: true },
+      {
+        service: "Comment",
+        operation: "CreateComment",
+        resourceType: "comment",
+        isMutation: true,
+      },
       () => this.client.POST("/cards/{cardNumber}/comments.json" as never, {
         params: { path: { cardNumber } },
         body: { body: body.body } as never,
@@ -42,30 +59,54 @@ export class CommentsService extends BaseService {
     );
   }
 
-  async get(cardNumber: number, commentId: number): Promise<Comment> {
-    return this.request(
-      { service: "Comments", operation: "Get", resourceType: "comment", isMutation: false, resourceId: commentId },
-      () => this.client.GET("/cards/{cardNumber}/comments/{commentId}.json" as never, {
-        params: { path: { cardNumber, commentId } },
-      } as never),
-    );
-  }
-
-  async update(cardNumber: number, commentId: number, body: UpdateCommentRequest): Promise<Comment> {
-    return this.request(
-      { service: "Comments", operation: "Update", resourceType: "comment", isMutation: true, resourceId: commentId },
-      () => this.client.PUT("/cards/{cardNumber}/comments/{commentId}.json" as never, {
-        params: { path: { cardNumber, commentId } },
-        body: { body: body.body } as never,
-      } as never),
-    );
-  }
-
+  /**
+   * DeleteComment
+   */
   async delete(cardNumber: number, commentId: number): Promise<void> {
     return this.request(
-      { service: "Comments", operation: "Delete", resourceType: "comment", isMutation: true, resourceId: commentId },
-      () => this.client.DELETE("/cards/{cardNumber}/comments/{commentId}.json" as never, {
+      {
+        service: "Comment",
+        operation: "DeleteComment",
+        resourceType: "comment",
+        isMutation: true,
+      },
+      () => this.client.DELETE("/cards/{cardNumber}/comments/{commentId}" as never, {
         params: { path: { cardNumber, commentId } },
+      } as never),
+    );
+  }
+
+  /**
+   * GetComment
+   */
+  async get(cardNumber: number, commentId: number): Promise<Comment> {
+    return this.request(
+      {
+        service: "Comment",
+        operation: "GetComment",
+        resourceType: "comment",
+        isMutation: false,
+      },
+      () => this.client.GET("/cards/{cardNumber}/comments/{commentId}" as never, {
+        params: { path: { cardNumber, commentId } },
+      } as never),
+    );
+  }
+
+  /**
+   * UpdateComment
+   */
+  async update(cardNumber: number, commentId: number, body: UpdateCommentRequest): Promise<Comment> {
+    return this.request(
+      {
+        service: "Comment",
+        operation: "UpdateComment",
+        resourceType: "comment",
+        isMutation: true,
+      },
+      () => this.client.PATCH("/cards/{cardNumber}/comments/{commentId}" as never, {
+        params: { path: { cardNumber, commentId } },
+        body: { body: body.body } as never,
       } as never),
     );
   }

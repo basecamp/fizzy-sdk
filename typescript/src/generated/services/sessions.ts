@@ -2,62 +2,91 @@
  * Sessions service for the Fizzy API.
  *
  * @generated from OpenAPI spec - do not edit directly
+ * Run `npm run generate` to regenerate.
  */
 
 import { BaseService, type FetchResponse } from "../../services/base.js";
+import { ListResult, type PaginationOptions } from "../../pagination.js";
 import type { components } from "../schema.js";
 
-export type Session = components["schemas"]["Session"];
-
 export interface CreateSessionRequest {
-  /** Email address for magic link delivery */
-  email: string;
+  emailAddress: string;
 }
 
 export interface RedeemMagicLinkRequest {
-  /** Magic link token */
   token: string;
 }
 
 export interface CompleteSignupRequest {
   /** Display name */
   name: string;
-  /** Magic link token */
-  token: string;
 }
 
 export class SessionsService extends BaseService {
 
-  async create(body: CreateSessionRequest): Promise<void> {
+  /**
+   * DestroySession
+   */
+  async destroy(): Promise<void> {
     return this.request(
-      { service: "Sessions", operation: "CreateSession", resourceType: "session", isMutation: true },
-      () => this.client.POST("/session.json" as never, {
-        body: { email: body.email } as never,
+      {
+        service: "Session",
+        operation: "DestroySession",
+        resourceType: "session",
+        isMutation: true,
+      },
+      () => this.client.DELETE("/session.json" as never, {
       } as never),
     );
   }
 
-  async redeemMagicLink(body: RedeemMagicLinkRequest): Promise<Session> {
+  /**
+   * CreateSession
+   */
+  async create(body: CreateSessionRequest): Promise<components["schemas"]["PendingAuthentication"]> {
     return this.request(
-      { service: "Sessions", operation: "RedeemMagicLink", resourceType: "session", isMutation: true },
+      {
+        service: "Session",
+        operation: "CreateSession",
+        resourceType: "session",
+        isMutation: true,
+      },
+      () => this.client.POST("/session.json" as never, {
+        body: { email_address: body.emailAddress } as never,
+      } as never),
+    );
+  }
+
+  /**
+   * RedeemMagicLink
+   */
+  async redeemMagicLink(body: RedeemMagicLinkRequest): Promise<components["schemas"]["SessionAuthorization"]> {
+    return this.request(
+      {
+        service: "Magic link",
+        operation: "RedeemMagicLink",
+        resourceType: "magic_link",
+        isMutation: true,
+      },
       () => this.client.POST("/session/magic_link.json" as never, {
         body: { token: body.token } as never,
       } as never),
     );
   }
 
-  async destroy(): Promise<void> {
+  /**
+   * CompleteSignup
+   */
+  async completeSignup(body: CompleteSignupRequest): Promise<components["schemas"]["User"]> {
     return this.request(
-      { service: "Sessions", operation: "DestroySession", resourceType: "session", isMutation: true },
-      () => this.client.DELETE("/session.json" as never, {} as never),
-    );
-  }
-
-  async completeSignup(body: CompleteSignupRequest): Promise<Session> {
-    return this.request(
-      { service: "Sessions", operation: "CompleteSignup", resourceType: "session", isMutation: true },
+      {
+        service: "Signup",
+        operation: "CompleteSignup",
+        resourceType: "signup",
+        isMutation: true,
+      },
       () => this.client.POST("/signup/completion.json" as never, {
-        body: { name: body.name, token: body.token } as never,
+        body: { name: body.name } as never,
       } as never),
     );
   }

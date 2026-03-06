@@ -11,165 +11,183 @@ import type { components } from "../schema.js";
 
 export type Card = components["schemas"]["Card"];
 
+export interface ListCardsOptions extends PaginationOptions {
+  boardId?: number;
+  columnId?: number;
+  assigneeId?: number;
+  tag?: string;
+  status?: string;
+  q?: string;
+}
+
 export interface CreateCardRequest {
   /** Title */
   title: string;
-  /** Body content (Markdown or HTML) */
-  body?: string;
-  /** Column ID to place the card in */
+  boardId?: number;
   columnId?: number;
+  /** Rich text description (HTML) */
+  description?: string;
   /** User IDs to assign to */
   assigneeIds?: number[];
+  tagNames?: string[];
 }
 
 export interface UpdateCardRequest {
   /** Title */
   title?: string;
-  /** Body content (Markdown or HTML) */
-  body?: string;
-}
-
-export interface MoveCardRequest {
-  /** Target column ID */
-  columnId: number;
-  /** Position within the column (1-based) */
-  position?: number;
+  /** Rich text description (HTML) */
+  description?: string;
+  columnId?: number;
 }
 
 export interface AssignCardRequest {
-  /** User IDs to assign */
-  assigneeIds: number[];
+  userId: number;
+}
+
+export interface MoveCardRequest {
+  boardId: number;
+  columnId?: number;
 }
 
 export interface TagCardRequest {
-  /** Tag IDs to apply */
-  tagIds: number[];
+  /** Display name */
+  name: string;
 }
 
 export class CardsService extends BaseService {
 
   /**
-   * List all cards for a board.
+   * ListCards
    */
-  async list(boardId: number, options?: PaginationOptions): Promise<ListResult<Card>> {
+  async list(options?: ListCardsOptions): Promise<ListResult<Card>> {
     return this.requestPaginated(
       {
         service: "Cards",
-        operation: "List",
-        resourceType: "card",
+        operation: "ListCards",
+        resourceType: "cards",
         isMutation: false,
-        boardId,
       },
-      () => this.client.GET("/boards/{boardId}/cards.json" as never, {
-        params: { path: { boardId } },
+      () => this.client.GET("/cards.json" as never, {
       } as never),
       options,
     );
   }
 
   /**
-   * Create a new card on a board.
+   * CreateCard
    */
-  async create(boardId: number, body: CreateCardRequest): Promise<Card> {
+  async create(body: CreateCardRequest): Promise<Card> {
     return this.request(
       {
-        service: "Cards",
-        operation: "Create",
+        service: "Card",
+        operation: "CreateCard",
         resourceType: "card",
         isMutation: true,
-        boardId,
       },
-      () => this.client.POST("/boards/{boardId}/cards.json" as never, {
-        params: { path: { boardId } },
-        body: { title: body.title, body: body.body, column_id: body.columnId, assignee_ids: body.assigneeIds } as never,
+      () => this.client.POST("/cards.json" as never, {
+        body: { title: body.title, board_id: body.boardId, column_id: body.columnId, description: body.description, assignee_ids: body.assigneeIds, tag_names: body.tagNames } as never,
       } as never),
     );
   }
 
   /**
-   * Get a single card by number.
-   */
-  async get(cardNumber: number): Promise<Card> {
-    return this.request(
-      {
-        service: "Cards",
-        operation: "Get",
-        resourceType: "card",
-        isMutation: false,
-        resourceId: cardNumber,
-      },
-      () => this.client.GET("/cards/{cardNumber}.json" as never, {
-        params: { path: { cardNumber } },
-      } as never),
-    );
-  }
-
-  /**
-   * Update a card.
-   */
-  async update(cardNumber: number, body: UpdateCardRequest): Promise<Card> {
-    return this.request(
-      {
-        service: "Cards",
-        operation: "Update",
-        resourceType: "card",
-        isMutation: true,
-        resourceId: cardNumber,
-      },
-      () => this.client.PATCH("/cards/{cardNumber}" as never, {
-        params: { path: { cardNumber } },
-        body: { title: body.title, body: body.body } as never,
-      } as never),
-    );
-  }
-
-  /**
-   * Delete a card. Deleted cards cannot be recovered.
+   * DeleteCard
    */
   async delete(cardNumber: number): Promise<void> {
     return this.request(
       {
-        service: "Cards",
-        operation: "Delete",
+        service: "Card",
+        operation: "DeleteCard",
         resourceType: "card",
         isMutation: true,
-        resourceId: cardNumber,
       },
-      () => this.client.DELETE("/cards/{cardNumber}.json" as never, {
+      () => this.client.DELETE("/cards/{cardNumber}" as never, {
         params: { path: { cardNumber } },
       } as never),
     );
   }
 
   /**
-   * Close a card.
+   * GetCard
    */
-  async close(cardNumber: number): Promise<Card> {
+  async get(cardNumber: number): Promise<Card> {
     return this.request(
       {
-        service: "Cards",
-        operation: "Close",
+        service: "Card",
+        operation: "GetCard",
         resourceType: "card",
-        isMutation: true,
-        resourceId: cardNumber,
+        isMutation: false,
       },
-      () => this.client.POST("/cards/{cardNumber}/closure.json" as never, {
+      () => this.client.GET("/cards/{cardNumber}" as never, {
         params: { path: { cardNumber } },
       } as never),
     );
   }
 
   /**
-   * Reopen a closed card.
+   * UpdateCard
    */
-  async reopen(cardNumber: number): Promise<Card> {
+  async update(cardNumber: number, body?: UpdateCardRequest): Promise<Card> {
     return this.request(
       {
-        service: "Cards",
-        operation: "Reopen",
+        service: "Card",
+        operation: "UpdateCard",
         resourceType: "card",
         isMutation: true,
-        resourceId: cardNumber,
+      },
+      () => this.client.PATCH("/cards/{cardNumber}" as never, {
+        params: { path: { cardNumber } },
+        body: { title: body?.title, description: body?.description, column_id: body?.columnId } as never,
+      } as never),
+    );
+  }
+
+  /**
+   * AssignCard
+   */
+  async assign(cardNumber: number, body: AssignCardRequest): Promise<void> {
+    return this.request(
+      {
+        service: "Card",
+        operation: "AssignCard",
+        resourceType: "card",
+        isMutation: true,
+      },
+      () => this.client.POST("/cards/{cardNumber}/assignments.json" as never, {
+        params: { path: { cardNumber } },
+        body: { user_id: body.userId } as never,
+      } as never),
+    );
+  }
+
+  /**
+   * MoveCard
+   */
+  async move(cardNumber: number, body: MoveCardRequest): Promise<Card> {
+    return this.request(
+      {
+        service: "Card",
+        operation: "MoveCard",
+        resourceType: "card",
+        isMutation: true,
+      },
+      () => this.client.PATCH("/cards/{cardNumber}/board.json" as never, {
+        params: { path: { cardNumber } },
+        body: { board_id: body.boardId, column_id: body.columnId } as never,
+      } as never),
+    );
+  }
+
+  /**
+   * ReopenCard
+   */
+  async reopen(cardNumber: number): Promise<void> {
+    return this.request(
+      {
+        service: "Card",
+        operation: "ReopenCard",
+        resourceType: "card",
+        isMutation: true,
       },
       () => this.client.DELETE("/cards/{cardNumber}/closure.json" as never, {
         params: { path: { cardNumber } },
@@ -178,88 +196,32 @@ export class CardsService extends BaseService {
   }
 
   /**
-   * Postpone a card.
+   * CloseCard
    */
-  async postpone(cardNumber: number): Promise<Card> {
+  async close(cardNumber: number): Promise<void> {
     return this.request(
       {
-        service: "Cards",
-        operation: "Postpone",
+        service: "Card",
+        operation: "CloseCard",
         resourceType: "card",
         isMutation: true,
-        resourceId: cardNumber,
       },
-      () => this.client.POST("/cards/{cardNumber}/not_now.json" as never, {
+      () => this.client.POST("/cards/{cardNumber}/closure.json" as never, {
         params: { path: { cardNumber } },
       } as never),
     );
   }
 
   /**
-   * Triage a card.
+   * UngoldCard
    */
-  async triage(cardNumber: number): Promise<Card> {
+  async ungold(cardNumber: number): Promise<void> {
     return this.request(
       {
-        service: "Cards",
-        operation: "Triage",
-        resourceType: "card",
-        isMutation: true,
-        resourceId: cardNumber,
-      },
-      () => this.client.POST("/cards/{cardNumber}/triage.json" as never, {
-        params: { path: { cardNumber } },
-      } as never),
-    );
-  }
-
-  /**
-   * Remove a card from triage.
-   */
-  async untriage(cardNumber: number): Promise<Card> {
-    return this.request(
-      {
-        service: "Cards",
-        operation: "UnTriageCard",
-        resourceType: "card",
-        isMutation: true,
-        resourceId: cardNumber,
-      },
-      () => this.client.DELETE("/cards/{cardNumber}/triage.json" as never, {
-        params: { path: { cardNumber } },
-      } as never),
-    );
-  }
-
-  /**
-   * Mark a card as gold.
-   */
-  async gold(cardNumber: number): Promise<Card> {
-    return this.request(
-      {
-        service: "Cards",
-        operation: "Gold",
-        resourceType: "card",
-        isMutation: true,
-        resourceId: cardNumber,
-      },
-      () => this.client.POST("/cards/{cardNumber}/goldness.json" as never, {
-        params: { path: { cardNumber } },
-      } as never),
-    );
-  }
-
-  /**
-   * Remove gold status from a card.
-   */
-  async ungold(cardNumber: number): Promise<Card> {
-    return this.request(
-      {
-        service: "Cards",
+        service: "Card",
         operation: "UngoldCard",
         resourceType: "card",
         isMutation: true,
-        resourceId: cardNumber,
       },
       () => this.client.DELETE("/cards/{cardNumber}/goldness.json" as never, {
         params: { path: { cardNumber } },
@@ -268,126 +230,66 @@ export class CardsService extends BaseService {
   }
 
   /**
-   * Assign users to a card.
+   * GoldCard
    */
-  async assign(cardNumber: number, body: AssignCardRequest): Promise<Card> {
+  async gold(cardNumber: number): Promise<void> {
     return this.request(
       {
-        service: "Cards",
-        operation: "Assign",
+        service: "Card",
+        operation: "GoldCard",
         resourceType: "card",
         isMutation: true,
-        resourceId: cardNumber,
       },
-      () => this.client.POST("/cards/{cardNumber}/assignments.json" as never, {
-        params: { path: { cardNumber } },
-        body: { assignee_ids: body.assigneeIds } as never,
-      } as never),
-    );
-  }
-
-  /**
-   * Assign yourself to a card.
-   */
-  async selfAssign(cardNumber: number): Promise<Card> {
-    return this.request(
-      {
-        service: "Cards",
-        operation: "SelfAssign",
-        resourceType: "card",
-        isMutation: true,
-        resourceId: cardNumber,
-      },
-      () => this.client.POST("/cards/{cardNumber}/self_assignment.json" as never, {
+      () => this.client.POST("/cards/{cardNumber}/goldness.json" as never, {
         params: { path: { cardNumber } },
       } as never),
     );
   }
 
   /**
-   * Apply tags to a card.
+   * DeleteCardImage
    */
-  async tag(cardNumber: number, body: TagCardRequest): Promise<Card> {
+  async deleteImage(cardNumber: number): Promise<void> {
     return this.request(
       {
-        service: "Cards",
-        operation: "Tag",
-        resourceType: "card",
+        service: "Card image",
+        operation: "DeleteCardImage",
+        resourceType: "card_image",
         isMutation: true,
-        resourceId: cardNumber,
       },
-      () => this.client.POST("/cards/{cardNumber}/taggings.json" as never, {
-        params: { path: { cardNumber } },
-        body: { tag_ids: body.tagIds } as never,
-      } as never),
-    );
-  }
-
-  /**
-   * Watch a card for notifications.
-   */
-  async watch(cardNumber: number): Promise<void> {
-    return this.request(
-      {
-        service: "Cards",
-        operation: "Watch",
-        resourceType: "card",
-        isMutation: true,
-        resourceId: cardNumber,
-      },
-      () => this.client.POST("/cards/{cardNumber}/watch.json" as never, {
+      () => this.client.DELETE("/cards/{cardNumber}/image.json" as never, {
         params: { path: { cardNumber } },
       } as never),
     );
   }
 
   /**
-   * Stop watching a card.
+   * PostponeCard
    */
-  async unwatch(cardNumber: number): Promise<void> {
+  async postpone(cardNumber: number): Promise<void> {
     return this.request(
       {
-        service: "Cards",
-        operation: "UnwatchCard",
+        service: "Card",
+        operation: "PostponeCard",
         resourceType: "card",
         isMutation: true,
-        resourceId: cardNumber,
       },
-      () => this.client.DELETE("/cards/{cardNumber}/watch.json" as never, {
+      () => this.client.POST("/cards/{cardNumber}/not_now.json" as never, {
         params: { path: { cardNumber } },
       } as never),
     );
   }
 
   /**
-   * Pin a card.
-   */
-  async pin(cardNumber: number): Promise<void> {
-    return this.request(
-      {
-        service: "Cards",
-        operation: "Pin",
-        resourceType: "card",
-        isMutation: true,
-        resourceId: cardNumber,
-      },
-      () => this.client.POST("/cards/{cardNumber}/pin.json" as never, {
-        params: { path: { cardNumber } },
-      } as never),
-    );
-  }
-
-  /**
-   * Unpin a card.
+   * UnpinCard
    */
   async unpin(cardNumber: number): Promise<void> {
     return this.request(
       {
-        service: "Cards",
+        service: "Card",
         operation: "UnpinCard",
         resourceType: "card",
         isMutation: true,
-        resourceId: cardNumber,
       },
       () => this.client.DELETE("/cards/{cardNumber}/pin.json" as never, {
         params: { path: { cardNumber } },
@@ -396,37 +298,120 @@ export class CardsService extends BaseService {
   }
 
   /**
-   * Move a card to a different column.
+   * PinCard
    */
-  async move(cardNumber: number, body: MoveCardRequest): Promise<Card> {
+  async pin(cardNumber: number): Promise<void> {
     return this.request(
       {
-        service: "Cards",
-        operation: "Move",
+        service: "Card",
+        operation: "PinCard",
         resourceType: "card",
         isMutation: true,
-        resourceId: cardNumber,
       },
-      () => this.client.PATCH("/cards/{cardNumber}/board.json" as never, {
+      () => this.client.POST("/cards/{cardNumber}/pin.json" as never, {
         params: { path: { cardNumber } },
-        body: { column_id: body.columnId, position: body.position } as never,
       } as never),
     );
   }
 
   /**
-   * Delete a card's image.
+   * SelfAssignCard
    */
-  async deleteImage(cardNumber: number): Promise<void> {
+  async selfAssign(cardNumber: number): Promise<void> {
     return this.request(
       {
-        service: "Cards",
-        operation: "DeleteImage",
+        service: "Card",
+        operation: "SelfAssignCard",
         resourceType: "card",
         isMutation: true,
-        resourceId: cardNumber,
       },
-      () => this.client.DELETE("/cards/{cardNumber}/image.json" as never, {
+      () => this.client.POST("/cards/{cardNumber}/self_assignment.json" as never, {
+        params: { path: { cardNumber } },
+      } as never),
+    );
+  }
+
+  /**
+   * TagCard
+   */
+  async tag(cardNumber: number, body: TagCardRequest): Promise<void> {
+    return this.request(
+      {
+        service: "Card",
+        operation: "TagCard",
+        resourceType: "card",
+        isMutation: true,
+      },
+      () => this.client.POST("/cards/{cardNumber}/taggings.json" as never, {
+        params: { path: { cardNumber } },
+        body: { name: body.name } as never,
+      } as never),
+    );
+  }
+
+  /**
+   * UnTriageCard
+   */
+  async untriage(cardNumber: number): Promise<void> {
+    return this.request(
+      {
+        service: "Card",
+        operation: "UnTriageCard",
+        resourceType: "card",
+        isMutation: true,
+      },
+      () => this.client.DELETE("/cards/{cardNumber}/triage.json" as never, {
+        params: { path: { cardNumber } },
+      } as never),
+    );
+  }
+
+  /**
+   * TriageCard
+   */
+  async triage(cardNumber: number): Promise<void> {
+    return this.request(
+      {
+        service: "Card",
+        operation: "TriageCard",
+        resourceType: "card",
+        isMutation: true,
+      },
+      () => this.client.POST("/cards/{cardNumber}/triage.json" as never, {
+        params: { path: { cardNumber } },
+      } as never),
+    );
+  }
+
+  /**
+   * UnwatchCard
+   */
+  async unwatch(cardNumber: number): Promise<void> {
+    return this.request(
+      {
+        service: "Card",
+        operation: "UnwatchCard",
+        resourceType: "card",
+        isMutation: true,
+      },
+      () => this.client.DELETE("/cards/{cardNumber}/watch.json" as never, {
+        params: { path: { cardNumber } },
+      } as never),
+    );
+  }
+
+  /**
+   * WatchCard
+   */
+  async watch(cardNumber: number): Promise<void> {
+    return this.request(
+      {
+        service: "Card",
+        operation: "WatchCard",
+        resourceType: "card",
+        isMutation: true,
+      },
+      () => this.client.POST("/cards/{cardNumber}/watch.json" as never, {
         params: { path: { cardNumber } },
       } as never),
     );

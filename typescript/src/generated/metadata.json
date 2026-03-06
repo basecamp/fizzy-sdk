@@ -1,82 +1,781 @@
 {
   "$schema": "https://fizzy.do/schemas/sdk-metadata.json",
   "version": "1.0.0",
-  "generated": "2026-03-01T00:00:00.000Z",
+  "generated": "2026-03-06T18:29:21.671Z",
   "operations": {
-    "ListBoards": {
-      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] },
-      "pagination": { "style": "link", "pageParam": "page", "maxPageSize": 50 }
-    },
-    "GetBoard": {
-      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] }
-    },
-    "CreateBoard": {
-      "retry": { "maxAttempts": 2, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] }
-    },
-    "ListColumns": {
-      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] },
-      "pagination": { "style": "link", "pageParam": "page", "maxPageSize": 50 }
-    },
-    "ListCards": {
-      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] },
-      "pagination": { "style": "link", "pageParam": "page", "maxPageSize": 50 }
-    },
-    "GetCard": {
-      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] }
-    },
-    "CreateCard": {
-      "retry": { "maxAttempts": 2, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] }
-    },
-    "ListComments": {
-      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] },
-      "pagination": { "style": "link", "pageParam": "page", "maxPageSize": 50 }
-    },
-    "GetComment": {
-      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] }
-    },
-    "ListNotifications": {
-      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] },
-      "pagination": { "style": "link", "pageParam": "page", "maxPageSize": 50 }
-    },
-    "ListTags": {
-      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] },
-      "pagination": { "style": "link", "pageParam": "page", "maxPageSize": 50 }
-    },
-    "ListUsers": {
-      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] },
-      "pagination": { "style": "link", "pageParam": "page", "maxPageSize": 50 }
+    "GetMyIdentity": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      }
     },
     "ListPins": {
-      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] },
-      "pagination": { "style": "link", "pageParam": "page", "maxPageSize": 50 }
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      }
+    },
+    "CreateSession": {
+      "retry": {
+        "maxAttempts": 1
+      }
+    },
+    "DestroySession": {
+      "retry": {
+        "maxAttempts": 1
+      }
+    },
+    "RedeemMagicLink": {
+      "retry": {
+        "maxAttempts": 1
+      }
+    },
+    "CompleteSignup": {
+      "retry": {
+        "maxAttempts": 1
+      }
+    },
+    "ListBoards": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "pagination": {
+        "style": "link",
+        "pageParam": "page"
+      }
+    },
+    "CreateBoard": {
+      "retry": {
+        "maxAttempts": 1
+      }
+    },
+    "GetBoard": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      }
+    },
+    "UpdateBoard": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
+    },
+    "DeleteBoard": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
+    },
+    "ListColumns": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      }
+    },
+    "CreateColumn": {
+      "retry": {
+        "maxAttempts": 1
+      }
+    },
+    "GetColumn": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      }
+    },
+    "UpdateColumn": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
     },
     "ListWebhooks": {
-      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] },
-      "pagination": { "style": "link", "pageParam": "page", "maxPageSize": 50 }
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      }
+    },
+    "CreateWebhook": {
+      "retry": {
+        "maxAttempts": 1
+      }
     },
     "GetWebhook": {
-      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] }
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      }
     },
-    "GetMyIdentity": {
-      "retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 503] }
+    "UpdateWebhook": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
+    },
+    "DeleteWebhook": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
+    },
+    "ActivateWebhook": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
+    },
+    "ListCards": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "pagination": {
+        "style": "link",
+        "pageParam": "page"
+      }
+    },
+    "CreateCard": {
+      "retry": {
+        "maxAttempts": 1
+      }
+    },
+    "GetCard": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      }
+    },
+    "UpdateCard": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
+    },
+    "DeleteCard": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
+    },
+    "AssignCard": {
+      "retry": {
+        "maxAttempts": 1
+      }
+    },
+    "MoveCard": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
     },
     "CloseCard": {
-      "idempotent": { "natural": true }
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
     },
     "ReopenCard": {
-      "idempotent": { "natural": true }
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
     },
-    "WatchCard": {
-      "idempotent": { "natural": true }
+    "ListComments": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "pagination": {
+        "style": "link",
+        "pageParam": "page"
+      }
     },
-    "UnwatchCard": {
-      "idempotent": { "natural": true }
+    "CreateComment": {
+      "retry": {
+        "maxAttempts": 1
+      }
+    },
+    "GetComment": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      }
+    },
+    "UpdateComment": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
+    },
+    "DeleteComment": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
+    },
+    "ListCommentReactions": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      }
+    },
+    "CreateCommentReaction": {
+      "retry": {
+        "maxAttempts": 1
+      }
+    },
+    "DeleteCommentReaction": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
+    },
+    "GoldCard": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
+    },
+    "UngoldCard": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
+    },
+    "DeleteCardImage": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
+    },
+    "PostponeCard": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
     },
     "PinCard": {
-      "idempotent": { "natural": true }
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
     },
     "UnpinCard": {
-      "idempotent": { "natural": true }
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
+    },
+    "ListCardReactions": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      }
+    },
+    "CreateCardReaction": {
+      "retry": {
+        "maxAttempts": 1
+      }
+    },
+    "DeleteCardReaction": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
+    },
+    "SelfAssignCard": {
+      "retry": {
+        "maxAttempts": 1
+      }
+    },
+    "CreateStep": {
+      "retry": {
+        "maxAttempts": 1
+      }
+    },
+    "GetStep": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      }
+    },
+    "UpdateStep": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
+    },
+    "DeleteStep": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
+    },
+    "TagCard": {
+      "retry": {
+        "maxAttempts": 1
+      }
+    },
+    "TriageCard": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
+    },
+    "UnTriageCard": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
+    },
+    "WatchCard": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
+    },
+    "UnwatchCard": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
+    },
+    "RegisterDevice": {
+      "retry": {
+        "maxAttempts": 1
+      }
+    },
+    "UnregisterDevice": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
+    },
+    "ListNotifications": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "pagination": {
+        "style": "link",
+        "pageParam": "page"
+      }
+    },
+    "BulkReadNotifications": {
+      "retry": {
+        "maxAttempts": 1
+      }
+    },
+    "GetNotificationTray": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      }
+    },
+    "ReadNotification": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
+    },
+    "UnreadNotification": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
+    },
+    "CreateDirectUpload": {
+      "retry": {
+        "maxAttempts": 1
+      }
+    },
+    "ListTags": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      }
+    },
+    "ListUsers": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      }
+    },
+    "GetUser": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      }
+    },
+    "UpdateUser": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
+    },
+    "DeactivateUser": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
     }
   }
 }

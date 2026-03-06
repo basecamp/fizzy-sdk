@@ -2,60 +2,94 @@
  * Steps service for the Fizzy API.
  *
  * @generated from OpenAPI spec - do not edit directly
+ * Run `npm run generate` to regenerate.
  */
 
 import { BaseService, type FetchResponse } from "../../services/base.js";
+import { ListResult, type PaginationOptions } from "../../pagination.js";
 import type { components } from "../schema.js";
 
 export type Step = components["schemas"]["Step"];
 
 export interface CreateStepRequest {
-  description: string;
-  position?: number;
+  /** Text content */
+  content: string;
 }
 
 export interface UpdateStepRequest {
-  description?: string;
+  /** Text content */
+  content?: string;
   completed?: boolean;
-  position?: number;
 }
 
 export class StepsService extends BaseService {
 
+  /**
+   * CreateStep
+   */
   async create(cardNumber: number, body: CreateStepRequest): Promise<Step> {
     return this.request(
-      { service: "Steps", operation: "Create", resourceType: "step", isMutation: true },
+      {
+        service: "Step",
+        operation: "CreateStep",
+        resourceType: "step",
+        isMutation: true,
+      },
       () => this.client.POST("/cards/{cardNumber}/steps.json" as never, {
         params: { path: { cardNumber } },
-        body: { description: body.description, position: body.position } as never,
+        body: { content: body.content } as never,
       } as never),
     );
   }
 
-  async get(cardNumber: number, stepId: number): Promise<Step> {
-    return this.request(
-      { service: "Steps", operation: "Get", resourceType: "step", isMutation: false, resourceId: stepId },
-      () => this.client.GET("/cards/{cardNumber}/steps/{stepId}.json" as never, {
-        params: { path: { cardNumber, stepId } },
-      } as never),
-    );
-  }
-
-  async update(cardNumber: number, stepId: number, body: UpdateStepRequest): Promise<Step> {
-    return this.request(
-      { service: "Steps", operation: "Update", resourceType: "step", isMutation: true, resourceId: stepId },
-      () => this.client.PUT("/cards/{cardNumber}/steps/{stepId}.json" as never, {
-        params: { path: { cardNumber, stepId } },
-        body: { description: body.description, completed: body.completed, position: body.position } as never,
-      } as never),
-    );
-  }
-
+  /**
+   * DeleteStep
+   */
   async delete(cardNumber: number, stepId: number): Promise<void> {
     return this.request(
-      { service: "Steps", operation: "Delete", resourceType: "step", isMutation: true, resourceId: stepId },
-      () => this.client.DELETE("/cards/{cardNumber}/steps/{stepId}.json" as never, {
+      {
+        service: "Step",
+        operation: "DeleteStep",
+        resourceType: "step",
+        isMutation: true,
+      },
+      () => this.client.DELETE("/cards/{cardNumber}/steps/{stepId}" as never, {
         params: { path: { cardNumber, stepId } },
+      } as never),
+    );
+  }
+
+  /**
+   * GetStep
+   */
+  async get(cardNumber: number, stepId: number): Promise<Step> {
+    return this.request(
+      {
+        service: "Step",
+        operation: "GetStep",
+        resourceType: "step",
+        isMutation: false,
+      },
+      () => this.client.GET("/cards/{cardNumber}/steps/{stepId}" as never, {
+        params: { path: { cardNumber, stepId } },
+      } as never),
+    );
+  }
+
+  /**
+   * UpdateStep
+   */
+  async update(cardNumber: number, stepId: number, body?: UpdateStepRequest): Promise<Step> {
+    return this.request(
+      {
+        service: "Step",
+        operation: "UpdateStep",
+        resourceType: "step",
+        isMutation: true,
+      },
+      () => this.client.PATCH("/cards/{cardNumber}/steps/{stepId}" as never, {
+        params: { path: { cardNumber, stepId } },
+        body: { content: body?.content, completed: body?.completed } as never,
       } as never),
     );
   }

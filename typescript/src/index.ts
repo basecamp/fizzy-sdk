@@ -131,7 +131,8 @@ export {
 export {
   ReactionsService,
   type Reaction,
-  type CreateReactionRequest,
+  type CreateCardReactionRequest,
+  type CreateCommentReactionRequest,
 } from "./generated/services/reactions.js";
 
 export {
@@ -173,7 +174,6 @@ export {
 // Sessions service
 export {
   SessionsService,
-  type Session,
   type CreateSessionRequest,
   type RedeemMagicLinkRequest,
   type CompleteSignupRequest,
@@ -182,7 +182,6 @@ export {
 // Devices service
 export {
   DevicesService,
-  type Device,
   type RegisterDeviceRequest,
 } from "./generated/services/devices.js";
 

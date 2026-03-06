@@ -14,103 +14,99 @@ export type Board = components["schemas"]["Board"];
 export interface CreateBoardRequest {
   /** Display name */
   name: string;
-  /** Rich text description (HTML) */
-  description?: string;
+  allAccess?: boolean;
 }
 
 export interface UpdateBoardRequest {
   /** Display name */
   name?: string;
-  /** Rich text description (HTML) */
-  description?: string;
+  allAccess?: boolean;
 }
 
 export class BoardsService extends BaseService {
 
   /**
-   * List all boards.
+   * ListBoards
    */
   async list(options?: PaginationOptions): Promise<ListResult<Board>> {
     return this.requestPaginated(
       {
         service: "Boards",
-        operation: "List",
-        resourceType: "board",
+        operation: "ListBoards",
+        resourceType: "boards",
         isMutation: false,
       },
-      () => this.client.GET("/boards.json" as never, {} as never),
+      () => this.client.GET("/boards.json" as never, {
+      } as never),
       options,
     );
   }
 
   /**
-   * Create a new board.
+   * CreateBoard
    */
   async create(body: CreateBoardRequest): Promise<Board> {
     return this.request(
       {
-        service: "Boards",
-        operation: "Create",
+        service: "Board",
+        operation: "CreateBoard",
         resourceType: "board",
         isMutation: true,
       },
       () => this.client.POST("/boards.json" as never, {
-        body: { name: body.name, description: body.description } as never,
+        body: { name: body.name, all_access: body.allAccess } as never,
       } as never),
     );
   }
 
   /**
-   * Get a single board by ID.
-   */
-  async get(boardId: number): Promise<Board> {
-    return this.request(
-      {
-        service: "Boards",
-        operation: "Get",
-        resourceType: "board",
-        isMutation: false,
-        boardId,
-      },
-      () => this.client.GET("/boards/{boardId}.json" as never, {
-        params: { path: { boardId } },
-      } as never),
-    );
-  }
-
-  /**
-   * Update a board.
-   */
-  async update(boardId: number, body: UpdateBoardRequest): Promise<Board> {
-    return this.request(
-      {
-        service: "Boards",
-        operation: "Update",
-        resourceType: "board",
-        isMutation: true,
-        boardId,
-      },
-      () => this.client.PUT("/boards/{boardId}.json" as never, {
-        params: { path: { boardId } },
-        body: { name: body.name, description: body.description } as never,
-      } as never),
-    );
-  }
-
-  /**
-   * Delete a board. Deleted boards cannot be recovered.
+   * DeleteBoard
    */
   async delete(boardId: number): Promise<void> {
     return this.request(
       {
-        service: "Boards",
-        operation: "Delete",
+        service: "Board",
+        operation: "DeleteBoard",
         resourceType: "board",
         isMutation: true,
-        boardId,
       },
-      () => this.client.DELETE("/boards/{boardId}.json" as never, {
+      () => this.client.DELETE("/boards/{boardId}" as never, {
         params: { path: { boardId } },
+      } as never),
+    );
+  }
+
+  /**
+   * GetBoard
+   */
+  async get(boardId: number): Promise<Board> {
+    return this.request(
+      {
+        service: "Board",
+        operation: "GetBoard",
+        resourceType: "board",
+        isMutation: false,
+      },
+      () => this.client.GET("/boards/{boardId}" as never, {
+        params: { path: { boardId } },
+      } as never),
+    );
+  }
+
+  /**
+   * UpdateBoard
+   */
+  async update(boardId: number, body?: UpdateBoardRequest): Promise<Board> {
+    return this.request(
+      {
+        service: "Board",
+        operation: "UpdateBoard",
+        resourceType: "board",
+        isMutation: true,
+      },
+      () => this.client.PATCH("/boards/{boardId}" as never, {
+        params: { path: { boardId } },
+        body: { name: body?.name, all_access: body?.allAccess } as never,
       } as never),
     );
   }

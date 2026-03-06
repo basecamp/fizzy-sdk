@@ -2,36 +2,52 @@
  * Devices service for the Fizzy API.
  *
  * @generated from OpenAPI spec - do not edit directly
+ * Run `npm run generate` to regenerate.
  */
 
 import { BaseService, type FetchResponse } from "../../services/base.js";
+import { ListResult, type PaginationOptions } from "../../pagination.js";
 import type { components } from "../schema.js";
 
-export type Device = components["schemas"]["Device"];
-
 export interface RegisterDeviceRequest {
-  /** Push notification token */
   token: string;
-  /** Device platform (ios, android, web) */
   platform: string;
+  /** Display name */
+  name?: string;
 }
 
 export class DevicesService extends BaseService {
 
-  async register(body: RegisterDeviceRequest): Promise<Device> {
+  /**
+   * RegisterDevice
+   */
+  async register(body: RegisterDeviceRequest): Promise<void> {
     return this.request(
-      { service: "Devices", operation: "Register", resourceType: "device", isMutation: true },
-      () => this.client.POST("/devices.json" as never, {
-        body: { token: body.token, platform: body.platform } as never,
+      {
+        service: "Device",
+        operation: "RegisterDevice",
+        resourceType: "device",
+        isMutation: true,
+      },
+      () => this.client.POST("/devices" as never, {
+        body: { token: body.token, platform: body.platform, name: body.name } as never,
       } as never),
     );
   }
 
-  async unregister(deviceId: number): Promise<void> {
+  /**
+   * UnregisterDevice
+   */
+  async unregister(deviceToken: string): Promise<void> {
     return this.request(
-      { service: "Devices", operation: "Unregister", resourceType: "device", isMutation: true, resourceId: deviceId },
-      () => this.client.DELETE("/devices/{deviceId}.json" as never, {
-        params: { path: { deviceId } },
+      {
+        service: "Device",
+        operation: "UnregisterDevice",
+        resourceType: "device",
+        isMutation: true,
+      },
+      () => this.client.DELETE("/devices/{deviceToken}" as never, {
+        params: { path: { deviceToken } },
       } as never),
     );
   }

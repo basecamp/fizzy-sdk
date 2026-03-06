@@ -3,9 +3,6 @@ package com.basecamp.fizzy.generated
 /**
  * Per-operation metadata from behavior-model.json.
  *
- * This is a stub file. Run the generator to produce the full version
- * with per-operation retry configuration.
- *
  * @generated from behavior-model.json -- do not edit directly
  */
 object Metadata {
@@ -23,104 +20,75 @@ object Metadata {
     )
 
     val operations: Map<String, OperationConfig> = mapOf(
-        // Boards
-        "ListBoards" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "GetBoard" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "CreateBoard" to OperationConfig(false, null),
-        "UpdateBoard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "DeleteBoard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-
-        // Columns
-        "ListColumns" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "GetColumn" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "CreateColumn" to OperationConfig(false, null),
-        "UpdateColumn" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-
-        // Cards
-        "ListCards" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "GetCard" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "CreateCard" to OperationConfig(false, null),
-        "UpdateCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "DeleteCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "ActivateWebhook" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "AssignCard" to OperationConfig(false, RetryConfig(1, 0L, "none", setOf())),
+        "BulkReadNotifications" to OperationConfig(false, RetryConfig(1, 0L, "none", setOf())),
         "CloseCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "ReopenCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "CompleteSignup" to OperationConfig(false, RetryConfig(1, 0L, "none", setOf())),
+        "CreateBoard" to OperationConfig(false, RetryConfig(1, 0L, "none", setOf())),
+        "CreateCard" to OperationConfig(false, RetryConfig(1, 0L, "none", setOf())),
+        "CreateCardReaction" to OperationConfig(false, RetryConfig(1, 0L, "none", setOf())),
+        "CreateColumn" to OperationConfig(false, RetryConfig(1, 0L, "none", setOf())),
+        "CreateComment" to OperationConfig(false, RetryConfig(1, 0L, "none", setOf())),
+        "CreateCommentReaction" to OperationConfig(false, RetryConfig(1, 0L, "none", setOf())),
+        "CreateDirectUpload" to OperationConfig(false, RetryConfig(1, 0L, "none", setOf())),
+        "CreateSession" to OperationConfig(false, RetryConfig(1, 0L, "none", setOf())),
+        "CreateStep" to OperationConfig(false, RetryConfig(1, 0L, "none", setOf())),
+        "CreateWebhook" to OperationConfig(false, RetryConfig(1, 0L, "none", setOf())),
+        "DeactivateUser" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "DeleteBoard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "DeleteCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "DeleteCardImage" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "DeleteCardReaction" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "DeleteComment" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "DeleteCommentReaction" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "DeleteStep" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "DeleteWebhook" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "DestroySession" to OperationConfig(true, RetryConfig(1, 0L, "none", setOf())),
+        "GetBoard" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "GetCard" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "GetColumn" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "GetComment" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "GetMyIdentity" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "GetNotificationTray" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "GetStep" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "GetUser" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "GetWebhook" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "GoldCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "ListBoards" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "ListCardReactions" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "ListCards" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "ListColumns" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "ListCommentReactions" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "ListComments" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "ListNotifications" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "ListPins" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "ListTags" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "ListUsers" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "ListWebhooks" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "MoveCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "PinCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
         "PostponeCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "ReadNotification" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "RedeemMagicLink" to OperationConfig(false, RetryConfig(1, 0L, "none", setOf())),
+        "RegisterDevice" to OperationConfig(false, RetryConfig(1, 0L, "none", setOf())),
+        "ReopenCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "SelfAssignCard" to OperationConfig(false, RetryConfig(1, 0L, "none", setOf())),
+        "TagCard" to OperationConfig(false, RetryConfig(1, 0L, "none", setOf())),
         "TriageCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
         "UnTriageCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "GoldCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
         "UngoldCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "AssignCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "SelfAssignCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "TagCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "WatchCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "UnwatchCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "PinCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
         "UnpinCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "MoveCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "DeleteCardImage" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-
-        // Comments
-        "ListComments" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "GetComment" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "CreateComment" to OperationConfig(false, null),
-        "UpdateComment" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "DeleteComment" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-
-        // Steps
-        "CreateStep" to OperationConfig(false, null),
-        "GetStep" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "UpdateStep" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "DeleteStep" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-
-        // Reactions
-        "ListCardReactions" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "CreateCardReaction" to OperationConfig(false, null),
-        "DeleteCardReaction" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "ListCommentReactions" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "CreateCommentReaction" to OperationConfig(false, null),
-        "DeleteCommentReaction" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-
-        // Notifications
-        "ListNotifications" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "ReadNotification" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
         "UnreadNotification" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "BulkReadNotifications" to OperationConfig(true, null),
-        "GetNotificationTray" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-
-        // Tags
-        "ListTags" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-
-        // Users
-        "ListUsers" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "GetUser" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "UpdateUser" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "DeactivateUser" to OperationConfig(true, null),
-
-        // Pins
-        "ListPins" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-
-        // Uploads
-        "CreateDirectUpload" to OperationConfig(false, null),
-
-        // Webhooks
-        "ListWebhooks" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "GetWebhook" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "CreateWebhook" to OperationConfig(false, null),
-        "UpdateWebhook" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "DeleteWebhook" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-        "ActivateWebhook" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-
-        // Identity
-        "GetMyIdentity" to OperationConfig(false, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
-
-        // Sessions
-        "CreateSession" to OperationConfig(false, null),
-        "RedeemMagicLink" to OperationConfig(false, null),
-        "DestroySession" to OperationConfig(true, null),
-        "CompleteSignup" to OperationConfig(false, null),
-
-        // Devices
-        "RegisterDevice" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
         "UnregisterDevice" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "UnwatchCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "UpdateBoard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "UpdateCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "UpdateColumn" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "UpdateComment" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "UpdateStep" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "UpdateUser" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "UpdateWebhook" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
+        "WatchCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 503))),
     )
 }
