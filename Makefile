@@ -3,7 +3,7 @@
 .PHONY: behavior-model behavior-model-check
 .PHONY: url-routes url-routes-check
 .PHONY: sync-api-version sync-api-version-check
-.PHONY: go-test go-lint go-check go-clean go-check-drift
+.PHONY: go-generate-services go-test go-lint go-check go-clean go-check-drift
 .PHONY: ts-install ts-generate ts-generate-services ts-build ts-test ts-typecheck ts-check ts-check-drift ts-clean
 .PHONY: rb-generate rb-generate-services rb-build rb-test rb-check rb-check-drift rb-clean
 .PHONY: swift-build swift-test swift-check swift-check-drift swift-generate swift-clean
@@ -132,6 +132,10 @@ sync-status: ## Show upstream changes since last sync
 # ──────────────────────────────────────────────
 # Go SDK
 # ──────────────────────────────────────────────
+
+go-generate-services: ## Generate Go service files from openapi.json
+	@echo "==> Generating Go services..."
+	cd go && go run ./cmd/generate-services/
 
 go-test: ## Run Go tests
 	@echo "==> Running Go tests..."
@@ -363,7 +367,7 @@ audit-check: ## Check rubric audit freshness and must-pass criteria
 # Combined
 # ──────────────────────────────────────────────
 
-check: smithy-check behavior-model-check url-routes-check sync-api-version-check provenance-check audit-check go-check ts-check rb-check swift-check kt-check ## Run all checks
+check: smithy-check behavior-model-check url-routes-check sync-api-version-check provenance-check audit-check go-check ts-check rb-check swift-check kt-check conformance ## Run all checks
 	@echo "==> All checks passed"
 
 clean: smithy-clean go-clean ts-clean rb-clean swift-clean kt-clean ## Clean all build artifacts

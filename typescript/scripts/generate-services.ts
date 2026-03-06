@@ -678,7 +678,10 @@ function generateServiceFile(service: ServiceDefinition): string {
   lines.push(" */");
   lines.push("");
   lines.push('import { BaseService, type FetchResponse } from "../../services/base.js";');
-  lines.push('import { ListResult, type PaginationOptions } from "../../pagination.js";');
+  const needsPagination = service.operations.some(op => op.hasPagination || op.returnsArray);
+  if (needsPagination) {
+    lines.push('import { ListResult, type PaginationOptions } from "../../pagination.js";');
+  }
   lines.push('import type { components } from "../schema.js";');
   lines.push("");
 

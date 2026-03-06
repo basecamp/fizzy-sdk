@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - String Utilities
 
-/// Converts a snake_case string to camelCase.
+/// Converts a snake_case string to lowerCamelCase.
 func toCamelCase(_ str: String) -> String {
     var result = ""
     var capitalizeNext = false
@@ -16,7 +16,9 @@ func toCamelCase(_ str: String) -> String {
             result.append(ch)
         }
     }
-    return result
+    // Ensure lowerCamelCase: lowercase the first character
+    guard let first = result.first else { return result }
+    return first.lowercased() + result.dropFirst()
 }
 
 /// Capitalizes the first character.

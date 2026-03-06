@@ -1,3 +1,4 @@
+// Code generated from openapi.json — DO NOT EDIT.
 package fizzy
 
 import (
@@ -7,9 +8,9 @@ import (
 	"github.com/basecamp/fizzy-sdk/go/pkg/generated"
 )
 
-// CreateDirectUpload creates a direct upload blob for ActiveStorage.
+// CreateDirectUpload creates a upload.
 func (s *UploadsService) CreateDirectUpload(ctx context.Context, req *generated.CreateDirectUploadRequest) (json.RawMessage, *Response, error) {
-	resp, err := s.client.Post(ctx, "/rails/active_storage/direct_uploads.json", req)
+	resp, err := s.client.Post(ctx, "/rails/active_storage/direct_uploads", req)
 	if err != nil {
 		return nil, nil, err
 	}

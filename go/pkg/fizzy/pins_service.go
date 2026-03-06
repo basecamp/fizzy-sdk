@@ -1,3 +1,4 @@
+// Code generated from openapi.json — DO NOT EDIT.
 package fizzy
 
 import (
@@ -5,7 +6,7 @@ import (
 	"encoding/json"
 )
 
-// List returns all pinned cards for the authenticated user.
+// List returns pins.
 func (s *PinsService) List(ctx context.Context) (json.RawMessage, *Response, error) {
 	resp, err := s.client.Get(ctx, "/my/pins.json")
 	if err != nil {

@@ -6,7 +6,6 @@
  */
 
 import { BaseService, type FetchResponse } from "../../services/base.js";
-import { ListResult, type PaginationOptions } from "../../pagination.js";
 import type { components } from "../schema.js";
 
 export type Step = components["schemas"]["Step"];

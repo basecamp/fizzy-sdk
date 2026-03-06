@@ -1,3 +1,4 @@
+// Code generated from openapi.json — DO NOT EDIT.
 package fizzy
 
 import (
@@ -8,7 +9,30 @@ import (
 	"github.com/basecamp/fizzy-sdk/go/pkg/generated"
 )
 
-// List returns boards for the account. The path can include query params (e.g. "?page=2").
+// Create creates a board.
+func (s *BoardsService) Create(ctx context.Context, req *generated.CreateBoardRequest) (json.RawMessage, *Response, error) {
+	resp, err := s.client.Post(ctx, "/boards.json", req)
+	if err != nil {
+		return nil, nil, err
+	}
+	return resp.Data, resp, nil
+}
+
+// Delete deletes a board.
+func (s *BoardsService) Delete(ctx context.Context, boardID string) (*Response, error) {
+	return s.client.Delete(ctx, fmt.Sprintf("/boards/%s", boardID))
+}
+
+// Get returns a board.
+func (s *BoardsService) Get(ctx context.Context, boardID string) (json.RawMessage, *Response, error) {
+	resp, err := s.client.Get(ctx, fmt.Sprintf("/boards/%s", boardID))
+	if err != nil {
+		return nil, nil, err
+	}
+	return resp.Data, resp, nil
+}
+
+// List returns boards.
 func (s *BoardsService) List(ctx context.Context, path string) (json.RawMessage, *Response, error) {
 	if path == "" {
 		path = "/boards.json"
@@ -20,54 +44,11 @@ func (s *BoardsService) List(ctx context.Context, path string) (json.RawMessage,
 	return resp.Data, resp, nil
 }
 
-// ListAll returns all boards across all pages.
-func (s *BoardsService) ListAll(ctx context.Context) ([]json.RawMessage, error) {
-	return s.client.GetAll(ctx, "/boards.json")
-}
-
-// Get returns a single board by ID.
-func (s *BoardsService) Get(ctx context.Context, boardID string) (*generated.Board, *Response, error) {
-	resp, err := s.client.Get(ctx, fmt.Sprintf("/boards/%s.json", boardID))
-	if err != nil {
-		return nil, nil, err
-	}
-	var board generated.Board
-	if err := resp.UnmarshalData(&board); err != nil {
-		return nil, resp, err
-	}
-	return &board, resp, nil
-}
-
-// Create creates a new board. It follows the Location header to return the created board.
-func (s *BoardsService) Create(ctx context.Context, req *generated.CreateBoardRequest) (json.RawMessage, *Response, error) {
-	resp, err := s.client.Post(ctx, "/boards.json", req)
-	if err != nil {
-		return nil, nil, err
-	}
-	if loc := resp.Headers.Get("Location"); loc != "" {
-		followResp, err := s.client.parent.Get(ctx, loc)
-		if err != nil {
-			return nil, resp, err
-		}
-		return followResp.Data, &Response{
-			Data:       followResp.Data,
-			StatusCode: followResp.StatusCode,
-			Headers:    resp.Headers,
-		}, nil
-	}
-	return resp.Data, resp, nil
-}
-
 // Update updates a board.
 func (s *BoardsService) Update(ctx context.Context, boardID string, req *generated.UpdateBoardRequest) (json.RawMessage, *Response, error) {
-	resp, err := s.client.Patch(ctx, fmt.Sprintf("/boards/%s.json", boardID), req)
+	resp, err := s.client.Patch(ctx, fmt.Sprintf("/boards/%s", boardID), req)
 	if err != nil {
 		return nil, nil, err
 	}
 	return resp.Data, resp, nil
-}
-
-// Delete deletes a board.
-func (s *BoardsService) Delete(ctx context.Context, boardID string) (*Response, error) {
-	return s.client.Delete(ctx, fmt.Sprintf("/boards/%s.json", boardID))
 }

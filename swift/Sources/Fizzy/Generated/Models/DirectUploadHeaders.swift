@@ -2,11 +2,11 @@
 import Foundation
 
 public struct DirectUploadHeaders: Codable, Sendable {
-    public let ContentType: String
-    public var ContentMD5: String?
+    public let contentType: String
+    public var contentMD5: String?
 
-    public init(ContentType: String, ContentMD5: String? = nil) {
-        self.ContentType = ContentType
-        self.ContentMD5 = ContentMD5
+    public init(contentType: String, contentMD5: String? = nil) {
+        self.contentType = contentType
+        self.contentMD5 = contentMD5
     }
 }

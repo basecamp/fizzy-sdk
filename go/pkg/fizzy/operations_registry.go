@@ -1,3 +1,4 @@
+// Code generated from openapi.json — DO NOT EDIT.
 package fizzy
 
 // OperationRegistry maps every OpenAPI operationId to its Go service method.
@@ -8,84 +9,84 @@ package fizzy
 // the corresponding service method.
 var OperationRegistry = map[string]string{
 	// Boards
-	"ListBoards":  "BoardsService.List",
 	"CreateBoard": "BoardsService.Create",
-	"GetBoard":    "BoardsService.Get",
-	"UpdateBoard": "BoardsService.Update",
 	"DeleteBoard": "BoardsService.Delete",
+	"GetBoard": "BoardsService.Get",
+	"ListBoards": "BoardsService.List",
+	"UpdateBoard": "BoardsService.Update",
 
 	// Cards
-	"ListCards":      "CardsService.List",
-	"CreateCard":     "CardsService.Create",
-	"GetCard":        "CardsService.Get",
-	"UpdateCard":     "CardsService.Update",
-	"DeleteCard":     "CardsService.Delete",
-	"CloseCard":      "CardsService.Close",
-	"ReopenCard":     "CardsService.Reopen",
-	"PostponeCard":   "CardsService.Postpone",
-	"TriageCard":     "CardsService.Triage",
-	"UnTriageCard":   "CardsService.UnTriage",
-	"GoldCard":       "CardsService.Gold",
-	"UngoldCard":     "CardsService.Ungold",
-	"AssignCard":     "CardsService.Assign",
-	"SelfAssignCard": "CardsService.SelfAssign",
-	"TagCard":        "CardsService.Tag",
-	"WatchCard":      "CardsService.Watch",
-	"UnwatchCard":    "CardsService.Unwatch",
-	"PinCard":        "CardsService.Pin",
-	"UnpinCard":      "CardsService.Unpin",
-	"MoveCard":       "CardsService.Move",
+	"AssignCard": "CardsService.Assign",
+	"CloseCard": "CardsService.Close",
+	"CreateCard": "CardsService.Create",
+	"DeleteCard": "CardsService.Delete",
 	"DeleteCardImage": "CardsService.DeleteImage",
+	"GetCard": "CardsService.Get",
+	"GoldCard": "CardsService.Gold",
+	"ListCards": "CardsService.List",
+	"MoveCard": "CardsService.Move",
+	"PinCard": "CardsService.Pin",
+	"PostponeCard": "CardsService.Postpone",
+	"ReopenCard": "CardsService.Reopen",
+	"SelfAssignCard": "CardsService.SelfAssign",
+	"TagCard": "CardsService.Tag",
+	"TriageCard": "CardsService.Triage",
+	"UnTriageCard": "CardsService.UnTriage",
+	"UngoldCard": "CardsService.Ungold",
+	"UnpinCard": "CardsService.Unpin",
+	"UnwatchCard": "CardsService.Unwatch",
+	"UpdateCard": "CardsService.Update",
+	"WatchCard": "CardsService.Watch",
 
 	// Columns
-	"ListColumns":  "ColumnsService.List",
 	"CreateColumn": "ColumnsService.Create",
-	"GetColumn":    "ColumnsService.Get",
+	"GetColumn": "ColumnsService.Get",
+	"ListColumns": "ColumnsService.List",
 	"UpdateColumn": "ColumnsService.Update",
 
 	// Comments
-	"ListComments":  "CommentsService.List",
 	"CreateComment": "CommentsService.Create",
-	"GetComment":    "CommentsService.Get",
-	"UpdateComment": "CommentsService.Update",
 	"DeleteComment": "CommentsService.Delete",
+	"GetComment": "CommentsService.Get",
+	"ListComments": "CommentsService.List",
+	"UpdateComment": "CommentsService.Update",
 
 	// Devices
-	"RegisterDevice":   "DevicesService.Register",
+	"RegisterDevice": "DevicesService.Register",
 	"UnregisterDevice": "DevicesService.Unregister",
 
 	// Identity
 	"GetMyIdentity": "IdentityService.GetMyIdentity",
 
 	// Notifications
-	"ListNotifications":    "NotificationsService.List",
-	"ReadNotification":     "NotificationsService.Read",
-	"UnreadNotification":   "NotificationsService.Unread",
 	"BulkReadNotifications": "NotificationsService.BulkRead",
-	"GetNotificationTray":  "NotificationsService.GetTray",
+	"GetNotificationTray": "NotificationsService.GetTray",
+	"ListNotifications": "NotificationsService.List",
+	"ReadNotification": "NotificationsService.Read",
+	"UnreadNotification": "NotificationsService.Unread",
 
 	// Pins
 	"ListPins": "PinsService.List",
 
 	// Reactions
-	"ListCardReactions":     "ReactionsService.ListCard",
-	"CreateCardReaction":    "ReactionsService.CreateCard",
-	"DeleteCardReaction":    "ReactionsService.DeleteCard",
-	"ListCommentReactions":  "ReactionsService.ListComment",
+	"CreateCardReaction": "ReactionsService.CreateCard",
 	"CreateCommentReaction": "ReactionsService.CreateComment",
+	"DeleteCardReaction": "ReactionsService.DeleteCard",
 	"DeleteCommentReaction": "ReactionsService.DeleteComment",
+	"ListCardReactions": "ReactionsService.ListCard",
+	"ListCommentReactions": "ReactionsService.ListComment",
 
 	// Sessions
-	"CreateSession":   "SessionsService.Create",
+	"CompleteSignup": "SessionsService.CompleteSignup",
+	"CreateSession": "SessionsService.Create",
+	"DestroySession": "SessionsService.Destroy",
 	"RedeemMagicLink": "SessionsService.RedeemMagicLink",
-	"DestroySession":  "SessionsService.Destroy",
-	"CompleteSignup":  "SessionsService.CompleteSignup",
 
 	// Steps
 	"CreateStep": "StepsService.Create",
-	"GetStep":    "StepsService.Get",
-	"UpdateStep": "StepsService.Update",
 	"DeleteStep": "StepsService.Delete",
+	"GetStep": "StepsService.Get",
+	"UpdateStep": "StepsService.Update",
 
 	// Tags
 	"ListTags": "TagsService.List",
@@ -94,16 +95,16 @@ var OperationRegistry = map[string]string{
 	"CreateDirectUpload": "UploadsService.CreateDirectUpload",
 
 	// Users
-	"ListUsers":      "UsersService.List",
-	"GetUser":        "UsersService.Get",
-	"UpdateUser":     "UsersService.Update",
 	"DeactivateUser": "UsersService.Deactivate",
+	"GetUser": "UsersService.Get",
+	"ListUsers": "UsersService.List",
+	"UpdateUser": "UsersService.Update",
 
 	// Webhooks
-	"ListWebhooks":    "WebhooksService.List",
-	"CreateWebhook":   "WebhooksService.Create",
-	"GetWebhook":      "WebhooksService.Get",
-	"UpdateWebhook":   "WebhooksService.Update",
-	"DeleteWebhook":   "WebhooksService.Delete",
 	"ActivateWebhook": "WebhooksService.Activate",
+	"CreateWebhook": "WebhooksService.Create",
+	"DeleteWebhook": "WebhooksService.Delete",
+	"GetWebhook": "WebhooksService.Get",
+	"ListWebhooks": "WebhooksService.List",
+	"UpdateWebhook": "WebhooksService.Update",
 }

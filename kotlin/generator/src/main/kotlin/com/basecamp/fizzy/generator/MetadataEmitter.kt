@@ -36,7 +36,7 @@ class MetadataEmitter {
                 }
                 RetryConfig(
                     max = max,
-                    baseDelayMs = r["base_delay_ms"]?.jsonPrimitive?.longOrNull ?: 0L,
+                    baseDelayMs = r["base_delay_ms"]?.jsonPrimitive?.longOrNull ?: 1000L,
                     backoff = r["backoff"]?.jsonPrimitive?.contentOrNull ?: "none",
                     retryOn = retryOn,
                 )
