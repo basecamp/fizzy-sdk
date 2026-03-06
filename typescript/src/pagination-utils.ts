@@ -16,8 +16,10 @@ export function parseNextLink(linkHeader: string | null): string | null {
   for (const part of linkHeader.split(",")) {
     const trimmed = part.trim();
     if (trimmed.includes('rel="next"')) {
-      const match = trimmed.match(/<([^>]+)>/);
-      return match?.[1] ?? null;
+      const start = trimmed.indexOf("<");
+      const end = trimmed.indexOf(">", start);
+      if (start !== -1 && end !== -1) return trimmed.slice(start + 1, end);
+      return null;
     }
   }
 

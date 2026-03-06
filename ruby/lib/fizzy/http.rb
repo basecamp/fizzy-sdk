@@ -363,8 +363,9 @@ module Fizzy
         part = part.strip
         next unless part.include?('rel="next"')
 
-        match = part.match(/<([^>]+)>/)
-        return match[1] if match
+        start = part.index("<")
+        finish = part.index(">", start || 0)
+        return part[(start + 1)...finish] if start && finish
       end
 
       nil
