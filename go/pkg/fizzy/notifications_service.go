@@ -15,7 +15,7 @@ func (s *NotificationsService) BulkRead(ctx context.Context, req *generated.Bulk
 	return resp, err
 }
 
-// GetTray returns a notification.
+// GetTray returns a tray.
 func (s *NotificationsService) GetTray(ctx context.Context) (json.RawMessage, *Response, error) {
 	resp, err := s.client.Get(ctx, "/notifications/tray.json")
 	if err != nil {

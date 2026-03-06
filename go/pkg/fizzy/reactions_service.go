@@ -9,7 +9,7 @@ import (
 	"github.com/basecamp/fizzy-sdk/go/pkg/generated"
 )
 
-// CreateCard creates a reaction.
+// CreateCard creates a card.
 func (s *ReactionsService) CreateCard(ctx context.Context, cardNumber string, req *generated.CreateCardReactionRequest) (json.RawMessage, *Response, error) {
 	resp, err := s.client.Post(ctx, fmt.Sprintf("/cards/%s/reactions.json", cardNumber), req)
 	if err != nil {
@@ -18,7 +18,7 @@ func (s *ReactionsService) CreateCard(ctx context.Context, cardNumber string, re
 	return resp.Data, resp, nil
 }
 
-// CreateComment creates a reaction.
+// CreateComment creates a comment.
 func (s *ReactionsService) CreateComment(ctx context.Context, cardNumber string, commentID string, req *generated.CreateCommentReactionRequest) (json.RawMessage, *Response, error) {
 	resp, err := s.client.Post(ctx, fmt.Sprintf("/cards/%s/comments/%s/reactions.json", cardNumber, commentID), req)
 	if err != nil {
@@ -27,17 +27,17 @@ func (s *ReactionsService) CreateComment(ctx context.Context, cardNumber string,
 	return resp.Data, resp, nil
 }
 
-// DeleteCard deletes a reaction.
+// DeleteCard deletes a card.
 func (s *ReactionsService) DeleteCard(ctx context.Context, cardNumber string, reactionID string) (*Response, error) {
 	return s.client.Delete(ctx, fmt.Sprintf("/cards/%s/reactions/%s", cardNumber, reactionID))
 }
 
-// DeleteComment deletes a reaction.
+// DeleteComment deletes a comment.
 func (s *ReactionsService) DeleteComment(ctx context.Context, cardNumber string, commentID string, reactionID string) (*Response, error) {
 	return s.client.Delete(ctx, fmt.Sprintf("/cards/%s/comments/%s/reactions/%s", cardNumber, commentID, reactionID))
 }
 
-// ListCard returns reactions.
+// ListCard returns cards.
 func (s *ReactionsService) ListCard(ctx context.Context, cardNumber string) (json.RawMessage, *Response, error) {
 	resp, err := s.client.Get(ctx, fmt.Sprintf("/cards/%s/reactions.json", cardNumber))
 	if err != nil {
@@ -46,7 +46,7 @@ func (s *ReactionsService) ListCard(ctx context.Context, cardNumber string) (jso
 	return resp.Data, resp, nil
 }
 
-// ListComment returns reactions.
+// ListComment returns comments.
 func (s *ReactionsService) ListComment(ctx context.Context, cardNumber string, commentID string) (json.RawMessage, *Response, error) {
 	resp, err := s.client.Get(ctx, fmt.Sprintf("/cards/%s/comments/%s/reactions.json", cardNumber, commentID))
 	if err != nil {

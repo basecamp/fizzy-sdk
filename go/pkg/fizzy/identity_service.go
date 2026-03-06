@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 )
 
-// GetMyIdentity returns a identity.
+// GetMyIdentity returns an identity.
 func (s *IdentityService) GetMyIdentity(ctx context.Context) (json.RawMessage, *Response, error) {
 	resp, err := s.client.Get(ctx, "/my/identity.json")
 	if err != nil {

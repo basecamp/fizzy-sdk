@@ -2,23 +2,27 @@ import Foundation
 
 // MARK: - String Utilities
 
-/// Converts a snake_case string to lowerCamelCase.
+/// Converts a snake_case string to lowerCamelCase, matching Swift's
+/// `JSONDecoder.KeyDecodingStrategy.convertFromSnakeCase` algorithm:
+/// split on `_`, lowercase the first segment, capitalize only the first
+/// character of each subsequent segment and lowercase the rest.
+///
+/// For strings without underscores (already camelCase), just lowercases
+/// the first character.
 func toCamelCase(_ str: String) -> String {
-    var result = ""
-    var capitalizeNext = false
-    for ch in str {
-        if ch == "_" {
-            capitalizeNext = true
-        } else if capitalizeNext {
-            result.append(ch.uppercased().first!)
-            capitalizeNext = false
-        } else {
-            result.append(ch)
-        }
+    let parts = str.split(separator: "_", omittingEmptySubsequences: false)
+    guard let first = parts.first else { return str }
+    if parts.count == 1 {
+        // No underscores — just lowercase first character
+        return lowercaseFirst(String(first))
     }
-    // Ensure lowerCamelCase: lowercase the first character
-    guard let first = result.first else { return result }
-    return first.lowercased() + result.dropFirst()
+    var result = first.lowercased()
+    for part in parts.dropFirst() {
+        guard let initial = part.first else { continue }
+        result += initial.uppercased()
+        result += part.dropFirst().lowercased()
+    }
+    return result
 }
 
 /// Capitalizes the first character.

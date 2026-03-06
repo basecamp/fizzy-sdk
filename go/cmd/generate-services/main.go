@@ -390,9 +390,14 @@ func generateMethod(serviceName string, op ParsedOp) string {
 	// Build method signature
 	sigParams := []string{"ctx context.Context"}
 
-	// For paginated List methods, use the path-string pattern
+	// For paginated List methods, use the path-string pattern.
+	// If the paginated list also has path params (e.g. ListComments needs cardNumber),
+	// include those params before the path param.
 	isPaginatedList := op.HasPagination && strings.HasPrefix(methodName, "List")
 	if isPaginatedList {
+		for _, gp := range goParams {
+			sigParams = append(sigParams, gp+" string")
+		}
 		sigParams = append(sigParams, "path string")
 	} else {
 		for _, gp := range goParams {
@@ -424,7 +429,7 @@ func generateMethod(serviceName string, op ParsedOp) string {
 
 	// Method body
 	if isPaginatedList {
-		buf.WriteString(generatePaginatedListBody(serviceName, op, fmtStr))
+		buf.WriteString(generatePaginatedListBody(serviceName, op, fmtStr, goParams))
 	} else {
 		buf.WriteString(generateMethodBody(serviceName, op, fmtStr, hasFormatParams, goParams, returnsData))
 	}
@@ -436,19 +441,26 @@ func generateMethod(serviceName string, op ParsedOp) string {
 func generateDocComment(methodName, serviceName string, op ParsedOp) string {
 	// Generate a brief doc comment based on the HTTP method and operation
 	var action string
+	var verb string
 	switch {
 	case strings.HasPrefix(methodName, "List"):
 		action = "returns"
+		verb = "List"
 	case strings.HasPrefix(methodName, "Get"):
 		action = "returns"
+		verb = "Get"
 	case strings.HasPrefix(methodName, "Create"):
 		action = "creates"
+		verb = "Create"
 	case strings.HasPrefix(methodName, "Update"):
 		action = "updates"
+		verb = "Update"
 	case strings.HasPrefix(methodName, "Delete"):
 		action = "deletes"
+		verb = "Delete"
 	default:
 		action = "performs the " + methodName + " operation on"
+		verb = ""
 	}
 
 	resource := strings.ToLower(serviceName)
@@ -456,22 +468,47 @@ func generateDocComment(methodName, serviceName string, op ParsedOp) string {
 		resource = resource[:len(resource)-1]
 	}
 
+	// If the method name has a suffix beyond the verb (e.g. DeleteImage, GetTray),
+	// use that suffix as the resource name for a more specific doc comment.
+	// Skip when the remainder contains the service resource (e.g. GetMyIdentity,
+	// CreateDirectUpload) — those should use the service resource.
+	if verb != "" {
+		remainder := strings.TrimPrefix(methodName, verb)
+		svcSingular := serviceName
+		if strings.HasSuffix(svcSingular, "s") {
+			svcSingular = svcSingular[:len(svcSingular)-1]
+		}
+		if remainder != "" && !isSimplePlural(remainder, serviceName) && !strings.Contains(remainder, svcSingular) {
+			resource = strings.ToLower(remainder[:1]) + remainder[1:]
+		}
+	}
+
+	article := "a"
+	if len(resource) > 0 && strings.ContainsRune("aeiou", rune(resource[0])) {
+		article = "an"
+	}
+
 	var comment string
 	switch {
 	case strings.HasPrefix(methodName, "List"):
 		comment = fmt.Sprintf("// %s %s %ss.", methodName, action, resource)
 	default:
-		comment = fmt.Sprintf("// %s %s a %s.", methodName, action, resource)
+		comment = fmt.Sprintf("// %s %s %s %s.", methodName, action, article, resource)
 	}
 
 	return comment + "\n"
 }
 
-func generatePaginatedListBody(serviceName string, op ParsedOp, fmtStr string) string {
+func generatePaginatedListBody(serviceName string, op ParsedOp, fmtStr string, goParams []string) string {
 	var buf strings.Builder
 
-	defaultPath := fmtStr
-	buf.WriteString(fmt.Sprintf("\tif path == \"\" {\n\t\tpath = %q\n\t}\n", defaultPath))
+	if len(goParams) > 0 {
+		// Paginated list with path params: construct default path with fmt.Sprintf
+		buf.WriteString(fmt.Sprintf("\tif path == \"\" {\n\t\tpath = fmt.Sprintf(%q, %s)\n\t}\n",
+			fmtStr, strings.Join(goParams, ", ")))
+	} else {
+		buf.WriteString(fmt.Sprintf("\tif path == \"\" {\n\t\tpath = %q\n\t}\n", fmtStr))
+	}
 	buf.WriteString("\tresp, err := s.client.Get(ctx, path)\n")
 	buf.WriteString("\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n")
 	buf.WriteString("\treturn resp.Data, resp, nil\n")
@@ -704,6 +741,14 @@ func main() {
 	fmt.Printf("Generated operations_registry.go (%d operations)\n", totalOps)
 
 	fmt.Printf("\nGenerated %d services with %d operations total.\n", len(services), totalOps)
+}
+
+// isSimplePlural returns true if the remainder is the service resource
+// singular or plural (e.g. "Card" for "Cards", "Comments" for "Comments").
+func isSimplePlural(remainder, serviceName string) bool {
+	sn := strings.ToLower(serviceName)
+	r := strings.ToLower(remainder)
+	return r == sn || r+"s" == sn || r == strings.TrimSuffix(sn, "s")
 }
 
 // toSnakeCase converts PascalCase to snake_case.

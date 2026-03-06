@@ -8,7 +8,7 @@ import (
 	"github.com/basecamp/fizzy-sdk/go/pkg/generated"
 )
 
-// CreateDirectUpload creates a upload.
+// CreateDirectUpload creates an upload.
 func (s *UploadsService) CreateDirectUpload(ctx context.Context, req *generated.CreateDirectUploadRequest) (json.RawMessage, *Response, error) {
 	resp, err := s.client.Post(ctx, "/rails/active_storage/direct_uploads", req)
 	if err != nil {

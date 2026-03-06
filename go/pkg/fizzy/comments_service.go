@@ -33,9 +33,9 @@ func (s *CommentsService) Get(ctx context.Context, cardNumber string, commentID 
 }
 
 // List returns comments.
-func (s *CommentsService) List(ctx context.Context, path string) (json.RawMessage, *Response, error) {
+func (s *CommentsService) List(ctx context.Context, cardNumber string, path string) (json.RawMessage, *Response, error) {
 	if path == "" {
-		path = "/cards/%s/comments.json"
+		path = fmt.Sprintf("/cards/%s/comments.json", cardNumber)
 	}
 	resp, err := s.client.Get(ctx, path)
 	if err != nil {

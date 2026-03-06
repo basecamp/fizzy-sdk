@@ -35,7 +35,7 @@ func (s *CardsService) Delete(ctx context.Context, cardNumber string) (*Response
 	return s.client.Delete(ctx, fmt.Sprintf("/cards/%s", cardNumber))
 }
 
-// DeleteImage deletes a card.
+// DeleteImage deletes an image.
 func (s *CardsService) DeleteImage(ctx context.Context, cardNumber string) (*Response, error) {
 	return s.client.Delete(ctx, fmt.Sprintf("/cards/%s/image.json", cardNumber))
 }

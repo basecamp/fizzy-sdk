@@ -3,10 +3,10 @@ import Foundation
 
 public struct DirectUploadHeaders: Codable, Sendable {
     public let contentType: String
-    public var contentMD5: String?
+    public var contentMd5: String?
 
-    public init(contentType: String, contentMD5: String? = nil) {
+    public init(contentType: String, contentMd5: String? = nil) {
         self.contentType = contentType
-        self.contentMD5 = contentMD5
+        self.contentMd5 = contentMd5
     }
 }
