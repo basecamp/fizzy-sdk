@@ -1,6 +1,8 @@
 {
   "fizzy": {
     "repo": "basecamp/fizzy",
+    "revision": "",
+    "date": "",
     "branch": "main",
     "paths": {
       "routes": "config/routes.rb",
