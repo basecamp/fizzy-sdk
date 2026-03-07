@@ -590,7 +590,7 @@ list WebhookList { member: Webhook }
 @readonly
 @http(method: "GET", uri: "/my/identity.json")
 @tags(["Identity"])
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation GetMyIdentity {
     output: GetMyIdentityOutput
     errors: [UnauthorizedError]
@@ -608,7 +608,7 @@ structure GetMyIdentityOutput {
 @readonly
 @http(method: "GET", uri: "/{accountId}/boards.json")
 @tags(["Boards"])
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 @fizzyPagination(style: "link", pageParam: "page")
 operation ListBoards {
     input: ListBoardsInput
@@ -653,9 +653,9 @@ structure CreateBoardOutput {
 }
 
 @readonly
-@http(method: "GET", uri: "/{accountId}/boards/{boardId}")
+@http(method: "GET", uri: "/{accountId}/boards/{boardId}.json")
 @tags(["Boards"])
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation GetBoard {
     input: GetBoardInput
     output: GetBoardOutput
@@ -677,10 +677,10 @@ structure GetBoardOutput {
     board: Board
 }
 
-@http(method: "PATCH", uri: "/{accountId}/boards/{boardId}")
+@http(method: "PATCH", uri: "/{accountId}/boards/{boardId}.json")
 @tags(["Boards"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation UpdateBoard {
     input: UpdateBoardInput
     output: UpdateBoardOutput
@@ -707,10 +707,10 @@ structure UpdateBoardOutput {
 }
 
 @idempotent
-@http(method: "DELETE", uri: "/{accountId}/boards/{boardId}")
+@http(method: "DELETE", uri: "/{accountId}/boards/{boardId}.json")
 @tags(["Boards"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation DeleteBoard {
     input: DeleteBoardInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -733,7 +733,7 @@ structure DeleteBoardInput {
 @readonly
 @http(method: "GET", uri: "/{accountId}/boards/{boardId}/columns.json")
 @tags(["Columns"])
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation ListColumns {
     input: ListColumnsInput
     output: ListColumnsOutput
@@ -787,7 +787,7 @@ structure CreateColumnOutput {
 @readonly
 @http(method: "GET", uri: "/{accountId}/boards/{boardId}/columns/{columnId}")
 @tags(["Columns"])
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation GetColumn {
     input: GetColumnInput
     output: GetColumnOutput
@@ -816,7 +816,7 @@ structure GetColumnOutput {
 @http(method: "PATCH", uri: "/{accountId}/boards/{boardId}/columns/{columnId}")
 @tags(["Columns"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation UpdateColumn {
     input: UpdateColumnInput
     output: UpdateColumnOutput
@@ -853,7 +853,7 @@ structure UpdateColumnOutput {
 @readonly
 @http(method: "GET", uri: "/{accountId}/cards.json")
 @tags(["Cards"])
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 @fizzyPagination(style: "link", pageParam: "page")
 operation ListCards {
     input: ListCardsInput
@@ -928,9 +928,9 @@ structure CreateCardOutput {
 }
 
 @readonly
-@http(method: "GET", uri: "/{accountId}/cards/{cardNumber}")
+@http(method: "GET", uri: "/{accountId}/cards/{cardNumber}.json")
 @tags(["Cards"])
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation GetCard {
     input: GetCardInput
     output: GetCardOutput
@@ -952,10 +952,10 @@ structure GetCardOutput {
     card: Card
 }
 
-@http(method: "PATCH", uri: "/{accountId}/cards/{cardNumber}")
+@http(method: "PATCH", uri: "/{accountId}/cards/{cardNumber}.json")
 @tags(["Cards"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation UpdateCard {
     input: UpdateCardInput
     output: UpdateCardOutput
@@ -984,10 +984,10 @@ structure UpdateCardOutput {
 }
 
 @idempotent
-@http(method: "DELETE", uri: "/{accountId}/cards/{cardNumber}")
+@http(method: "DELETE", uri: "/{accountId}/cards/{cardNumber}.json")
 @tags(["Cards"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation DeleteCard {
     input: DeleteCardInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -1008,7 +1008,7 @@ structure DeleteCardInput {
 @http(method: "POST", uri: "/{accountId}/cards/{cardNumber}/closure.json")
 @tags(["Cards"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation CloseCard {
     input: CardNumberInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -1018,7 +1018,7 @@ operation CloseCard {
 @http(method: "DELETE", uri: "/{accountId}/cards/{cardNumber}/closure.json")
 @tags(["Cards"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation ReopenCard {
     input: CardNumberInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -1027,7 +1027,7 @@ operation ReopenCard {
 @http(method: "POST", uri: "/{accountId}/cards/{cardNumber}/not_now.json")
 @tags(["Cards"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation PostponeCard {
     input: CardNumberInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -1036,7 +1036,7 @@ operation PostponeCard {
 @http(method: "POST", uri: "/{accountId}/cards/{cardNumber}/triage.json")
 @tags(["Cards"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation TriageCard {
     input: CardNumberInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -1046,7 +1046,7 @@ operation TriageCard {
 @http(method: "DELETE", uri: "/{accountId}/cards/{cardNumber}/triage.json")
 @tags(["Cards"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation UnTriageCard {
     input: CardNumberInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -1055,7 +1055,7 @@ operation UnTriageCard {
 @http(method: "POST", uri: "/{accountId}/cards/{cardNumber}/goldness.json")
 @tags(["Cards"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation GoldCard {
     input: CardNumberInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -1065,7 +1065,7 @@ operation GoldCard {
 @http(method: "DELETE", uri: "/{accountId}/cards/{cardNumber}/goldness.json")
 @tags(["Cards"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation UngoldCard {
     input: CardNumberInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -1124,7 +1124,7 @@ structure TagCardInput {
 @http(method: "POST", uri: "/{accountId}/cards/{cardNumber}/watch.json")
 @tags(["Cards"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation WatchCard {
     input: CardNumberInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -1134,7 +1134,7 @@ operation WatchCard {
 @http(method: "DELETE", uri: "/{accountId}/cards/{cardNumber}/watch.json")
 @tags(["Cards"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation UnwatchCard {
     input: CardNumberInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -1143,7 +1143,7 @@ operation UnwatchCard {
 @http(method: "POST", uri: "/{accountId}/cards/{cardNumber}/pin.json")
 @tags(["Cards"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation PinCard {
     input: CardNumberInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -1153,7 +1153,7 @@ operation PinCard {
 @http(method: "DELETE", uri: "/{accountId}/cards/{cardNumber}/pin.json")
 @tags(["Cards"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation UnpinCard {
     input: CardNumberInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -1162,7 +1162,7 @@ operation UnpinCard {
 @http(method: "PATCH", uri: "/{accountId}/cards/{cardNumber}/board.json")
 @tags(["Cards"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation MoveCard {
     input: MoveCardInput
     output: MoveCardOutput
@@ -1193,7 +1193,7 @@ structure MoveCardOutput {
 @http(method: "DELETE", uri: "/{accountId}/cards/{cardNumber}/image.json")
 @tags(["Cards"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation DeleteCardImage {
     input: CardNumberInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -1217,7 +1217,7 @@ structure CardNumberInput {
 @readonly
 @http(method: "GET", uri: "/{accountId}/cards/{cardNumber}/comments.json")
 @tags(["Comments"])
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 @fizzyPagination(style: "link", pageParam: "page")
 operation ListComments {
     input: ListCommentsInput
@@ -1270,7 +1270,7 @@ structure CreateCommentOutput {
 @readonly
 @http(method: "GET", uri: "/{accountId}/cards/{cardNumber}/comments/{commentId}")
 @tags(["Comments"])
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation GetComment {
     input: GetCommentInput
     output: GetCommentOutput
@@ -1299,7 +1299,7 @@ structure GetCommentOutput {
 @http(method: "PATCH", uri: "/{accountId}/cards/{cardNumber}/comments/{commentId}")
 @tags(["Comments"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation UpdateComment {
     input: UpdateCommentInput
     output: UpdateCommentOutput
@@ -1332,7 +1332,7 @@ structure UpdateCommentOutput {
 @http(method: "DELETE", uri: "/{accountId}/cards/{cardNumber}/comments/{commentId}")
 @tags(["Comments"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation DeleteComment {
     input: DeleteCommentInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -1386,7 +1386,7 @@ structure CreateStepOutput {
 @readonly
 @http(method: "GET", uri: "/{accountId}/cards/{cardNumber}/steps/{stepId}")
 @tags(["Steps"])
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation GetStep {
     input: GetStepInput
     output: GetStepOutput
@@ -1415,7 +1415,7 @@ structure GetStepOutput {
 @http(method: "PATCH", uri: "/{accountId}/cards/{cardNumber}/steps/{stepId}")
 @tags(["Steps"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation UpdateStep {
     input: UpdateStepInput
     output: UpdateStepOutput
@@ -1449,7 +1449,7 @@ structure UpdateStepOutput {
 @http(method: "DELETE", uri: "/{accountId}/cards/{cardNumber}/steps/{stepId}")
 @tags(["Steps"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation DeleteStep {
     input: DeleteStepInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -1478,7 +1478,7 @@ structure DeleteStepInput {
 @readonly
 @http(method: "GET", uri: "/{accountId}/cards/{cardNumber}/reactions.json")
 @tags(["Reactions"])
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation ListCardReactions {
     input: CardNumberInput
     output: ListCardReactionsOutput
@@ -1521,7 +1521,7 @@ structure CreateCardReactionOutput {
 @http(method: "DELETE", uri: "/{accountId}/cards/{cardNumber}/reactions/{reactionId}")
 @tags(["Reactions"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation DeleteCardReaction {
     input: DeleteCardReactionInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -1546,7 +1546,7 @@ structure DeleteCardReactionInput {
 @readonly
 @http(method: "GET", uri: "/{accountId}/cards/{cardNumber}/comments/{commentId}/reactions.json")
 @tags(["Reactions"])
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation ListCommentReactions {
     input: ListCommentReactionsInput
     output: ListCommentReactionsOutput
@@ -1607,7 +1607,7 @@ structure CreateCommentReactionOutput {
 @http(method: "DELETE", uri: "/{accountId}/cards/{cardNumber}/comments/{commentId}/reactions/{reactionId}")
 @tags(["Reactions"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation DeleteCommentReaction {
     input: DeleteCommentReactionInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -1638,7 +1638,7 @@ structure DeleteCommentReactionInput {
 @readonly
 @http(method: "GET", uri: "/{accountId}/notifications.json")
 @tags(["Notifications"])
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 @fizzyPagination(style: "link", pageParam: "page")
 operation ListNotifications {
     input: ListNotificationsInput
@@ -1663,7 +1663,7 @@ structure ListNotificationsOutput {
 @http(method: "POST", uri: "/{accountId}/notifications/{notificationId}/reading.json")
 @tags(["Notifications"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation ReadNotification {
     input: ReadNotificationInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -1683,7 +1683,7 @@ structure ReadNotificationInput {
 @http(method: "DELETE", uri: "/{accountId}/notifications/{notificationId}/reading.json")
 @tags(["Notifications"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation UnreadNotification {
     input: UnreadNotificationInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -1722,7 +1722,7 @@ list NotificationIdList {
 @readonly
 @http(method: "GET", uri: "/{accountId}/notifications/tray.json")
 @tags(["Notifications"])
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation GetNotificationTray {
     input: GetNotificationTrayInput
     output: GetNotificationTrayOutput
@@ -1747,7 +1747,7 @@ structure GetNotificationTrayOutput {
 @readonly
 @http(method: "GET", uri: "/{accountId}/tags.json")
 @tags(["Tags"])
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation ListTags {
     input: ListTagsInput
     output: ListTagsOutput
@@ -1772,7 +1772,7 @@ structure ListTagsOutput {
 @readonly
 @http(method: "GET", uri: "/{accountId}/users.json")
 @tags(["Users"])
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation ListUsers {
     input: ListUsersInput
     output: ListUsersOutput
@@ -1793,7 +1793,7 @@ structure ListUsersOutput {
 @readonly
 @http(method: "GET", uri: "/{accountId}/users/{userId}")
 @tags(["Users"])
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation GetUser {
     input: GetUserInput
     output: GetUserOutput
@@ -1818,7 +1818,7 @@ structure GetUserOutput {
 @http(method: "PATCH", uri: "/{accountId}/users/{userId}")
 @tags(["Users"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation UpdateUser {
     input: UpdateUserInput
     output: UpdateUserOutput
@@ -1846,7 +1846,7 @@ structure UpdateUserOutput {
 @http(method: "DELETE", uri: "/{accountId}/users/{userId}")
 @tags(["Users"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation DeactivateUser {
     input: DeactivateUserInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -1869,7 +1869,7 @@ structure DeactivateUserInput {
 @readonly
 @http(method: "GET", uri: "/my/pins.json")
 @tags(["Pins"])
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation ListPins {
     output: ListPinsOutput
     errors: [UnauthorizedError]
@@ -1923,7 +1923,7 @@ structure CreateDirectUploadOutput {
 @readonly
 @http(method: "GET", uri: "/{accountId}/boards/{boardId}/webhooks.json")
 @tags(["Webhooks"])
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation ListWebhooks {
     input: ListWebhooksInput
     output: ListWebhooksOutput
@@ -1980,7 +1980,7 @@ structure CreateWebhookOutput {
 @readonly
 @http(method: "GET", uri: "/{accountId}/boards/{boardId}/webhooks/{webhookId}")
 @tags(["Webhooks"])
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation GetWebhook {
     input: GetWebhookInput
     output: GetWebhookOutput
@@ -2009,7 +2009,7 @@ structure GetWebhookOutput {
 @http(method: "PATCH", uri: "/{accountId}/boards/{boardId}/webhooks/{webhookId}")
 @tags(["Webhooks"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation UpdateWebhook {
     input: UpdateWebhookInput
     output: UpdateWebhookOutput
@@ -2045,7 +2045,7 @@ structure UpdateWebhookOutput {
 @http(method: "DELETE", uri: "/{accountId}/boards/{boardId}/webhooks/{webhookId}")
 @tags(["Webhooks"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation DeleteWebhook {
     input: DeleteWebhookInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -2068,7 +2068,7 @@ structure DeleteWebhookInput {
 @http(method: "POST", uri: "/{accountId}/boards/{boardId}/webhooks/{webhookId}/activation.json")
 @tags(["Webhooks"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation ActivateWebhook {
     input: ActivateWebhookInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -2188,7 +2188,7 @@ structure RegisterDeviceInput {
 @http(method: "DELETE", uri: "/{accountId}/devices/{deviceToken}")
 @tags(["Devices"])
 @fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 503])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation UnregisterDevice {
     input: UnregisterDeviceInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
