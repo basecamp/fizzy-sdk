@@ -172,7 +172,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: cd typescript && npm ci
+      - run: cd typescript && npm ci && npm run build
       - run: cd conformance/runner/typescript && npm ci
       - run: cd conformance/runner/typescript && npx vitest run
 

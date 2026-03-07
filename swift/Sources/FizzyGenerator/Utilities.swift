@@ -17,8 +17,10 @@ func toCamelCase(_ str: String) -> String {
         // No underscores — just lowercase first character
         return lowercaseFirst(String(first))
     }
-    var result = first.lowercased()
-    for part in parts.dropFirst() {
+    let nonEmpty = parts.filter { !$0.isEmpty }
+    guard let head = nonEmpty.first else { return str }
+    var result = head.lowercased()
+    for part in nonEmpty.dropFirst() {
         guard let initial = part.first else { continue }
         result += initial.uppercased()
         result += part.dropFirst().lowercased()

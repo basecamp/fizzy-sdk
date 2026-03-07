@@ -31,7 +31,7 @@ public final class NotificationsService: BaseService, @unchecked Sendable {
         )
     }
 
-    public func tray(accountId: String, options: TrayNotificationOptions? = nil) async throws -> NotificationTray {
+    public func tray(accountId: String, options: TrayNotificationOptions? = nil) async throws -> [Notification] {
         var queryItems: [URLQueryItem] = []
         if let includeRead = options?.includeRead {
             queryItems.append(URLQueryItem(name: "include_read", value: String(includeRead)))

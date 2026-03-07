@@ -4,7 +4,7 @@
     "description": "JSON parsing must not lose precision on large numeric IDs",
     "operation": "GetBoard",
     "method": "GET",
-    "path": "/{accountId}/boards/{boardId}.json",
+    "path": "/{accountId}/boards/{boardId}",
     "pathParams": { "accountId": "999", "boardId": 9007199254740993 },
     "mockResponses": [
       {
@@ -24,7 +24,7 @@
     "description": "Large numbers should not lose precision in URL construction",
     "operation": "GetCard",
     "method": "GET",
-    "path": "/{accountId}/cards/{cardNumber}.json",
+    "path": "/{accountId}/cards/{cardNumber}",
     "pathParams": { "accountId": "999", "cardNumber": 9007199254740993 },
     "mockResponses": [
       {
@@ -35,7 +35,7 @@
     ],
     "assertions": [
       { "type": "noError" },
-      { "type": "requestPath", "expected": "/999/cards/9007199254740993.json" }
+      { "type": "requestPath", "expected": "/999/cards/9007199254740993" }
     ],
     "tags": ["integer-precision"]
   }

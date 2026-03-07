@@ -511,6 +511,7 @@ function createRetryMiddleware(hooks?: FizzyHooks, authStrategy?: AuthStrategy):
 
       let currentResponse = response;
       let attempt = parseInt(request.headers.get("X-Retry-Attempt") || "0", 10);
+      if (Number.isNaN(attempt)) attempt = 0;
 
       try {
         while (retryConfig.retryOn.includes(currentResponse.status) &&
