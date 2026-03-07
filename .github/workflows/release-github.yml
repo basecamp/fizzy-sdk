@@ -35,7 +35,6 @@ jobs:
       - name: Wait for release workflows
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ steps.tag.outputs.tag }}
         run: |
           WORKFLOWS="release-go release-typescript release-ruby release-kotlin release-swift"
           MAX_WAIT=1800
