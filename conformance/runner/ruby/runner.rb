@@ -54,9 +54,11 @@ class ConformanceRunner
     stub_request(:any, /#{Regexp.escape(host)}/).to_return do |request|
       request_log[:count] += 1
       request_log[:times] << Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      parsed_uri = URI.parse(request.uri)
       request_log[:records] << {
         method: request.method,
-        path: URI.parse(request.uri).path,
+        path: parsed_uri.path,
+        query: parsed_uri.query,
         headers: request.headers,
         body: request.body
       }
@@ -248,7 +250,7 @@ class ConformanceRunner
     when "BulkReadNotifications"
       client.notifications.bulk_read(account_id: account_id, **symbolize_body(body))
     when "GetNotificationTray"
-      client.notifications.tray(account_id: account_id)
+      client.notifications.tray(account_id: account_id, **symbolize_body(tc["queryParams"] || {}))
     when "ReadNotification"
       client.notifications.read(account_id: account_id, notification_id: pp["notificationId"])
     when "UnreadNotification"
@@ -505,6 +507,23 @@ class ConformanceRunner
             true
           else
             puts "    ASSERT FAIL [errorMessage]: expected message containing #{expected.inspect}, got #{actual.inspect}"
+            false
+          end
+        end
+
+      when "requestQueryParam"
+        if log[:records].empty?
+          puts "    ASSERT FAIL [requestQueryParam]: no requests recorded"
+          false
+        else
+          last = log[:records].last
+          params = URI.decode_www_form(last[:query] || "").to_h
+          param_name = path
+          actual = params[param_name]
+          if actual == expected.to_s
+            true
+          else
+            puts "    ASSERT FAIL [requestQueryParam]: param #{param_name.inspect} expected #{expected.inspect}, got #{actual.inspect}"
             false
           end
         end

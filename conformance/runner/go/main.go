@@ -68,11 +68,12 @@ type ExecResult struct {
 
 // RequestRecord captures details about a request made to the mock server.
 type RequestRecord struct {
-	Time   time.Time
-	Method string
-	Path   string
-	Body   []byte
-	Header http.Header
+	Time     time.Time
+	Method   string
+	Path     string
+	RawQuery string
+	Body     []byte
+	Header   http.Header
 }
 
 // noRetryOps holds operation names that have retry_on: null and are not POST.
@@ -294,11 +295,12 @@ func runTest(tc TestCase) (*ExecResult, []RequestRecord) {
 		body, _ := io.ReadAll(r.Body)
 		mu.Lock()
 		records = append(records, RequestRecord{
-			Time:   time.Now(),
-			Method: r.Method,
-			Path:   r.URL.Path,
-			Body:   body,
-			Header: r.Header.Clone(),
+			Time:     time.Now(),
+			Method:   r.Method,
+			Path:     r.URL.Path,
+			RawQuery: r.URL.RawQuery,
+			Body:     body,
+			Header:   r.Header.Clone(),
 		})
 		idx := mockIdx
 		mockIdx++
@@ -395,6 +397,15 @@ func executeOperation(tc TestCase, serverURL string) *ExecResult {
 
 	ctx := context.Background()
 	path := expandPath(tc.Path, tc.PathParams)
+
+	// Append query params from fixture to path
+	if len(tc.QueryParams) > 0 {
+		qv := url.Values{}
+		for k, v := range tc.QueryParams {
+			qv.Set(k, paramStr(v))
+		}
+		path += "?" + qv.Encode()
+	}
 
 	accountID := ""
 	if v, ok := tc.PathParams["accountId"]; ok {
@@ -676,6 +687,22 @@ func checkAssertion(tc TestCase, a Assertion, result *ExecResult, records []Requ
 		first := records[0]
 		if first.Path != expected {
 			fmt.Printf("    ASSERT FAIL [requestPath]: expected %q, got %q\n", expected, first.Path)
+			return false
+		}
+		return true
+
+	case "requestQueryParam":
+		paramName := a.Path
+		expected := fmt.Sprint(a.Expected)
+		if len(records) == 0 {
+			fmt.Printf("    ASSERT FAIL [requestQueryParam]: no requests recorded\n")
+			return false
+		}
+		first := records[0]
+		vals, _ := url.ParseQuery(first.RawQuery)
+		actual := vals.Get(paramName)
+		if actual != expected {
+			fmt.Printf("    ASSERT FAIL [requestQueryParam]: param %q expected %q, got %q\n", paramName, expected, actual)
 			return false
 		}
 		return true

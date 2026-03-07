@@ -119,9 +119,18 @@ async function dispatch(
         break;
 
       // Cards
-      case "ListCards":
-        data = await (client as any).cards.list();
+      case "ListCards": {
+        const qc = tc.queryParams ?? {};
+        data = await (client as any).cards.list({
+          boardId: qc.board_id ? Number(qc.board_id) : undefined,
+          columnId: qc.column_id ? Number(qc.column_id) : undefined,
+          assigneeId: qc.assignee_id ? Number(qc.assignee_id) : undefined,
+          tag: qc.tag,
+          status: qc.status,
+          q: qc.q,
+        });
         break;
+      }
       case "CreateCard":
         data = await (client as any).cards.create(body);
         break;
@@ -135,7 +144,7 @@ async function dispatch(
         data = await (client as any).cards.delete(p.cardNumber as number);
         break;
       case "AssignCard":
-        data = await (client as any).cards.assign(p.cardNumber as number, { userId: body.user_id });
+        data = await (client as any).cards.assign(p.cardNumber as number, { assigneeId: body.assignee_id });
         break;
       case "MoveCard":
         data = await (client as any).cards.move(p.cardNumber as number, { boardId: body.board_id as number, columnId: body.column_id as number | undefined });
@@ -147,7 +156,7 @@ async function dispatch(
         data = await (client as any).cards.reopen(p.cardNumber as number);
         break;
       case "TagCard":
-        data = await (client as any).cards.tag(p.cardNumber as number, { name: body.name });
+        data = await (client as any).cards.tag(p.cardNumber as number, { tagTitle: body.tag_title });
         break;
 
       // Comments
@@ -235,6 +244,31 @@ async function dispatch(
       // Identity
       case "GetMyIdentity":
         data = await (client as any).identity.me();
+        break;
+
+      // Notifications
+      case "ListNotifications": {
+        const qn = tc.queryParams ?? {};
+        data = await (client as any).notifications.list({
+          read: qn.read === "true" ? true : qn.read === "false" ? false : undefined,
+        });
+        break;
+      }
+      case "GetNotificationTray": {
+        const qt = tc.queryParams ?? {};
+        data = await (client as any).notifications.tray({
+          includeRead: qt.include_read === "true" ? true : qt.include_read === "false" ? false : undefined,
+        });
+        break;
+      }
+      case "BulkReadNotifications":
+        data = await (client as any).notifications.bulkRead({ notificationIds: body.notification_ids as number[] });
+        break;
+      case "ReadNotification":
+        data = await (client as any).notifications.read(p.notificationId as number);
+        break;
+      case "UnreadNotification":
+        data = await (client as any).notifications.unread(p.notificationId as number);
         break;
 
       // Pins
@@ -560,6 +594,18 @@ function checkAssertion(
         fieldName in lastBody!,
         `requestBodyField: expected field '${fieldName}' in body ${JSON.stringify(lastBody)}`,
       ).toBe(true);
+      break;
+    }
+
+    case "requestQueryParam": {
+      expect(log.lastRequest, `requestQueryParam: no request captured`).not.toBeNull();
+      const url = new URL(log.lastRequest!.url);
+      const paramName = assertion.path!;
+      const expected = String(assertion.expected);
+      expect(
+        url.searchParams.get(paramName),
+        `requestQueryParam: expected ${paramName}=${expected}`,
+      ).toBe(expected);
       break;
     }
 

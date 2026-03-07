@@ -252,6 +252,7 @@ fun executeOperation(tc: TestCase, engine: MockEngine): ExecResult {
 suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
     val pp = tc.pathParams
     val body = tc.requestBody
+    val qp = tc.queryParams
 
     return when (tc.operation) {
         // Boards
@@ -262,18 +263,25 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
                 allAccess = body?.boolOrNull("all_access"),
             )
         )
-        "GetBoard" -> account.boards.get(pp.long("boardId"))
+        "GetBoard" -> account.boards.get(pp.string("boardId"))
         "UpdateBoard" -> account.boards.update(
-            pp.long("boardId"),
+            pp.string("boardId"),
             UpdateBoardBody(
                 name = body?.strOrNull("name"),
                 allAccess = body?.boolOrNull("all_access"),
             ),
         )
-        "DeleteBoard" -> account.boards.delete(pp.long("boardId"))
+        "DeleteBoard" -> account.boards.delete(pp.string("boardId"))
 
         // Cards
-        "ListCards" -> account.cards.list()
+        "ListCards" -> account.cards.list(ListCardsOptions(
+            boardId = qp.strOrNull("board_id"),
+            columnId = qp.strOrNull("column_id"),
+            assigneeId = qp.strOrNull("assignee_id"),
+            tag = qp.strOrNull("tag"),
+            status = qp.strOrNull("status"),
+            q = qp.strOrNull("q"),
+        ))
         "CreateCard" -> account.cards.create(
             CreateCardBody(title = body?.str("title") ?: "")
         )
@@ -283,19 +291,19 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
             UpdateCardBody(
                 title = body?.strOrNull("title"),
                 description = body?.strOrNull("description"),
-                columnId = body?.longOrNull("column_id"),
+                columnId = body?.strOrNull("column_id"),
             ),
         )
         "DeleteCard" -> account.cards.delete(pp.long("cardNumber"))
         "AssignCard" -> account.cards.assign(
             pp.long("cardNumber"),
-            AssignCardBody(userId = body?.long("user_id") ?: 0),
+            AssignCardBody(assigneeId = body?.str("assignee_id") ?: ""),
         )
         "MoveCard" -> account.cards.move(
             pp.long("cardNumber"),
             MoveCardBody(
-                boardId = body?.long("board_id") ?: 0,
-                columnId = body?.longOrNull("column_id"),
+                boardId = body?.str("board_id") ?: "",
+                columnId = body?.strOrNull("column_id"),
             ),
         )
         "CloseCard" -> account.cards.close(pp.long("cardNumber"))
@@ -309,31 +317,32 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
         "SelfAssignCard" -> account.cards.selfAssign(pp.long("cardNumber"))
         "TagCard" -> account.cards.tag(
             pp.long("cardNumber"),
-            TagCardBody(name = body?.str("name") ?: ""),
+            TagCardBody(tagTitle = body?.str("tag_title") ?: ""),
         )
-        "TriageCard" -> account.cards.triage(pp.long("cardNumber"))
+        "TriageCard" -> account.cards.triage(pp.long("cardNumber"), TriageCardBody())
         "UnTriageCard" -> account.cards.untriage(pp.long("cardNumber"))
         "WatchCard" -> account.cards.watch(pp.long("cardNumber"))
         "UnwatchCard" -> account.cards.unwatch(pp.long("cardNumber"))
 
         // Columns
-        "ListColumns" -> account.columns.list(pp.long("boardId"))
+        "ListColumns" -> account.columns.list(pp.string("boardId"))
         "CreateColumn" -> account.columns.create(
-            pp.long("boardId"),
+            pp.string("boardId"),
             CreateColumnBody(
                 name = body?.str("name") ?: "",
                 color = body?.strOrNull("color"),
             ),
         )
-        "GetColumn" -> account.columns.get(pp.long("boardId"), pp.long("columnId"))
+        "GetColumn" -> account.columns.get(pp.string("boardId"), pp.string("columnId"))
         "UpdateColumn" -> account.columns.update(
-            pp.long("boardId"),
-            pp.long("columnId"),
+            pp.string("boardId"),
+            pp.string("columnId"),
             UpdateColumnBody(
                 name = body?.strOrNull("name"),
                 color = body?.strOrNull("color"),
             ),
         )
+        "DeleteColumn" -> account.columns.delete(pp.string("boardId"), pp.string("columnId"))
 
         // Comments
         "ListComments" -> account.comments.list(pp.long("cardNumber"))
@@ -341,13 +350,13 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
             pp.long("cardNumber"),
             CreateCommentBody(body = body?.str("body") ?: ""),
         )
-        "GetComment" -> account.comments.get(pp.long("cardNumber"), pp.long("commentId"))
+        "GetComment" -> account.comments.get(pp.long("cardNumber"), pp.string("commentId"))
         "UpdateComment" -> account.comments.update(
             pp.long("cardNumber"),
-            pp.long("commentId"),
+            pp.string("commentId"),
             UpdateCommentBody(body = body?.str("body") ?: ""),
         )
-        "DeleteComment" -> account.comments.delete(pp.long("cardNumber"), pp.long("commentId"))
+        "DeleteComment" -> account.comments.delete(pp.long("cardNumber"), pp.string("commentId"))
 
         // Devices
         "RegisterDevice" -> account.devices.register(
@@ -366,27 +375,29 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
         "ListNotifications" -> account.notifications.list()
         "BulkReadNotifications" -> account.notifications.bulkRead(
             BulkReadNotificationsBody(
-                notificationIds = body?.longListOrNull("notification_ids"),
+                notificationIds = body?.stringListOrNull("notification_ids"),
             )
         )
-        "GetNotificationTray" -> account.notifications.tray()
-        "ReadNotification" -> account.notifications.read(pp.long("notificationId"))
-        "UnreadNotification" -> account.notifications.unread(pp.long("notificationId"))
+        "GetNotificationTray" -> account.notifications.tray(GetNotificationTrayOptions(
+            includeRead = qp.boolOrNull("include_read"),
+        ))
+        "ReadNotification" -> account.notifications.read(pp.string("notificationId"))
+        "UnreadNotification" -> account.notifications.unread(pp.string("notificationId"))
 
         // Pins
         "ListPins" -> account.pins.list()
 
         // Reactions
         "ListCommentReactions" -> account.reactions.listForComment(
-            pp.long("cardNumber"), pp.long("commentId"),
+            pp.long("cardNumber"), pp.string("commentId"),
         )
         "CreateCommentReaction" -> account.reactions.createForComment(
             pp.long("cardNumber"),
-            pp.long("commentId"),
+            pp.string("commentId"),
             CreateCommentReactionBody(content = body?.str("content") ?: ""),
         )
         "DeleteCommentReaction" -> account.reactions.deleteForComment(
-            pp.long("cardNumber"), pp.long("commentId"), pp.long("reactionId"),
+            pp.long("cardNumber"), pp.string("commentId"), pp.string("reactionId"),
         )
         "ListCardReactions" -> account.reactions.listForCard(pp.long("cardNumber"))
         "CreateCardReaction" -> account.reactions.createForCard(
@@ -394,7 +405,7 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
             CreateCardReactionBody(content = body?.str("content") ?: ""),
         )
         "DeleteCardReaction" -> account.reactions.deleteForCard(
-            pp.long("cardNumber"), pp.long("reactionId"),
+            pp.long("cardNumber"), pp.string("reactionId"),
         )
 
         // Sessions
@@ -414,16 +425,16 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
             pp.long("cardNumber"),
             CreateStepBody(content = body?.str("content") ?: ""),
         )
-        "GetStep" -> account.steps.get(pp.long("cardNumber"), pp.long("stepId"))
+        "GetStep" -> account.steps.get(pp.long("cardNumber"), pp.string("stepId"))
         "UpdateStep" -> account.steps.update(
             pp.long("cardNumber"),
-            pp.long("stepId"),
+            pp.string("stepId"),
             UpdateStepBody(
                 content = body?.strOrNull("content"),
                 completed = body?.boolOrNull("completed"),
             ),
         )
-        "DeleteStep" -> account.steps.delete(pp.long("cardNumber"), pp.long("stepId"))
+        "DeleteStep" -> account.steps.delete(pp.long("cardNumber"), pp.string("stepId"))
 
         // Tags
         "ListTags" -> account.tags.list()
@@ -440,35 +451,35 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
 
         // Users
         "ListUsers" -> account.users.list()
-        "GetUser" -> account.users.get(pp.long("userId"))
+        "GetUser" -> account.users.get(pp.string("userId"))
         "UpdateUser" -> account.users.update(
-            pp.long("userId"),
+            pp.string("userId"),
             UpdateUserBody(name = body?.strOrNull("name")),
         )
-        "DeactivateUser" -> account.users.deactivate(pp.long("userId"))
+        "DeactivateUser" -> account.users.deactivate(pp.string("userId"))
 
         // Webhooks
-        "ListWebhooks" -> account.webhooks.list(pp.long("boardId"))
+        "ListWebhooks" -> account.webhooks.list(pp.string("boardId"))
         "CreateWebhook" -> account.webhooks.create(
-            pp.long("boardId"),
+            pp.string("boardId"),
             CreateWebhookBody(
                 name = body?.str("name") ?: "",
                 url = body?.str("url") ?: "",
                 subscribedActions = body?.stringListOrNull("subscribed_actions"),
             ),
         )
-        "GetWebhook" -> account.webhooks.get(pp.long("boardId"), pp.long("webhookId"))
+        "GetWebhook" -> account.webhooks.get(pp.string("boardId"), pp.string("webhookId"))
         "UpdateWebhook" -> account.webhooks.update(
-            pp.long("boardId"),
-            pp.long("webhookId"),
+            pp.string("boardId"),
+            pp.string("webhookId"),
             UpdateWebhookBody(
                 name = body?.strOrNull("name"),
                 url = body?.strOrNull("url"),
                 subscribedActions = body?.stringListOrNull("subscribed_actions"),
             ),
         )
-        "DeleteWebhook" -> account.webhooks.delete(pp.long("boardId"), pp.long("webhookId"))
-        "ActivateWebhook" -> account.webhooks.activate(pp.long("boardId"), pp.long("webhookId"))
+        "DeleteWebhook" -> account.webhooks.delete(pp.string("boardId"), pp.string("webhookId"))
+        "ActivateWebhook" -> account.webhooks.activate(pp.string("boardId"), pp.string("webhookId"))
 
         else -> throw FizzyException.Usage("Unknown operation: ${tc.operation}")
     }
@@ -648,6 +659,23 @@ fun checkAssertion(
             return true
         }
 
+        "requestQueryParam" -> {
+            val paramName = a.path ?: ""
+            val expected = a.expected.asString()
+            if (records.isEmpty()) {
+                println("    ASSERT FAIL [requestQueryParam]: no requests recorded")
+                return false
+            }
+            val last = records.last()
+            val parsedUrl = Url(last.url)
+            val actual = parsedUrl.parameters[paramName]
+            if (actual != expected) {
+                println("    ASSERT FAIL [requestQueryParam]: param \"$paramName\" expected \"$expected\", got \"$actual\"")
+                return false
+            }
+            return true
+        }
+
         else -> {
             println("    ASSERT SKIP [${ a.type }]: unsupported assertion type")
             return true
@@ -670,6 +698,18 @@ private fun Map<String, JsonElement>.long(key: String): Long {
         is JsonPrimitive -> el.long
         else -> el.toString().toLong()
     }
+}
+
+private fun Map<String, JsonElement>.longOrNull(key: String): Long? =
+    (this[key] as? JsonPrimitive)?.longOrNull
+
+private fun Map<String, JsonElement>.strOrNull(key: String): String? =
+    (this[key] as? JsonPrimitive)?.contentOrNull
+
+private fun Map<String, JsonElement>.boolOrNull(key: String): Boolean? {
+    val el = (this[key] as? JsonPrimitive) ?: return null
+    // Query params may be string "true"/"false" rather than JSON boolean
+    return el.booleanOrNull ?: (el.contentOrNull == "true")
 }
 
 private fun Map<String, JsonElement>.string(key: String): String {

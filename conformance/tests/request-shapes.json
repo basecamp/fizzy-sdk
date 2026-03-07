@@ -59,12 +59,12 @@
     "tags": ["request-shapes"]
   },
   {
-    "name": "AssignCard sends user_id field",
+    "name": "AssignCard sends assignee_id field",
     "operation": "AssignCard",
     "method": "POST",
     "path": "/{accountId}/cards/{cardNumber}/assignments.json",
     "pathParams": { "accountId": "999", "cardNumber": 123 },
-    "requestBody": { "user_id": 42 },
+    "requestBody": { "assignee_id": 42 },
     "mockResponses": [
       {
         "status": 201,
@@ -73,18 +73,18 @@
       }
     ],
     "assertions": [
-      { "type": "requestBodyField", "expected": "user_id" },
+      { "type": "requestBodyField", "expected": "assignee_id" },
       { "type": "noError" }
     ],
     "tags": ["request-shapes"]
   },
   {
-    "name": "TagCard sends name field",
+    "name": "TagCard sends tag_title field",
     "operation": "TagCard",
     "method": "POST",
     "path": "/{accountId}/cards/{cardNumber}/taggings.json",
     "pathParams": { "accountId": "999", "cardNumber": 123 },
-    "requestBody": { "name": "urgent" },
+    "requestBody": { "tag_title": "urgent" },
     "mockResponses": [
       {
         "status": 201,
@@ -93,7 +93,7 @@
       }
     ],
     "assertions": [
-      { "type": "requestBodyField", "expected": "name" },
+      { "type": "requestBodyField", "expected": "tag_title" },
       { "type": "noError" }
     ],
     "tags": ["request-shapes"]
@@ -115,6 +115,44 @@
     "assertions": [
       { "type": "requestBodyField", "expected": "name" },
       { "type": "requestBodyField", "expected": "url" },
+      { "type": "noError" }
+    ],
+    "tags": ["request-shapes"]
+  },
+  {
+    "name": "GetNotificationTray sends include_read query param",
+    "operation": "GetNotificationTray",
+    "method": "GET",
+    "path": "/notifications/tray.json",
+    "queryParams": { "include_read": "true" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "read_count": 5, "unread_count": 3, "notifications": [] }
+      }
+    ],
+    "assertions": [
+      { "type": "requestQueryParam", "path": "include_read", "expected": "true" },
+      { "type": "noError" }
+    ],
+    "tags": ["request-shapes"]
+  },
+  {
+    "name": "ListCards sends board_id filter query param",
+    "operation": "ListCards",
+    "method": "GET",
+    "path": "/cards.json",
+    "queryParams": { "board_id": "5" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": []
+      }
+    ],
+    "assertions": [
+      { "type": "requestQueryParam", "path": "board_id", "expected": "5" },
       { "type": "noError" }
     ],
     "tags": ["request-shapes"]
