@@ -127,8 +127,8 @@ func WithAuthStrategy(strategy AuthStrategy) ClientOption {
 // NewClient creates a new API client with spec-driven defaults.
 //
 // The client automatically:
-//   - Retries failed GET requests with exponential backoff
-//   - Does NOT retry POST/PUT/DELETE on 429/5xx (to avoid duplicating data)
+//   - Retries idempotent requests (GET/PUT/PATCH/DELETE) with exponential backoff
+//   - Does NOT retry POST on 429/5xx (to avoid duplicating data)
 //   - Respects Retry-After headers on 429 responses
 //   - Follows pagination via Link headers
 func NewClient(cfg *Config, tokenProvider TokenProvider, opts ...ClientOption) *Client {
