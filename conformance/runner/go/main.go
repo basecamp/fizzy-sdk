@@ -661,7 +661,7 @@ func checkAssertion(tc TestCase, a Assertion, result *ExecResult, records []Requ
 		last := records[len(records)-1]
 		actual := last.Header.Get(headerName)
 		if actual != expected {
-			fmt.Printf("    ASSERT FAIL [headerValue]: header %q expected %q, got %q\n", headerName, expected, actual)
+			fmt.Printf("    ASSERT FAIL [headerValue]: header %q expected %q, got mismatch (len=%d)\n", headerName, expected, len(actual))
 			return false
 		}
 		return true

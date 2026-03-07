@@ -72,15 +72,15 @@ type BehaviorEntry struct {
 // ---------------------------------------------------------------------------
 
 type ParsedOp struct {
-	OperationID    string
-	HTTPMethod     string // GET, POST, PATCH, DELETE
-	Path           string // raw path from spec
-	PathParams     []string
-	HasRequestBody bool
-	BodyRefName    string // e.g. "CreateBoardRequestContent"
+	OperationID     string
+	HTTPMethod      string // GET, POST, PATCH, DELETE
+	Path            string // raw path from spec
+	PathParams      []string
+	HasRequestBody  bool
+	BodyRefName     string // e.g. "CreateBoardRequestContent"
 	HasResponseData bool
-	HasPagination  bool
-	NoRetry        bool // true for non-POST operations with retry_on: null
+	HasPagination   bool
+	NoRetry         bool // true for non-POST operations with retry_on: null
 }
 
 // ---------------------------------------------------------------------------
@@ -90,13 +90,13 @@ type ParsedOp struct {
 // operationServiceOverrides maps operationId to service name for operations
 // whose service cannot be derived from suffix matching.
 var operationServiceOverrides = map[string]string{
-	"GetMyIdentity":        "Identity",
-	"CreateDirectUpload":   "Uploads",
-	"RedeemMagicLink":      "Sessions",
-	"CompleteSignup":       "Sessions",
-	"GetNotificationTray":  "Notifications",
+	"GetMyIdentity":         "Identity",
+	"CreateDirectUpload":    "Uploads",
+	"RedeemMagicLink":       "Sessions",
+	"CompleteSignup":        "Sessions",
+	"GetNotificationTray":   "Notifications",
 	"BulkReadNotifications": "Notifications",
-	"DeleteCardImage":      "Cards",
+	"DeleteCardImage":       "Cards",
 }
 
 // serviceSuffixes is checked longest-first to map operationId to a service.
@@ -436,24 +436,24 @@ func generateMethod(serviceName string, op ParsedOp) string {
 	receiver := "s *" + serviceName + "Service"
 
 	// Generate doc comment
-	buf.WriteString(generateDocComment(methodName, serviceName, op))
+	buf.WriteString(generateDocComment(methodName, serviceName))
 
 	// Method signature
-	buf.WriteString(fmt.Sprintf("func (%s) %s(%s) %s {\n",
-		receiver, methodName, strings.Join(sigParams, ", "), returnType))
+	fmt.Fprintf(&buf, "func (%s) %s(%s) %s {\n",
+		receiver, methodName, strings.Join(sigParams, ", "), returnType)
 
 	// Method body
 	if isPaginatedList {
-		buf.WriteString(generatePaginatedListBody(serviceName, op, fmtStr, goParams))
+		buf.WriteString(generatePaginatedListBody(op, fmtStr, goParams))
 	} else {
-		buf.WriteString(generateMethodBody(serviceName, op, fmtStr, hasFormatParams, goParams, returnsData))
+		buf.WriteString(generateMethodBody(op, fmtStr, hasFormatParams, goParams, returnsData))
 	}
 
 	buf.WriteString("}\n")
 	return buf.String()
 }
 
-func generateDocComment(methodName, serviceName string, op ParsedOp) string {
+func generateDocComment(methodName, serviceName string) string {
 	// Generate a brief doc comment based on the HTTP method and operation
 	var action string
 	var verb string
@@ -479,9 +479,7 @@ func generateDocComment(methodName, serviceName string, op ParsedOp) string {
 	}
 
 	resource := strings.ToLower(serviceName)
-	if strings.HasSuffix(resource, "s") {
-		resource = resource[:len(resource)-1]
-	}
+	resource = strings.TrimSuffix(resource, "s")
 
 	// If the method name has a suffix beyond the verb (e.g. DeleteImage, GetTray),
 	// use that suffix as the resource name for a more specific doc comment.
@@ -491,10 +489,7 @@ func generateDocComment(methodName, serviceName string, op ParsedOp) string {
 	//   creates a reaction, not a card)
 	if verb != "" {
 		remainder := strings.TrimPrefix(methodName, verb)
-		svcSingular := serviceName
-		if strings.HasSuffix(svcSingular, "s") {
-			svcSingular = svcSingular[:len(svcSingular)-1]
-		}
+		svcSingular := strings.TrimSuffix(serviceName, "s")
 		if remainder != "" && !isSimplePlural(remainder, serviceName) &&
 			!strings.Contains(remainder, svcSingular) && !isTopLevelResource(remainder) {
 			resource = strings.ToLower(remainder[:1]) + remainder[1:]
@@ -514,15 +509,15 @@ func generateDocComment(methodName, serviceName string, op ParsedOp) string {
 	return comment + "\n"
 }
 
-func generatePaginatedListBody(serviceName string, op ParsedOp, fmtStr string, goParams []string) string {
+func generatePaginatedListBody(op ParsedOp, fmtStr string, goParams []string) string {
 	var buf strings.Builder
 
 	if len(goParams) > 0 {
 		// Paginated list with path params: construct default path with fmt.Sprintf
-		buf.WriteString(fmt.Sprintf("\tif path == \"\" {\n\t\tpath = fmt.Sprintf(%q, %s)\n\t}\n",
-			fmtStr, strings.Join(goParams, ", ")))
+		fmt.Fprintf(&buf, "\tif path == \"\" {\n\t\tpath = fmt.Sprintf(%q, %s)\n\t}\n",
+			fmtStr, strings.Join(goParams, ", "))
 	} else {
-		buf.WriteString(fmt.Sprintf("\tif path == \"\" {\n\t\tpath = %q\n\t}\n", fmtStr))
+		fmt.Fprintf(&buf, "\tif path == \"\" {\n\t\tpath = %q\n\t}\n", fmtStr)
 	}
 	buf.WriteString("\tresp, err := s.client.Get(ctx, path)\n")
 	buf.WriteString("\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n")
@@ -531,16 +526,14 @@ func generatePaginatedListBody(serviceName string, op ParsedOp, fmtStr string, g
 	return buf.String()
 }
 
-func generateMethodBody(serviceName string, op ParsedOp, fmtStr string, hasFormatParams bool, goParams []string, returnsData bool) string {
+func generateMethodBody(op ParsedOp, fmtStr string, hasFormatParams bool, goParams []string, returnsData bool) string {
 	var buf strings.Builder
 
 	// Build path expression
 	var pathExpr string
 	if hasFormatParams {
 		args := make([]string, len(goParams))
-		for i, p := range goParams {
-			args[i] = p
-		}
+		copy(args, goParams)
 		pathExpr = fmt.Sprintf("fmt.Sprintf(%q, %s)", fmtStr, strings.Join(args, ", "))
 	} else {
 		pathExpr = fmt.Sprintf("%q", fmtStr)
@@ -553,7 +546,7 @@ func generateMethodBody(serviceName string, op ParsedOp, fmtStr string, hasForma
 
 	switch op.HTTPMethod {
 	case "GET":
-		buf.WriteString(fmt.Sprintf("\tresp, err := s.client.Get(%s, %s)\n", ctxArg, pathExpr))
+		fmt.Fprintf(&buf, "\tresp, err := s.client.Get(%s, %s)\n", ctxArg, pathExpr)
 		buf.WriteString("\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n")
 		buf.WriteString("\treturn resp.Data, resp, nil\n")
 
@@ -564,11 +557,11 @@ func generateMethodBody(serviceName string, op ParsedOp, fmtStr string, hasForma
 		}
 
 		if returnsData {
-			buf.WriteString(fmt.Sprintf("\tresp, err := s.client.Post(ctx, %s, %s)\n", pathExpr, bodyArg))
+			fmt.Fprintf(&buf, "\tresp, err := s.client.Post(ctx, %s, %s)\n", pathExpr, bodyArg)
 			buf.WriteString("\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n")
 			buf.WriteString("\treturn resp.Data, resp, nil\n")
 		} else {
-			buf.WriteString(fmt.Sprintf("\tresp, err := s.client.Post(ctx, %s, %s)\n", pathExpr, bodyArg))
+			fmt.Fprintf(&buf, "\tresp, err := s.client.Post(ctx, %s, %s)\n", pathExpr, bodyArg)
 			buf.WriteString("\treturn resp, err\n")
 		}
 
@@ -577,7 +570,7 @@ func generateMethodBody(serviceName string, op ParsedOp, fmtStr string, hasForma
 		if op.HasRequestBody {
 			bodyArg = "req"
 		}
-		buf.WriteString(fmt.Sprintf("\tresp, err := s.client.Patch(%s, %s, %s)\n", ctxArg, pathExpr, bodyArg))
+		fmt.Fprintf(&buf, "\tresp, err := s.client.Patch(%s, %s, %s)\n", ctxArg, pathExpr, bodyArg)
 		buf.WriteString("\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n")
 		buf.WriteString("\treturn resp.Data, resp, nil\n")
 
@@ -586,12 +579,12 @@ func generateMethodBody(serviceName string, op ParsedOp, fmtStr string, hasForma
 		if op.HasRequestBody {
 			bodyArg = "req"
 		}
-		buf.WriteString(fmt.Sprintf("\tresp, err := s.client.Put(%s, %s, %s)\n", ctxArg, pathExpr, bodyArg))
+		fmt.Fprintf(&buf, "\tresp, err := s.client.Put(%s, %s, %s)\n", ctxArg, pathExpr, bodyArg)
 		buf.WriteString("\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n")
 		buf.WriteString("\treturn resp.Data, resp, nil\n")
 
 	case "DELETE":
-		buf.WriteString(fmt.Sprintf("\treturn s.client.Delete(%s, %s)\n", ctxArg, pathExpr))
+		fmt.Fprintf(&buf, "\treturn s.client.Delete(%s, %s)\n", ctxArg, pathExpr)
 	}
 
 	return buf.String()
@@ -626,7 +619,7 @@ func generateOperationsRegistry(services map[string]*ServiceDef) string {
 		if i > 0 {
 			buf.WriteString("\n")
 		}
-		buf.WriteString(fmt.Sprintf("\t// %s\n", name))
+		fmt.Fprintf(&buf, "\t// %s\n", name)
 
 		ops := make([]ParsedOp, len(svc.Operations))
 		copy(ops, svc.Operations)
@@ -636,9 +629,9 @@ func generateOperationsRegistry(services map[string]*ServiceDef) string {
 
 		for _, op := range ops {
 			methodName := deriveMethodName(op.OperationID, name)
-			buf.WriteString(fmt.Sprintf("\t%q: %q,\n",
+			fmt.Fprintf(&buf, "\t%q: %q,\n",
 				op.OperationID,
-				name+"Service."+methodName))
+				name+"Service."+methodName)
 		}
 	}
 
@@ -765,7 +758,7 @@ func main() {
 		filename := toSnakeCase(name) + "_service.go"
 		outPath := filepath.Join(outputDir, filename)
 
-		if err := os.WriteFile(outPath, []byte(code), 0644); err != nil {
+		if err := os.WriteFile(outPath, []byte(code), 0600); err != nil {
 			log.Fatalf("writing %s: %v", outPath, err)
 		}
 		fmt.Printf("Generated %s (%d operations)\n", filename, len(svc.Operations))
@@ -775,7 +768,7 @@ func main() {
 	// Generate operations registry
 	registryCode := generateOperationsRegistry(services)
 	registryPath := filepath.Join(outputDir, "operations_registry.go")
-	if err := os.WriteFile(registryPath, []byte(registryCode), 0644); err != nil {
+	if err := os.WriteFile(registryPath, []byte(registryCode), 0600); err != nil {
 		log.Fatalf("writing operations_registry.go: %v", err)
 	}
 	fmt.Printf("Generated operations_registry.go (%d operations)\n", totalOps)

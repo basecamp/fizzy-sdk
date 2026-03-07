@@ -808,7 +808,7 @@
                 }
             }
         },
-        "/{accountId}/boards/{boardId}.json": {
+        "/{accountId}/boards/{boardId}": {
             "delete": {
                 "operationId": "DeleteBoard",
                 "parameters": [
@@ -2650,7 +2650,7 @@
                 }
             }
         },
-        "/{accountId}/cards/{cardNumber}.json": {
+        "/{accountId}/cards/{cardNumber}": {
             "delete": {
                 "operationId": "DeleteCard",
                 "parameters": [

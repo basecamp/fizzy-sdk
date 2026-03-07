@@ -5,7 +5,7 @@
 // The service layer uses shorter *Request names for ergonomics.
 package generated
 
-// Request type aliases (service-layer name = generated name)
+// AssignCardRequest is a type alias for the generated request type.
 type AssignCardRequest = AssignCardRequestContent
 type BulkReadNotificationsRequest = BulkReadNotificationsRequestContent
 type CompleteSignupRequest = CompleteSignupRequestContent
@@ -23,6 +23,7 @@ type MoveCardRequest = MoveCardRequestContent
 type RedeemMagicLinkRequest = RedeemMagicLinkRequestContent
 type RegisterDeviceRequest = RegisterDeviceRequestContent
 type TagCardRequest = TagCardRequestContent
+
 // TriageCardRequest is a stub — TriageCard has no request body in the spec.
 type TriageCardRequest struct{}
 type UpdateBoardRequest = UpdateBoardRequestContent

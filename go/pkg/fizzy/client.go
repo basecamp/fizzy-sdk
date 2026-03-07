@@ -32,7 +32,7 @@ type Client struct {
 	userAgent     string
 	logger        *slog.Logger
 	httpOpts      HTTPOptions
-	hooks Hooks
+	hooks         Hooks
 
 	// Account-independent services
 	sessionsMu sync.Mutex
