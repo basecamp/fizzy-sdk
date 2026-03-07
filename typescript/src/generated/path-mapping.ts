@@ -9,9 +9,9 @@ export const PATH_TO_OPERATION: Record<string, string> = {
   // Boards
   "GET:/{accountId}/boards.json": "ListBoards",
   "POST:/{accountId}/boards.json": "CreateBoard",
-  "DELETE:/{accountId}/boards/{boardId}": "DeleteBoard",
-  "GET:/{accountId}/boards/{boardId}": "GetBoard",
-  "PATCH:/{accountId}/boards/{boardId}": "UpdateBoard",
+  "DELETE:/{accountId}/boards/{boardId}.json": "DeleteBoard",
+  "GET:/{accountId}/boards/{boardId}.json": "GetBoard",
+  "PATCH:/{accountId}/boards/{boardId}.json": "UpdateBoard",
   "GET:/{accountId}/boards/{boardId}/columns.json": "ListColumns",
   "POST:/{accountId}/boards/{boardId}/columns.json": "CreateColumn",
   "GET:/{accountId}/boards/{boardId}/columns/{columnId}": "GetColumn",
@@ -26,9 +26,9 @@ export const PATH_TO_OPERATION: Record<string, string> = {
   // Cards
   "GET:/{accountId}/cards.json": "ListCards",
   "POST:/{accountId}/cards.json": "CreateCard",
-  "DELETE:/{accountId}/cards/{cardNumber}": "DeleteCard",
-  "GET:/{accountId}/cards/{cardNumber}": "GetCard",
-  "PATCH:/{accountId}/cards/{cardNumber}": "UpdateCard",
+  "DELETE:/{accountId}/cards/{cardNumber}.json": "DeleteCard",
+  "GET:/{accountId}/cards/{cardNumber}.json": "GetCard",
+  "PATCH:/{accountId}/cards/{cardNumber}.json": "UpdateCard",
   "POST:/{accountId}/cards/{cardNumber}/assignments.json": "AssignCard",
   "PATCH:/{accountId}/cards/{cardNumber}/board.json": "MoveCard",
   "DELETE:/{accountId}/cards/{cardNumber}/closure.json": "ReopenCard",
@@ -71,23 +71,20 @@ export const PATH_TO_OPERATION: Record<string, string> = {
   "POST:/{accountId}/devices": "RegisterDevice",
   "DELETE:/{accountId}/devices/{deviceToken}": "UnregisterDevice",
 
-  // Other
-  "GET:/{accountId}/my/identity.json": "GetMyIdentity",
-  "POST:/{accountId}/rails/active_storage/direct_uploads": "CreateDirectUpload",
-  "DELETE:/{accountId}/session.json": "DestroySession",
-  "POST:/{accountId}/session.json": "CreateSession",
-  "POST:/{accountId}/session/magic_link.json": "RedeemMagicLink",
-  "POST:/{accountId}/signup/completion.json": "CompleteSignup",
-
-  // Pins
-  "GET:/{accountId}/my/pins.json": "ListPins",
-
   // Notifications
   "GET:/{accountId}/notifications.json": "ListNotifications",
   "DELETE:/{accountId}/notifications/{notificationId}/reading.json": "UnreadNotification",
   "POST:/{accountId}/notifications/{notificationId}/reading.json": "ReadNotification",
   "POST:/{accountId}/notifications/bulk_reading.json": "BulkReadNotifications",
   "GET:/{accountId}/notifications/tray.json": "GetNotificationTray",
+
+  // Other
+  "POST:/{accountId}/rails/active_storage/direct_uploads": "CreateDirectUpload",
+  "GET:/my/identity.json": "GetMyIdentity",
+  "DELETE:/session.json": "DestroySession",
+  "POST:/session.json": "CreateSession",
+  "POST:/session/magic_link.json": "RedeemMagicLink",
+  "POST:/signup/completion.json": "CompleteSignup",
 
   // Tags
   "GET:/{accountId}/tags.json": "ListTags",
@@ -97,4 +94,7 @@ export const PATH_TO_OPERATION: Record<string, string> = {
   "DELETE:/{accountId}/users/{userId}": "DeactivateUser",
   "GET:/{accountId}/users/{userId}": "GetUser",
   "PATCH:/{accountId}/users/{userId}": "UpdateUser",
+
+  // Pins
+  "GET:/my/pins.json": "ListPins",
 };

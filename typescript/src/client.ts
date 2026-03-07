@@ -476,7 +476,7 @@ function getRetryConfigForRequest(method: string, url: string): RetryConfig {
   if (operationName) {
     const opMeta = metadata.operations[operationName as keyof typeof metadata.operations];
     if (opMeta?.retry) {
-      return opMeta.retry as RetryConfig;
+      return { ...DEFAULT_RETRY_CONFIG, ...opMeta.retry } as RetryConfig;
     }
   }
 
@@ -507,79 +507,61 @@ function createRetryMiddleware(hooks?: FizzyHooks, authStrategy?: AuthStrategy):
     async onResponse({ request, response }) {
       const retryConfig = getRetryConfigForRequest(request.method, request.url);
       const requestId = request.headers.get("X-Request-Id");
+      const cleanupBody = () => { if (requestId) bodyCache.delete(requestId); };
 
-      const cleanupBody = () => {
-        if (requestId) bodyCache.delete(requestId);
-      };
+      let currentResponse = response;
+      let attempt = parseInt(request.headers.get("X-Retry-Attempt") || "0", 10);
 
-      if (!retryConfig.retryOn.includes(response.status)) {
-        cleanupBody();
-        return response;
-      }
-
-      const attemptHeader = request.headers.get("X-Retry-Attempt");
-      const attempt = attemptHeader ? parseInt(attemptHeader, 10) : 0;
-
-      if (attempt >= retryConfig.maxAttempts - 1) {
-        cleanupBody();
-        return response;
-      }
-
-      let delay: number;
-      if (response.status === 429) {
-        const retryAfter = response.headers.get("Retry-After");
-        if (retryAfter) {
-          const seconds = parseInt(retryAfter, 10);
-          if (!isNaN(seconds)) {
-            delay = seconds * 1000;
-          } else {
-            delay = calculateBackoffDelay(retryConfig, attempt);
-          }
+      while (retryConfig.retryOn.includes(currentResponse.status) &&
+             attempt < retryConfig.maxAttempts - 1) {
+        // Calculate delay (Retry-After for 429, backoff otherwise)
+        let delay: number;
+        if (currentResponse.status === 429) {
+          const ra = currentResponse.headers.get("Retry-After");
+          const sec = ra ? parseInt(ra, 10) : NaN;
+          delay = isNaN(sec) ? calculateBackoffDelay(retryConfig, attempt) : sec * 1000;
         } else {
           delay = calculateBackoffDelay(retryConfig, attempt);
         }
-      } else {
-        delay = calculateBackoffDelay(retryConfig, attempt);
-      }
 
-      if (hooks?.onRetry) {
-        const info: RequestInfo = {
-          method: request.method,
-          url: request.url,
-          attempt: attempt + 1,
-        };
-        const error = new Error(`HTTP ${response.status}: ${response.statusText || "Request failed"}`);
-        try { hooks.onRetry(info, attempt + 1, error, delay); } catch { /* hooks must not interrupt */ }
-      }
-
-      await sleep(delay);
-
-      let body: ArrayBuffer | null = null;
-      if (requestId && bodyCache.has(requestId)) {
-        const cachedBody = bodyCache.get(requestId);
-        if (cachedBody) {
-          body = cachedBody;
+        // Fire hook
+        if (hooks?.onRetry) {
+          const info: RequestInfo = {
+            method: request.method,
+            url: request.url,
+            attempt: attempt + 1,
+          };
+          try {
+            hooks.onRetry(info, attempt + 1,
+              new Error(`HTTP ${currentResponse.status}: ${currentResponse.statusText || "Request failed"}`), delay);
+          } catch { /* hooks must not interrupt */ }
         }
+
+        await sleep(delay);
+        attempt++;
+
+        // Build retry request
+        let body: ArrayBuffer | null = null;
+        if (requestId && bodyCache.has(requestId)) {
+          body = bodyCache.get(requestId) ?? null;
+        }
+        const retryHeaders = new Headers(request.headers);
+        retryHeaders.set("X-Retry-Attempt", String(attempt));
+
+        if (authStrategy) {
+          await authStrategy.authenticate(retryHeaders);
+        }
+
+        currentResponse = await fetch(new Request(request.url, {
+          method: request.method,
+          headers: retryHeaders,
+          body,
+          signal: request.signal,
+        }));
       }
 
-      const retryHeaders = new Headers(request.headers);
-      retryHeaders.set("X-Retry-Attempt", String(attempt + 1));
-
-      if (authStrategy) {
-        await authStrategy.authenticate(retryHeaders);
-      }
-
-      // NOTE: Retried requests bypass the openapi-fetch middleware pipeline
-      // (hooks, cache) because onResponse cannot re-dispatch. Auth is
-      // re-applied above. This is acceptable for retry (transient error
-      // recovery) where observability of individual attempts is secondary.
-      const retryRequest = new Request(request.url, {
-        method: request.method,
-        headers: retryHeaders,
-        body,
-        signal: request.signal,
-      });
-      return fetch(retryRequest);
+      cleanupBody();
+      return currentResponse;
     },
   };
 }

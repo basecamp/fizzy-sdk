@@ -101,7 +101,7 @@ export class CardsService extends BaseService {
         resourceType: "card",
         isMutation: true,
       },
-      () => this.client.DELETE("/cards/{cardNumber}" as never, {
+      () => this.client.DELETE("/cards/{cardNumber}.json" as never, {
         params: { path: { cardNumber } },
       } as never),
     );
@@ -118,7 +118,7 @@ export class CardsService extends BaseService {
         resourceType: "card",
         isMutation: false,
       },
-      () => this.client.GET("/cards/{cardNumber}" as never, {
+      () => this.client.GET("/cards/{cardNumber}.json" as never, {
         params: { path: { cardNumber } },
       } as never),
     );
@@ -135,7 +135,7 @@ export class CardsService extends BaseService {
         resourceType: "card",
         isMutation: true,
       },
-      () => this.client.PATCH("/cards/{cardNumber}" as never, {
+      () => this.client.PATCH("/cards/{cardNumber}.json" as never, {
         params: { path: { cardNumber } },
         body: { title: body?.title, description: body?.description, column_id: body?.columnId } as never,
       } as never),

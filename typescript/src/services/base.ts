@@ -162,10 +162,7 @@ export abstract class BaseService {
       const nextUrl = resolveURL(response.url, rawNextUrl);
 
       if (!isSameOrigin(nextUrl, initialUrl)) {
-        throw new FizzyError(
-          "api_error",
-          `Pagination Link header points to different origin: ${nextUrl}`,
-        );
+        break;
       }
 
       response = await this.fetchPage(nextUrl);

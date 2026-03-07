@@ -70,7 +70,7 @@ export class BoardsService extends BaseService {
         resourceType: "board",
         isMutation: true,
       },
-      () => this.client.DELETE("/boards/{boardId}" as never, {
+      () => this.client.DELETE("/boards/{boardId}.json" as never, {
         params: { path: { boardId } },
       } as never),
     );
@@ -87,7 +87,7 @@ export class BoardsService extends BaseService {
         resourceType: "board",
         isMutation: false,
       },
-      () => this.client.GET("/boards/{boardId}" as never, {
+      () => this.client.GET("/boards/{boardId}.json" as never, {
         params: { path: { boardId } },
       } as never),
     );
@@ -104,7 +104,7 @@ export class BoardsService extends BaseService {
         resourceType: "board",
         isMutation: true,
       },
-      () => this.client.PATCH("/boards/{boardId}" as never, {
+      () => this.client.PATCH("/boards/{boardId}.json" as never, {
         params: { path: { boardId } },
         body: { name: body?.name, all_access: body?.allAccess } as never,
       } as never),

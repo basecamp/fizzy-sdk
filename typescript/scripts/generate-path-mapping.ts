@@ -14,6 +14,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const OPENAPI_STRIPPED = resolve(__dirname, "../src/generated/openapi-stripped.json");
+const OPENAPI_FULL = resolve(__dirname, "../../openapi.json");
 const OUTPUT_PATH = resolve(__dirname, "../src/generated/path-mapping.ts");
 
 interface OpenAPISpec {
@@ -38,6 +39,13 @@ function resolveOpenAPIPath(): string {
 
 function parseOpenAPI(specPath: string): PathEntry[] {
   const spec: OpenAPISpec = JSON.parse(readFileSync(specPath, "utf-8"));
+
+  // Read full spec to determine which paths are account-scoped
+  const fullSpec: OpenAPISpec = existsSync(OPENAPI_FULL)
+    ? JSON.parse(readFileSync(OPENAPI_FULL, "utf-8"))
+    : { paths: {} } as OpenAPISpec;
+  const fullPaths = new Set(Object.keys(fullSpec.paths));
+
   const entries: PathEntry[] = [];
 
   for (const [path, methods] of Object.entries(spec.paths)) {
@@ -45,7 +53,9 @@ function parseOpenAPI(specPath: string): PathEntry[] {
       if (method === "parameters") continue;
       if (!details.operationId) continue;
 
-      const fullPath = `/{accountId}${path}`;
+      // Only prepend {accountId} if the full spec had an account-scoped path
+      const isAccountScoped = fullPaths.has(`/{accountId}${path}`);
+      const fullPath = isAccountScoped ? `/{accountId}${path}` : path;
 
       entries.push({
         method: method.toUpperCase(),

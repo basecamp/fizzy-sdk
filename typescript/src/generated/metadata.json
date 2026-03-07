@@ -1,7 +1,7 @@
 {
   "$schema": "https://fizzy.do/schemas/sdk-metadata.json",
   "version": "1.0.0",
-  "generated": "2026-03-06T18:29:21.671Z",
+  "generated": "2026-03-07T00:33:08.354Z",
   "operations": {
     "GetMyIdentity": {
       "retry": {
@@ -10,6 +10,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       }
@@ -21,6 +22,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       }
@@ -52,6 +54,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -72,6 +75,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       }
@@ -83,6 +87,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -97,6 +102,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -111,6 +117,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       }
@@ -127,6 +134,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       }
@@ -138,6 +146,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -152,6 +161,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       }
@@ -168,6 +178,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       }
@@ -179,6 +190,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -193,6 +205,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -207,6 +220,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -221,6 +235,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -241,6 +256,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       }
@@ -252,6 +268,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -266,6 +283,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -285,6 +303,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -299,6 +318,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -313,6 +333,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -327,6 +348,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -347,6 +369,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       }
@@ -358,6 +381,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -372,6 +396,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -386,6 +411,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       }
@@ -402,6 +428,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -416,6 +443,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -430,6 +458,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -444,6 +473,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -458,6 +488,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -472,6 +503,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -486,6 +518,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -500,6 +533,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       }
@@ -516,6 +550,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -540,6 +575,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       }
@@ -551,6 +587,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -565,6 +602,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -584,6 +622,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -598,6 +637,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -612,6 +652,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -626,6 +667,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -645,6 +687,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -659,6 +702,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -679,6 +723,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       }
@@ -690,6 +735,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -704,6 +750,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -723,6 +770,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       }
@@ -734,6 +782,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       }
@@ -745,6 +794,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       }
@@ -756,6 +806,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },
@@ -770,6 +821,7 @@
         "backoff": "exponential",
         "retryOn": [
           429,
+          500,
           503
         ]
       },

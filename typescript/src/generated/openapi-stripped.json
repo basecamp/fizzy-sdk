@@ -105,6 +105,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -201,6 +202,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -683,6 +685,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -787,7 +790,7 @@
         }
       }
     },
-    "/boards/{boardId}": {
+    "/boards/{boardId}.json": {
       "delete": {
         "operationId": "DeleteBoard",
         "parameters": [
@@ -885,6 +888,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -990,6 +994,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -1107,6 +1112,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -1214,6 +1220,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -1439,6 +1446,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -1565,6 +1573,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -1672,6 +1681,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -1893,6 +1903,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -2007,6 +2018,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -2133,6 +2145,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -2245,6 +2258,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -2392,6 +2406,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -2496,7 +2511,7 @@
         }
       }
     },
-    "/cards/{cardNumber}": {
+    "/cards/{cardNumber}.json": {
       "delete": {
         "operationId": "DeleteCard",
         "parameters": [
@@ -2594,6 +2609,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -2699,6 +2715,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -2816,6 +2833,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -3040,6 +3058,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -3143,6 +3162,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -3244,6 +3264,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -3355,6 +3376,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -3576,6 +3598,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -3690,6 +3713,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -3817,6 +3841,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -3933,6 +3958,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -4172,6 +4198,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -4275,6 +4302,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -4376,6 +4404,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -4479,6 +4508,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -4582,6 +4612,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -4685,6 +4716,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -4786,6 +4818,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -4893,6 +4926,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -5114,6 +5148,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -5431,6 +5466,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -5545,6 +5581,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -5671,6 +5708,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -5878,6 +5916,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -5979,6 +6018,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -6082,6 +6122,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -6183,6 +6224,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -6379,6 +6421,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -6488,6 +6531,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -6678,6 +6722,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -6781,6 +6826,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -6882,6 +6928,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -7080,6 +7127,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -7177,6 +7225,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -7280,6 +7329,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -7385,6 +7435,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
@@ -7502,6 +7553,7 @@
           "backoff": "exponential",
           "retryOn": [
             429,
+            500,
             503
           ]
         }
