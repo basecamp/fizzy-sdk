@@ -19,9 +19,10 @@ All HTTP responses are subject to a maximum body size (`MAX_RESPONSE_BODY_BYTES`
 Retry behavior varies by SDK and is driven by a per-operation behavior model generated from the Smithy spec. The general policy:
 
 - **Non-idempotent operations** (e.g., `CreateCard`, `CreateBoard`) have `maxAttempts: 1` — they are never retried, preventing duplicate side effects.
-- **Idempotent operations** (reads plus `PUT`, `DELETE`, and select `POST` actions like `CloseCard`, `GoldCard`) may retry up to 3 times on `429` and `503` responses.
-- **Go and Ruby** currently apply a simpler policy: only `GET` requests retry on transient failures. `PUT`/`DELETE` mutations do not retry, even when idempotent. This is stricter than the behavior model allows.
-- **Kotlin** retries `GET`, `PUT`, `DELETE`, and `HEAD` by default, and can additionally retry `POST`/`PATCH` when the operation's metadata marks it as idempotent.
+- **Idempotent operations** (reads plus `PUT`, `PATCH`, `DELETE`, and select `POST` actions like `CloseCard`, `GoldCard`) may retry up to 3 times on `429`, `500`, and `503` responses.
+- **Go** retries all methods except `POST` by default. Operations with `retry_on: null` in the behavior model can opt out via `WithNoRetry(ctx)`.
+- **Ruby** retries all methods except `POST` by default. Operations with `retry_on: null` can opt out via `retryable: false`.
+- **Kotlin** retries `GET`, `PUT`, `PATCH`, `DELETE`, and `HEAD` by default, and can additionally retry `POST` when the operation's metadata marks it as idempotent.
 - **TypeScript and Swift** use the full per-operation retry config from the behavior model.
 
 All retries use exponential backoff with jitter. The `Retry-After` header is respected when present on `429` responses.
