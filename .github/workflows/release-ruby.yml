@@ -20,9 +20,9 @@ jobs:
     name: Publish to RubyGems
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      - uses: ruby/setup-ruby@v1
+      - uses: ruby/setup-ruby@6ca151fd1bfcfd6fe0c4eb6837eb0584d0134a0c # v1
         with:
           ruby-version: '3.3'
           bundler-cache: true
@@ -39,7 +39,7 @@ jobs:
 
       - name: Configure credentials
         if: github.event_name == 'push' || inputs.dry_run == false
-        uses: rubygems/configure-rubygems-credentials@main
+        uses: rubygems/configure-rubygems-credentials@453c77b40e686566dabf4fd7576187f0ef08138f # main
         with:
           role-to-assume: ${{ secrets.RUBYGEMS_ROLE_ARN }}
 

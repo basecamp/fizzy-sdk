@@ -18,20 +18,25 @@ jobs:
     name: Create GitHub Release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Determine tag
         id: tag
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TAG: ${{ inputs.tag }}
         run: |
-          if [[ "${{ github.event_name }}" == "push" ]]; then
+          if [[ "$EVENT_NAME" == "push" ]]; then
             echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           else
-            echo "tag=${{ inputs.tag }}" >> $GITHUB_OUTPUT
+            echo "tag=$INPUT_TAG" >> $GITHUB_OUTPUT
           fi
 
       - name: Wait for release workflows
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          TAG="${{ steps.tag.outputs.tag }}"
           WORKFLOWS="release-go release-typescript release-ruby release-kotlin release-swift"
           MAX_WAIT=1800
           POLL_INTERVAL=30
@@ -57,15 +62,16 @@ jobs:
               exit 1
             fi
           done
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
-          TAG="${{ steps.tag.outputs.tag }}"
           VERSION="${TAG#v}"
 
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
             DRAFT="--draft"
           else
             DRAFT=""
@@ -98,5 +104,3 @@ jobs:
           .package(url: \"https://github.com/basecamp/fizzy-sdk.git\", from: \"${VERSION}\")
           \`\`\`
           "
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

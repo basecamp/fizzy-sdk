@@ -16,12 +16,14 @@ jobs:
     name: Verify Swift release
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Extract version
         id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
         run: |
-          if [[ "${{ github.event_name }}" == "push" ]]; then
+          if [[ "$EVENT_NAME" == "push" ]]; then
             VERSION="${GITHUB_REF#refs/tags/v}"
           else
             VERSION="0.0.0-dryrun"
@@ -30,10 +32,12 @@ jobs:
 
       - name: Verify version matches
         if: github.event_name == 'push'
+        env:
+          EXPECTED_VERSION: ${{ steps.version.outputs.version }}
         run: |
           SWIFT_VERSION=$(grep 'sdkVersion' swift/Sources/Fizzy/FizzyConfig.swift | sed 's/.*"\(.*\)".*/\1/')
-          if [[ "$SWIFT_VERSION" != "${{ steps.version.outputs.version }}" ]]; then
-            echo "::error::FizzyConfig.swift ($SWIFT_VERSION) does not match tag (${{ steps.version.outputs.version }})"
+          if [[ "$SWIFT_VERSION" != "$EXPECTED_VERSION" ]]; then
+            echo "::error::FizzyConfig.swift ($SWIFT_VERSION) does not match tag ($EXPECTED_VERSION)"
             exit 1
           fi
 
