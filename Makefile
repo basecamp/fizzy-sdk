@@ -283,10 +283,8 @@ conformance-build:
 	cd kotlin && ./gradlew :conformance:build
 
 conformance-go:
-	@if [ -f conformance/runner/go/conformance-runner ]; then \
-		echo "==> Running Go conformance..."; \
-		cd conformance/runner/go && ./conformance-runner ../../tests/; \
-	else echo "SKIP: Go conformance runner not built"; fi
+	@echo "==> Running Go conformance..."
+	cd conformance/runner/go && go build -o conformance-runner . && ./conformance-runner ../../tests/
 
 conformance-typescript:
 	@if [ -f conformance/runner/typescript/package.json ]; then \

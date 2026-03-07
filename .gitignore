@@ -48,7 +48,6 @@ build/
 
 # Conformance
 conformance/runner/go/conformance-runner
-conformance/runner/ruby/Gemfile.lock
 conformance/runner/typescript/node_modules/
 
 # Claude
