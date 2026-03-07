@@ -16,7 +16,7 @@ class WebhooksService(client: AccountClient) : BaseService(client) {
      * list operation
      * @param boardId The board ID
      */
-    suspend fun list(boardId: Long): List<Webhook> {
+    suspend fun list(boardId: String): List<Webhook> {
         val info = OperationInfo(
             service = "Webhooks",
             operation = "ListWebhooks",
@@ -37,7 +37,7 @@ class WebhooksService(client: AccountClient) : BaseService(client) {
      * @param boardId The board ID
      * @param body Request body
      */
-    suspend fun create(boardId: Long, body: CreateWebhookBody): Webhook {
+    suspend fun create(boardId: String, body: CreateWebhookBody): Webhook {
         val info = OperationInfo(
             service = "Webhooks",
             operation = "CreateWebhook",
@@ -62,7 +62,7 @@ class WebhooksService(client: AccountClient) : BaseService(client) {
      * @param boardId The board ID
      * @param webhookId The webhook ID
      */
-    suspend fun get(boardId: Long, webhookId: Long): Webhook {
+    suspend fun get(boardId: String, webhookId: String): Webhook {
         val info = OperationInfo(
             service = "Webhooks",
             operation = "GetWebhook",
@@ -84,7 +84,7 @@ class WebhooksService(client: AccountClient) : BaseService(client) {
      * @param webhookId The webhook ID
      * @param body Request body
      */
-    suspend fun update(boardId: Long, webhookId: Long, body: UpdateWebhookBody): Webhook {
+    suspend fun update(boardId: String, webhookId: String, body: UpdateWebhookBody): Webhook {
         val info = OperationInfo(
             service = "Webhooks",
             operation = "UpdateWebhook",
@@ -109,7 +109,7 @@ class WebhooksService(client: AccountClient) : BaseService(client) {
      * @param boardId The board ID
      * @param webhookId The webhook ID
      */
-    suspend fun delete(boardId: Long, webhookId: Long): Unit {
+    suspend fun delete(boardId: String, webhookId: String): Unit {
         val info = OperationInfo(
             service = "Webhooks",
             operation = "DeleteWebhook",
@@ -128,7 +128,7 @@ class WebhooksService(client: AccountClient) : BaseService(client) {
      * @param boardId The board ID
      * @param webhookId The webhook ID
      */
-    suspend fun activate(boardId: Long, webhookId: Long): Unit {
+    suspend fun activate(boardId: String, webhookId: String): Unit {
         val info = OperationInfo(
             service = "Webhooks",
             operation = "ActivateWebhook",

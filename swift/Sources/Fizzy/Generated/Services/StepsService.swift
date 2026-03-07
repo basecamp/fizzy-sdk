@@ -12,27 +12,27 @@ public final class StepsService: BaseService, @unchecked Sendable {
         )
     }
 
-    public func delete(accountId: String, cardNumber: Int, stepId: Int) async throws {
+    public func delete(accountId: String, cardNumber: Int, stepId: String) async throws {
         try await requestVoid(
-            OperationInfo(service: "Steps", operation: "DeleteStep", resourceType: "step", isMutation: true, resourceId: stepId),
+            OperationInfo(service: "Steps", operation: "DeleteStep", resourceType: "step", isMutation: true),
             method: "DELETE",
             path: "/\(accountId)/cards/\(cardNumber)/steps/\(stepId)",
             retryConfig: Metadata.retryConfig(for: "DeleteStep")
         )
     }
 
-    public func get(accountId: String, cardNumber: Int, stepId: Int) async throws -> Step {
+    public func get(accountId: String, cardNumber: Int, stepId: String) async throws -> Step {
         return try await request(
-            OperationInfo(service: "Steps", operation: "GetStep", resourceType: "step", isMutation: false, resourceId: stepId),
+            OperationInfo(service: "Steps", operation: "GetStep", resourceType: "step", isMutation: false),
             method: "GET",
             path: "/\(accountId)/cards/\(cardNumber)/steps/\(stepId)",
             retryConfig: Metadata.retryConfig(for: "GetStep")
         )
     }
 
-    public func update(accountId: String, cardNumber: Int, stepId: Int, req: UpdateStepRequest) async throws -> Step {
+    public func update(accountId: String, cardNumber: Int, stepId: String, req: UpdateStepRequest) async throws -> Step {
         return try await request(
-            OperationInfo(service: "Steps", operation: "UpdateStep", resourceType: "step", isMutation: true, resourceId: stepId),
+            OperationInfo(service: "Steps", operation: "UpdateStep", resourceType: "step", isMutation: true),
             method: "PATCH",
             path: "/\(accountId)/cards/\(cardNumber)/steps/\(stepId)",
             body: req,

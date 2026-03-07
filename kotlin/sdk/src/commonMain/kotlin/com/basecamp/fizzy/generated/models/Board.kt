@@ -12,7 +12,7 @@ import kotlinx.serialization.json.JsonObject
  */
 @Serializable
 data class Board(
-    val id: Long,
+    val id: String,
     val name: String,
     @SerialName("all_access") val allAccess: Boolean,
     @SerialName("created_at") val createdAt: String,

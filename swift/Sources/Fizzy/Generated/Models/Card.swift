@@ -6,7 +6,7 @@ public struct Card: Codable, Sendable {
     public let createdAt: String
     public let golden: Bool
     public let hasAttachments: Bool
-    public let id: Int
+    public let id: String
     public let number: Int32
     public let postponed: Bool
     public let status: String
@@ -31,7 +31,7 @@ public struct Card: Codable, Sendable {
         createdAt: String,
         golden: Bool,
         hasAttachments: Bool,
-        id: Int,
+        id: String,
         number: Int32,
         postponed: Bool,
         status: String,

@@ -49,6 +49,7 @@ class BoardsService(client: AccountClient) : BaseService(client) {
             httpPost("/boards.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
                 put("name", kotlinx.serialization.json.JsonPrimitive(body.name))
                 body.allAccess?.let { put("all_access", kotlinx.serialization.json.JsonPrimitive(it)) }
+                body.autoPostponePeriod?.let { put("auto_postpone_period", kotlinx.serialization.json.JsonPrimitive(it)) }
             }), operationName = info.operation)
         }) { body ->
             json.decodeFromString<Board>(body)
@@ -59,7 +60,7 @@ class BoardsService(client: AccountClient) : BaseService(client) {
      * get operation
      * @param boardId The board ID
      */
-    suspend fun get(boardId: Long): Board {
+    suspend fun get(boardId: String): Board {
         val info = OperationInfo(
             service = "Boards",
             operation = "GetBoard",
@@ -69,7 +70,7 @@ class BoardsService(client: AccountClient) : BaseService(client) {
             resourceId = null,
         )
         return request(info, {
-            httpGet("/boards/${boardId}.json", operationName = info.operation)
+            httpGet("/boards/${boardId}", operationName = info.operation)
         }) { body ->
             json.decodeFromString<Board>(body)
         }
@@ -80,7 +81,7 @@ class BoardsService(client: AccountClient) : BaseService(client) {
      * @param boardId The board ID
      * @param body Request body
      */
-    suspend fun update(boardId: Long, body: UpdateBoardBody): Board {
+    suspend fun update(boardId: String, body: UpdateBoardBody): Board {
         val info = OperationInfo(
             service = "Boards",
             operation = "UpdateBoard",
@@ -90,9 +91,10 @@ class BoardsService(client: AccountClient) : BaseService(client) {
             resourceId = null,
         )
         return request(info, {
-            httpPatch("/boards/${boardId}.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
+            httpPatch("/boards/${boardId}", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
                 body.name?.let { put("name", kotlinx.serialization.json.JsonPrimitive(it)) }
                 body.allAccess?.let { put("all_access", kotlinx.serialization.json.JsonPrimitive(it)) }
+                body.autoPostponePeriod?.let { put("auto_postpone_period", kotlinx.serialization.json.JsonPrimitive(it)) }
             }), operationName = info.operation)
         }) { body ->
             json.decodeFromString<Board>(body)
@@ -103,7 +105,7 @@ class BoardsService(client: AccountClient) : BaseService(client) {
      * delete operation
      * @param boardId The board ID
      */
-    suspend fun delete(boardId: Long): Unit {
+    suspend fun delete(boardId: String): Unit {
         val info = OperationInfo(
             service = "Boards",
             operation = "DeleteBoard",
@@ -113,7 +115,7 @@ class BoardsService(client: AccountClient) : BaseService(client) {
             resourceId = null,
         )
         request(info, {
-            httpDelete("/boards/${boardId}.json", operationName = info.operation)
+            httpDelete("/boards/${boardId}", operationName = info.operation)
         }) { Unit }
     }
 }

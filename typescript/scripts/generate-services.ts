@@ -847,9 +847,14 @@ function generateMethodBody(op: ParsedOperation): string {
     const queryEntries = op.queryParams
       .map((q) => `${q.name}: options?.${toCamelCase(q.name)}`)
       .join(", ");
-    fetchOpts.push(`${indent}    params: { path: { ${op.pathParams.map((p) => toCamelCase(p.name)).join(", ")} }, query: { ${queryEntries} } }`);
-    // Remove duplicate path params line
-    fetchOpts.shift();
+    const pathPart = op.pathParams.length > 0
+      ? `path: { ${op.pathParams.map((p) => toCamelCase(p.name)).join(", ")} }, `
+      : "";
+    // Remove path-only line if one was pushed above
+    if (op.pathParams.length > 0) {
+      fetchOpts.shift();
+    }
+    fetchOpts.push(`${indent}    params: { ${pathPart}query: { ${queryEntries} } }`);
   }
 
   // Body

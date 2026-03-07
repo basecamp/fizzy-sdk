@@ -4,7 +4,7 @@ import Foundation
 public struct Notification: Codable, Sendable {
     public let createdAt: String
     public let creator: UserSummary
-    public let id: Int
+    public let id: String
     public let read: Bool
     public let sourceType: String
     public let unreadCount: Int32
@@ -15,7 +15,7 @@ public struct Notification: Codable, Sendable {
     public init(
         createdAt: String,
         creator: UserSummary,
-        id: Int,
+        id: String,
         read: Bool,
         sourceType: String,
         unreadCount: Int32,

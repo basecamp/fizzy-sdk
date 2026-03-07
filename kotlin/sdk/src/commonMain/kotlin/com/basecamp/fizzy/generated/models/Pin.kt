@@ -12,7 +12,7 @@ import kotlinx.serialization.json.JsonObject
  */
 @Serializable
 data class Pin(
-    val id: Long,
+    val id: String,
     val card: CardRef,
     @SerialName("created_at") val createdAt: String
 )

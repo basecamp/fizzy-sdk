@@ -29,6 +29,7 @@ class StepsService(client: AccountClient) : BaseService(client) {
         return request(info, {
             httpPost("/cards/${cardNumber}/steps.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
                 put("content", kotlinx.serialization.json.JsonPrimitive(body.content))
+                body.completed?.let { put("completed", kotlinx.serialization.json.JsonPrimitive(it)) }
             }), operationName = info.operation)
         }) { body ->
             json.decodeFromString<Step>(body)
@@ -40,7 +41,7 @@ class StepsService(client: AccountClient) : BaseService(client) {
      * @param cardNumber The card number
      * @param stepId The step ID
      */
-    suspend fun get(cardNumber: Long, stepId: Long): Step {
+    suspend fun get(cardNumber: Long, stepId: String): Step {
         val info = OperationInfo(
             service = "Steps",
             operation = "GetStep",
@@ -62,7 +63,7 @@ class StepsService(client: AccountClient) : BaseService(client) {
      * @param stepId The step ID
      * @param body Request body
      */
-    suspend fun update(cardNumber: Long, stepId: Long, body: UpdateStepBody): Step {
+    suspend fun update(cardNumber: Long, stepId: String, body: UpdateStepBody): Step {
         val info = OperationInfo(
             service = "Steps",
             operation = "UpdateStep",
@@ -86,7 +87,7 @@ class StepsService(client: AccountClient) : BaseService(client) {
      * @param cardNumber The card number
      * @param stepId The step ID
      */
-    suspend fun delete(cardNumber: Long, stepId: Long): Unit {
+    suspend fun delete(cardNumber: Long, stepId: String): Unit {
         val info = OperationInfo(
             service = "Steps",
             operation = "DeleteStep",

@@ -4,7 +4,7 @@ import Foundation
 public struct Webhook: Codable, Sendable {
     public let active: Bool
     public let createdAt: String
-    public let id: Int
+    public let id: String
     public let name: String
     public let signingSecret: String
     public let subscribedActions: [String]
@@ -14,7 +14,7 @@ public struct Webhook: Codable, Sendable {
     public init(
         active: Bool,
         createdAt: String,
-        id: Int,
+        id: String,
         name: String,
         signingSecret: String,
         subscribedActions: [String],

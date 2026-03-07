@@ -3,13 +3,13 @@ import Foundation
 
 public struct Reaction: Codable, Sendable {
     public let content: String
-    public let id: Int
+    public let id: String
     public let reacter: UserSummary
     public let url: String
 
     public init(
         content: String,
-        id: Int,
+        id: String,
         reacter: UserSummary,
         url: String
     ) {

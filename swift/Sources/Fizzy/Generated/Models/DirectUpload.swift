@@ -7,7 +7,7 @@ public struct DirectUpload: Codable, Sendable {
     public let contentType: String
     public let directUpload: DirectUploadMetadata
     public let filename: String
-    public let id: Int
+    public let id: String
     public let key: String
 
     public init(
@@ -16,7 +16,7 @@ public struct DirectUpload: Codable, Sendable {
         contentType: String,
         directUpload: DirectUploadMetadata,
         filename: String,
-        id: Int,
+        id: String,
         key: String
     ) {
         self.byteSize = byteSize

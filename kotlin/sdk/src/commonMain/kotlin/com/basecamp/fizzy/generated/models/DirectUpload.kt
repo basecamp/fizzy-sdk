@@ -12,7 +12,7 @@ import kotlinx.serialization.json.JsonObject
  */
 @Serializable
 data class DirectUpload(
-    val id: Long,
+    val id: String,
     val key: String,
     val filename: String,
     @SerialName("content_type") val contentType: String,

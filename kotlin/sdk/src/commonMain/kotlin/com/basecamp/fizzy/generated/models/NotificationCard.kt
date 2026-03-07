@@ -12,7 +12,7 @@ import kotlinx.serialization.json.JsonObject
  */
 @Serializable
 data class NotificationCard(
-    val id: Long,
+    val id: String,
     val number: Int,
     val title: String,
     val url: String,

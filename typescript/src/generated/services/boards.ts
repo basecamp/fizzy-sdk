@@ -15,12 +15,14 @@ export interface CreateBoardRequest {
   /** Display name */
   name: string;
   allAccess?: boolean;
+  autoPostponePeriod?: number;
 }
 
 export interface UpdateBoardRequest {
   /** Display name */
   name?: string;
   allAccess?: boolean;
+  autoPostponePeriod?: number;
 }
 
 export class BoardsService extends BaseService {
@@ -54,7 +56,7 @@ export class BoardsService extends BaseService {
         isMutation: true,
       },
       () => this.client.POST("/boards.json" as never, {
-        body: { name: body.name, all_access: body.allAccess } as never,
+        body: { name: body.name, all_access: body.allAccess, auto_postpone_period: body.autoPostponePeriod } as never,
       } as never),
     );
   }
@@ -62,7 +64,7 @@ export class BoardsService extends BaseService {
   /**
    * DeleteBoard
    */
-  async delete(boardId: number): Promise<void> {
+  async delete(boardId: string): Promise<void> {
     return this.request(
       {
         service: "Board",
@@ -70,7 +72,7 @@ export class BoardsService extends BaseService {
         resourceType: "board",
         isMutation: true,
       },
-      () => this.client.DELETE("/boards/{boardId}.json" as never, {
+      () => this.client.DELETE("/boards/{boardId}" as never, {
         params: { path: { boardId } },
       } as never),
     );
@@ -79,7 +81,7 @@ export class BoardsService extends BaseService {
   /**
    * GetBoard
    */
-  async get(boardId: number): Promise<Board> {
+  async get(boardId: string): Promise<Board> {
     return this.request(
       {
         service: "Board",
@@ -87,7 +89,7 @@ export class BoardsService extends BaseService {
         resourceType: "board",
         isMutation: false,
       },
-      () => this.client.GET("/boards/{boardId}.json" as never, {
+      () => this.client.GET("/boards/{boardId}" as never, {
         params: { path: { boardId } },
       } as never),
     );
@@ -96,7 +98,7 @@ export class BoardsService extends BaseService {
   /**
    * UpdateBoard
    */
-  async update(boardId: number, body?: UpdateBoardRequest): Promise<Board> {
+  async update(boardId: string, body?: UpdateBoardRequest): Promise<Board> {
     return this.request(
       {
         service: "Board",
@@ -104,9 +106,9 @@ export class BoardsService extends BaseService {
         resourceType: "board",
         isMutation: true,
       },
-      () => this.client.PATCH("/boards/{boardId}.json" as never, {
+      () => this.client.PATCH("/boards/{boardId}" as never, {
         params: { path: { boardId } },
-        body: { name: body?.name, all_access: body?.allAccess } as never,
+        body: { name: body?.name, all_access: body?.allAccess, auto_postpone_period: body?.autoPostponePeriod } as never,
       } as never),
     );
   }

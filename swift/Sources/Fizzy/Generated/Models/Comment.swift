@@ -5,7 +5,7 @@ public struct Comment: Codable, Sendable {
     public let body: RichTextBody
     public let createdAt: String
     public let creator: UserSummary
-    public let id: Int
+    public let id: String
     public let updatedAt: String
     public let url: String
     public var card: CardRef?
@@ -15,7 +15,7 @@ public struct Comment: Codable, Sendable {
         body: RichTextBody,
         createdAt: String,
         creator: UserSummary,
-        id: Int,
+        id: String,
         updatedAt: String,
         url: String,
         card: CardRef? = nil,

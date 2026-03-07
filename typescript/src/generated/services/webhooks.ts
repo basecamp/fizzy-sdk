@@ -30,7 +30,7 @@ export class WebhooksService extends BaseService {
   /**
    * ListWebhooks
    */
-  async list(boardId: number): Promise<ListResult<Webhook>> {
+  async list(boardId: string): Promise<ListResult<Webhook>> {
     return this.request(
       {
         service: "Webhooks",
@@ -47,7 +47,7 @@ export class WebhooksService extends BaseService {
   /**
    * CreateWebhook
    */
-  async create(boardId: number, body: CreateWebhookRequest): Promise<Webhook> {
+  async create(boardId: string, body: CreateWebhookRequest): Promise<Webhook> {
     return this.request(
       {
         service: "Webhook",
@@ -65,7 +65,7 @@ export class WebhooksService extends BaseService {
   /**
    * DeleteWebhook
    */
-  async delete(boardId: number, webhookId: number): Promise<void> {
+  async delete(boardId: string, webhookId: string): Promise<void> {
     return this.request(
       {
         service: "Webhook",
@@ -82,7 +82,7 @@ export class WebhooksService extends BaseService {
   /**
    * GetWebhook
    */
-  async get(boardId: number, webhookId: number): Promise<Webhook> {
+  async get(boardId: string, webhookId: string): Promise<Webhook> {
     return this.request(
       {
         service: "Webhook",
@@ -99,7 +99,7 @@ export class WebhooksService extends BaseService {
   /**
    * UpdateWebhook
    */
-  async update(boardId: number, webhookId: number, body?: UpdateWebhookRequest): Promise<Webhook> {
+  async update(boardId: string, webhookId: string, body?: UpdateWebhookRequest): Promise<Webhook> {
     return this.request(
       {
         service: "Webhook",
@@ -117,7 +117,7 @@ export class WebhooksService extends BaseService {
   /**
    * ActivateWebhook
    */
-  async activate(boardId: number, webhookId: number): Promise<void> {
+  async activate(boardId: string, webhookId: string): Promise<void> {
     return this.request(
       {
         service: "Webhook",

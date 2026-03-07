@@ -9,7 +9,7 @@ module Fizzy
 
       # list operation
       # @param account_id [String] account id ID
-      # @param board_id [Integer] board id ID
+      # @param board_id [String] board id ID
       # @return [Hash] response data
       def list(account_id:, board_id:)
         with_operation(service: "webhooks", operation: "ListWebhooks", is_mutation: false, resource_id: board_id) do
@@ -19,7 +19,7 @@ module Fizzy
 
       # create operation
       # @param account_id [String] account id ID
-      # @param board_id [Integer] board id ID
+      # @param board_id [String] board id ID
       # @param name [String] name
       # @param url [String] url
       # @param subscribed_actions [Array, nil] subscribed actions
@@ -32,8 +32,8 @@ module Fizzy
 
       # get operation
       # @param account_id [String] account id ID
-      # @param board_id [Integer] board id ID
-      # @param webhook_id [Integer] webhook id ID
+      # @param board_id [String] board id ID
+      # @param webhook_id [String] webhook id ID
       # @return [Hash] response data
       def get(account_id:, board_id:, webhook_id:)
         with_operation(service: "webhooks", operation: "GetWebhook", is_mutation: false, resource_id: webhook_id) do
@@ -43,8 +43,8 @@ module Fizzy
 
       # update operation
       # @param account_id [String] account id ID
-      # @param board_id [Integer] board id ID
-      # @param webhook_id [Integer] webhook id ID
+      # @param board_id [String] board id ID
+      # @param webhook_id [String] webhook id ID
       # @param name [String, nil] name
       # @param url [String, nil] url
       # @param subscribed_actions [Array, nil] subscribed actions
@@ -57,8 +57,8 @@ module Fizzy
 
       # delete operation
       # @param account_id [String] account id ID
-      # @param board_id [Integer] board id ID
-      # @param webhook_id [Integer] webhook id ID
+      # @param board_id [String] board id ID
+      # @param webhook_id [String] webhook id ID
       # @return [void]
       def delete(account_id:, board_id:, webhook_id:)
         with_operation(service: "webhooks", operation: "DeleteWebhook", is_mutation: true, resource_id: webhook_id) do
@@ -69,8 +69,8 @@ module Fizzy
 
       # activate operation
       # @param account_id [String] account id ID
-      # @param board_id [Integer] board id ID
-      # @param webhook_id [Integer] webhook id ID
+      # @param board_id [String] board id ID
+      # @param webhook_id [String] webhook id ID
       # @return [void]
       def activate(account_id:, board_id:, webhook_id:)
         with_operation(service: "webhooks", operation: "ActivateWebhook", is_mutation: true, resource_id: webhook_id) do

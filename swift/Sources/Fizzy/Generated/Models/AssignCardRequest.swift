@@ -2,9 +2,9 @@
 import Foundation
 
 public struct AssignCardRequest: Codable, Sendable {
-    public let userId: Int
+    public let assigneeId: String
 
-    public init(userId: Int) {
-        self.userId = userId
+    public init(assigneeId: String) {
+        self.assigneeId = assigneeId
     }
 }

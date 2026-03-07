@@ -142,7 +142,7 @@ export interface paths {
         get: operations["GetColumn"];
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["DeleteColumn"];
         options?: never;
         head?: never;
         patch: operations["UpdateColumn"];
@@ -702,15 +702,13 @@ export interface components {
             url: string;
         };
         AssignCardRequestContent: {
-            /** Format: int64 */
-            user_id: number;
+            assignee_id: string;
         };
         BadRequestErrorResponseContent: {
             message: string;
         };
         Board: {
-            /** Format: int64 */
-            id: number;
+            id: string;
             name: string;
             all_access: boolean;
             created_at: string;
@@ -718,17 +716,15 @@ export interface components {
             creator?: components["schemas"]["UserSummary"];
         };
         BoardSummary: {
-            /** Format: int64 */
-            id: number;
+            id: string;
             name: string;
             url: string;
         };
         BulkReadNotificationsRequestContent: {
-            notification_ids?: number[];
+            notification_ids?: string[];
         };
         Card: {
-            /** Format: int64 */
-            id: number;
+            id: string;
             /** Format: int32 */
             number: number;
             title: string;
@@ -754,25 +750,21 @@ export interface components {
             steps?: components["schemas"]["Step"][];
         };
         CardRef: {
-            /** Format: int64 */
-            id: number;
+            id: string;
             url: string;
         };
         Column: {
-            /** Format: int64 */
-            id: number;
+            id: string;
             name: string;
             color?: string;
             created_at: string;
         };
         ColumnSummary: {
-            /** Format: int64 */
-            id: number;
+            id: string;
             name: string;
         };
         Comment: {
-            /** Format: int64 */
-            id: number;
+            id: string;
             created_at: string;
             updated_at: string;
             body: components["schemas"]["RichTextBody"];
@@ -788,6 +780,8 @@ export interface components {
         CreateBoardRequestContent: {
             name: string;
             all_access?: boolean;
+            /** Format: int32 */
+            auto_postpone_period?: number;
         };
         CreateBoardResponseContent: components["schemas"]["Board"];
         CreateCardReactionRequestContent: {
@@ -796,13 +790,14 @@ export interface components {
         CreateCardReactionResponseContent: components["schemas"]["Reaction"];
         CreateCardRequestContent: {
             title: string;
-            /** Format: int64 */
-            board_id?: number;
-            /** Format: int64 */
-            column_id?: number;
+            board_id?: string;
+            column_id?: string;
             description?: string;
-            assignee_ids?: number[];
+            assignee_ids?: string[];
             tag_names?: string[];
+            image?: string;
+            created_at?: string;
+            last_active_at?: string;
         };
         CreateCardResponseContent: components["schemas"]["Card"];
         CreateColumnRequestContent: {
@@ -816,6 +811,7 @@ export interface components {
         CreateCommentReactionResponseContent: components["schemas"]["Reaction"];
         CreateCommentRequestContent: {
             body: string;
+            created_at?: string;
         };
         CreateCommentResponseContent: components["schemas"]["Comment"];
         CreateDirectUploadRequestContent: {
@@ -833,6 +829,7 @@ export interface components {
         CreateSessionResponseContent: components["schemas"]["PendingAuthentication"];
         CreateStepRequestContent: {
             content: string;
+            completed?: boolean;
         };
         CreateStepResponseContent: components["schemas"]["Step"];
         CreateWebhookRequestContent: {
@@ -842,8 +839,7 @@ export interface components {
         };
         CreateWebhookResponseContent: components["schemas"]["Webhook"];
         DirectUpload: {
-            /** Format: int64 */
-            id: number;
+            id: string;
             key: string;
             filename: string;
             content_type: string;
@@ -873,8 +869,7 @@ export interface components {
         GetUserResponseContent: components["schemas"]["User"];
         GetWebhookResponseContent: components["schemas"]["Webhook"];
         Identity: {
-            /** Format: int64 */
-            id: number;
+            id: string;
             /** Format: password */
             name: string;
             /** Format: password */
@@ -896,18 +891,15 @@ export interface components {
         ListUsersResponseContent: components["schemas"]["User"][];
         ListWebhooksResponseContent: components["schemas"]["Webhook"][];
         MoveCardRequestContent: {
-            /** Format: int64 */
-            board_id: number;
-            /** Format: int64 */
-            column_id?: number;
+            board_id: string;
+            column_id?: string;
         };
         MoveCardResponseContent: components["schemas"]["Card"];
         NotFoundErrorResponseContent: {
             message: string;
         };
         Notification: {
-            /** Format: int64 */
-            id: number;
+            id: string;
             /** Format: int32 */
             unread_count: number;
             read: boolean;
@@ -919,8 +911,7 @@ export interface components {
             url: string;
         };
         NotificationCard: {
-            /** Format: int64 */
-            id: number;
+            id: string;
             /** Format: int32 */
             number: number;
             title: string;
@@ -935,8 +926,7 @@ export interface components {
             pending_authentication_token: string;
         };
         Pin: {
-            /** Format: int64 */
-            id: number;
+            id: string;
             card: components["schemas"]["CardRef"];
             created_at: string;
         };
@@ -944,8 +934,7 @@ export interface components {
             message: string;
         };
         Reaction: {
-            /** Format: int64 */
-            id: number;
+            id: string;
             content: string;
             reacter: components["schemas"]["UserSummary"];
             url: string;
@@ -968,18 +957,19 @@ export interface components {
             requires_signup_completion: boolean;
         };
         Step: {
-            /** Format: int64 */
-            id: number;
+            id: string;
             content: string;
             completed: boolean;
         };
         Tag: {
-            /** Format: int64 */
-            id: number;
+            id: string;
             name: string;
         };
         TagCardRequestContent: {
-            name: string;
+            tag_title: string;
+        };
+        TriageCardRequestContent: {
+            column_id?: string;
         };
         UnauthorizedErrorResponseContent: {
             message: string;
@@ -987,13 +977,16 @@ export interface components {
         UpdateBoardRequestContent: {
             name?: string;
             all_access?: boolean;
+            /** Format: int32 */
+            auto_postpone_period?: number;
         };
         UpdateBoardResponseContent: components["schemas"]["Board"];
         UpdateCardRequestContent: {
             title?: string;
             description?: string;
-            /** Format: int64 */
-            column_id?: number;
+            column_id?: string;
+            image?: string;
+            created_at?: string;
         };
         UpdateCardResponseContent: components["schemas"]["Card"];
         UpdateColumnRequestContent: {
@@ -1021,8 +1014,7 @@ export interface components {
         };
         UpdateWebhookResponseContent: components["schemas"]["Webhook"];
         User: {
-            /** Format: int64 */
-            id: number;
+            id: string;
             /** Format: password */
             name: string;
             role: string;
@@ -1034,8 +1026,7 @@ export interface components {
             avatar_url?: string;
         };
         UserSummary: {
-            /** Format: int64 */
-            id: number;
+            id: string;
             /** Format: password */
             name: string;
             avatar_url?: string;
@@ -1045,8 +1036,7 @@ export interface components {
             errors?: string[];
         };
         Webhook: {
-            /** Format: int64 */
-            id: number;
+            id: string;
             name: string;
             url: string;
             subscribed_actions: string[];
@@ -1747,7 +1737,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                boardId: number;
+                boardId: string;
             };
             cookie?: never;
         };
@@ -1832,7 +1822,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                boardId: number;
+                boardId: string;
             };
             cookie?: never;
         };
@@ -1915,7 +1905,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                boardId: number;
+                boardId: string;
             };
             cookie?: never;
         };
@@ -2004,7 +1994,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                boardId: number;
+                boardId: string;
             };
             cookie?: never;
         };
@@ -2089,7 +2079,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                boardId: number;
+                boardId: string;
             };
             cookie?: never;
         };
@@ -2178,8 +2168,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                boardId: number;
-                columnId: number;
+                boardId: string;
+                columnId: string;
             };
             cookie?: never;
         };
@@ -2259,13 +2249,97 @@ export interface operations {
             };
         };
     };
+    DeleteColumn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                boardId: string;
+                columnId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description DeleteColumn 200 response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description BadRequestError 400 response */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BadRequestErrorResponseContent"];
+                };
+            };
+            /** @description UnauthorizedError 401 response */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnauthorizedErrorResponseContent"];
+                };
+            };
+            /** @description ForbiddenError 403 response */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForbiddenErrorResponseContent"];
+                };
+            };
+            /** @description NotFoundError 404 response */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotFoundErrorResponseContent"];
+                };
+            };
+            /** @description ValidationError 422 response */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationErrorResponseContent"];
+                };
+            };
+            /** @description RateLimitError 429 response */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RateLimitErrorResponseContent"];
+                };
+            };
+            /** @description InternalServerError 500 response */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalServerErrorResponseContent"];
+                };
+            };
+        };
+    };
     UpdateColumn: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                boardId: number;
-                columnId: number;
+                boardId: string;
+                columnId: string;
             };
             cookie?: never;
         };
@@ -2354,7 +2428,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                boardId: number;
+                boardId: string;
             };
             cookie?: never;
         };
@@ -2439,7 +2513,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                boardId: number;
+                boardId: string;
             };
             cookie?: never;
         };
@@ -2528,8 +2602,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                boardId: number;
-                webhookId: number;
+                boardId: string;
+                webhookId: string;
             };
             cookie?: never;
         };
@@ -2614,8 +2688,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                boardId: number;
-                webhookId: number;
+                boardId: string;
+                webhookId: string;
             };
             cookie?: never;
         };
@@ -2698,8 +2772,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                boardId: number;
-                webhookId: number;
+                boardId: string;
+                webhookId: string;
             };
             cookie?: never;
         };
@@ -2788,8 +2862,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                boardId: number;
-                webhookId: number;
+                boardId: string;
+                webhookId: string;
             };
             cookie?: never;
         };
@@ -2870,9 +2944,9 @@ export interface operations {
     ListCards: {
         parameters: {
             query?: {
-                board_id?: number;
-                column_id?: number;
-                assignee_id?: number;
+                board_id?: string;
+                column_id?: string;
+                assignee_id?: string;
                 tag?: string;
                 status?: string;
                 q?: string;
@@ -3823,7 +3897,7 @@ export interface operations {
             header?: never;
             path: {
                 cardNumber: number;
-                commentId: number;
+                commentId: string;
             };
             cookie?: never;
         };
@@ -3909,7 +3983,7 @@ export interface operations {
             header?: never;
             path: {
                 cardNumber: number;
-                commentId: number;
+                commentId: string;
             };
             cookie?: never;
         };
@@ -3993,7 +4067,7 @@ export interface operations {
             header?: never;
             path: {
                 cardNumber: number;
-                commentId: number;
+                commentId: string;
             };
             cookie?: never;
         };
@@ -4083,7 +4157,7 @@ export interface operations {
             header?: never;
             path: {
                 cardNumber: number;
-                commentId: number;
+                commentId: string;
             };
             cookie?: never;
         };
@@ -4169,7 +4243,7 @@ export interface operations {
             header?: never;
             path: {
                 cardNumber: number;
-                commentId: number;
+                commentId: string;
             };
             cookie?: never;
         };
@@ -4259,8 +4333,8 @@ export interface operations {
             header?: never;
             path: {
                 cardNumber: number;
-                commentId: number;
-                reactionId: number;
+                commentId: string;
+                reactionId: string;
             };
             cookie?: never;
         };
@@ -5016,7 +5090,7 @@ export interface operations {
             header?: never;
             path: {
                 cardNumber: number;
-                reactionId: number;
+                reactionId: string;
             };
             cookie?: never;
         };
@@ -5272,7 +5346,7 @@ export interface operations {
             header?: never;
             path: {
                 cardNumber: number;
-                stepId: number;
+                stepId: string;
             };
             cookie?: never;
         };
@@ -5358,7 +5432,7 @@ export interface operations {
             header?: never;
             path: {
                 cardNumber: number;
-                stepId: number;
+                stepId: string;
             };
             cookie?: never;
         };
@@ -5442,7 +5516,7 @@ export interface operations {
             header?: never;
             path: {
                 cardNumber: number;
-                stepId: number;
+                stepId: string;
             };
             cookie?: never;
         };
@@ -5622,7 +5696,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["TriageCardRequestContent"];
+            };
+        };
         responses: {
             /** @description TriageCard 200 response */
             200: {
@@ -6285,7 +6363,9 @@ export interface operations {
     };
     GetNotificationTray: {
         parameters: {
-            query?: never;
+            query?: {
+                include_read?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -6371,7 +6451,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                notificationId: number;
+                notificationId: string;
             };
             cookie?: never;
         };
@@ -6454,7 +6534,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                notificationId: number;
+                notificationId: string;
             };
             cookie?: never;
         };
@@ -6790,7 +6870,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                userId: number;
+                userId: string;
             };
             cookie?: never;
         };
@@ -6875,7 +6955,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                userId: number;
+                userId: string;
             };
             cookie?: never;
         };
@@ -6958,7 +7038,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                userId: number;
+                userId: string;
             };
             cookie?: never;
         };

@@ -1,7 +1,7 @@
 {
   "$schema": "https://fizzy.do/schemas/sdk-metadata.json",
   "version": "1.0.0",
-  "generated": "2026-03-07T00:33:08.354Z",
+  "generated": "2026-03-07T21:01:27.956Z",
   "operations": {
     "GetMyIdentity": {
       "retry": {
@@ -140,6 +140,21 @@
       }
     },
     "UpdateColumn": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          500,
+          503
+        ]
+      },
+      "idempotent": {
+        "natural": true
+      }
+    },
+    "DeleteColumn": {
       "retry": {
         "maxAttempts": 3,
         "baseDelayMs": 1000,
@@ -773,6 +788,10 @@
           500,
           503
         ]
+      },
+      "pagination": {
+        "style": "link",
+        "pageParam": "page"
       }
     },
     "ListUsers": {
@@ -785,6 +804,10 @@
           500,
           503
         ]
+      },
+      "pagination": {
+        "style": "link",
+        "pageParam": "page"
       }
     },
     "GetUser": {

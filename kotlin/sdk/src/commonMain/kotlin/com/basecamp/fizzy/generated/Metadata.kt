@@ -40,6 +40,7 @@ object Metadata {
         "DeleteCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 500, 503))),
         "DeleteCardImage" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 500, 503))),
         "DeleteCardReaction" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 500, 503))),
+        "DeleteColumn" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 500, 503))),
         "DeleteComment" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 500, 503))),
         "DeleteCommentReaction" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 500, 503))),
         "DeleteStep" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 500, 503))),

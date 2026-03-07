@@ -2,9 +2,9 @@
 import Foundation
 
 public struct BulkReadNotificationsRequest: Codable, Sendable {
-    public var notificationIds: [Int]?
+    public var notificationIds: [String]?
 
-    public init(notificationIds: [Int]? = nil) {
+    public init(notificationIds: [String]? = nil) {
         self.notificationIds = notificationIds
     }
 }

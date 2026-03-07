@@ -16,8 +16,8 @@ export class TagsService extends BaseService {
   /**
    * ListTags
    */
-  async list(): Promise<ListResult<Tag>> {
-    return this.request(
+  async list(options?: PaginationOptions): Promise<ListResult<Tag>> {
+    return this.requestPaginated(
       {
         service: "Tags",
         operation: "ListTags",
@@ -26,6 +26,7 @@ export class TagsService extends BaseService {
       },
       () => this.client.GET("/tags.json" as never, {
       } as never),
+      options,
     );
   }
 }

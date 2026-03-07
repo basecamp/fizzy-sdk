@@ -13,20 +13,22 @@ import kotlinx.serialization.json.JsonObject
 /** Request body for CreateBoard. */
 data class CreateBoardBody(
     val name: String,
-    val allAccess: Boolean? = null
+    val allAccess: Boolean? = null,
+    val autoPostponePeriod: Int? = null
 )
 
 /** Request body for UpdateBoard. */
 data class UpdateBoardBody(
     val name: String? = null,
-    val allAccess: Boolean? = null
+    val allAccess: Boolean? = null,
+    val autoPostponePeriod: Int? = null
 )
 
 /** Options for ListCards. */
 data class ListCardsOptions(
-    val boardId: Long? = null,
-    val columnId: Long? = null,
-    val assigneeId: Long? = null,
+    val boardId: String? = null,
+    val columnId: String? = null,
+    val assigneeId: String? = null,
     val tag: String? = null,
     val status: String? = null,
     val q: String? = null,
@@ -38,34 +40,44 @@ data class ListCardsOptions(
 /** Request body for CreateCard. */
 data class CreateCardBody(
     val title: String,
-    val boardId: Long? = null,
-    val columnId: Long? = null,
+    val boardId: String? = null,
+    val columnId: String? = null,
     val description: String? = null,
-    val assigneeIds: List<Long>? = null,
-    val tagNames: List<String>? = null
+    val assigneeIds: List<String>? = null,
+    val tagNames: List<String>? = null,
+    val image: String? = null,
+    val createdAt: String? = null,
+    val lastActiveAt: String? = null
 )
 
 /** Request body for UpdateCard. */
 data class UpdateCardBody(
     val title: String? = null,
     val description: String? = null,
-    val columnId: Long? = null
+    val columnId: String? = null,
+    val image: String? = null,
+    val createdAt: String? = null
 )
 
 /** Request body for AssignCard. */
 data class AssignCardBody(
-    val userId: Long
+    val assigneeId: String
 )
 
 /** Request body for MoveCard. */
 data class MoveCardBody(
-    val boardId: Long,
-    val columnId: Long? = null
+    val boardId: String,
+    val columnId: String? = null
 )
 
 /** Request body for TagCard. */
 data class TagCardBody(
-    val name: String
+    val tagTitle: String
+)
+
+/** Request body for TriageCard. */
+data class TriageCardBody(
+    val columnId: String? = null
 )
 
 /** Request body for CreateColumn. */
@@ -82,7 +94,8 @@ data class UpdateColumnBody(
 
 /** Request body for CreateComment. */
 data class CreateCommentBody(
-    val body: String
+    val body: String,
+    val createdAt: String? = null
 )
 
 /** Request body for UpdateComment. */
@@ -107,8 +120,14 @@ data class ListNotificationsOptions(
 
 /** Request body for BulkReadNotifications. */
 data class BulkReadNotificationsBody(
-    val notificationIds: List<Long>? = null
+    val notificationIds: List<String>? = null
 )
+
+/** Options for GetNotificationTray. */
+data class GetNotificationTrayOptions(
+    val includeRead: Boolean? = null
+) {
+}
 
 /** Request body for CreateCommentReaction. */
 data class CreateCommentReactionBody(
@@ -137,7 +156,8 @@ data class CompleteSignupBody(
 
 /** Request body for CreateStep. */
 data class CreateStepBody(
-    val content: String
+    val content: String,
+    val completed: Boolean? = null
 )
 
 /** Request body for UpdateStep. */

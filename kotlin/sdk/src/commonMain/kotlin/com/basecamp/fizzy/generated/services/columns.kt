@@ -16,7 +16,7 @@ class ColumnsService(client: AccountClient) : BaseService(client) {
      * list operation
      * @param boardId The board ID
      */
-    suspend fun list(boardId: Long): List<Column> {
+    suspend fun list(boardId: String): List<Column> {
         val info = OperationInfo(
             service = "Columns",
             operation = "ListColumns",
@@ -37,7 +37,7 @@ class ColumnsService(client: AccountClient) : BaseService(client) {
      * @param boardId The board ID
      * @param body Request body
      */
-    suspend fun create(boardId: Long, body: CreateColumnBody): Column {
+    suspend fun create(boardId: String, body: CreateColumnBody): Column {
         val info = OperationInfo(
             service = "Columns",
             operation = "CreateColumn",
@@ -61,7 +61,7 @@ class ColumnsService(client: AccountClient) : BaseService(client) {
      * @param boardId The board ID
      * @param columnId The column ID
      */
-    suspend fun get(boardId: Long, columnId: Long): Column {
+    suspend fun get(boardId: String, columnId: String): Column {
         val info = OperationInfo(
             service = "Columns",
             operation = "GetColumn",
@@ -83,7 +83,7 @@ class ColumnsService(client: AccountClient) : BaseService(client) {
      * @param columnId The column ID
      * @param body Request body
      */
-    suspend fun update(boardId: Long, columnId: Long, body: UpdateColumnBody): Column {
+    suspend fun update(boardId: String, columnId: String, body: UpdateColumnBody): Column {
         val info = OperationInfo(
             service = "Columns",
             operation = "UpdateColumn",
@@ -100,5 +100,24 @@ class ColumnsService(client: AccountClient) : BaseService(client) {
         }) { body ->
             json.decodeFromString<Column>(body)
         }
+    }
+
+    /**
+     * delete operation
+     * @param boardId The board ID
+     * @param columnId The column ID
+     */
+    suspend fun delete(boardId: String, columnId: String): Unit {
+        val info = OperationInfo(
+            service = "Columns",
+            operation = "DeleteColumn",
+            resourceType = "column",
+            isMutation = true,
+            boardId = boardId,
+            resourceId = columnId,
+        )
+        request(info, {
+            httpDelete("/boards/${boardId}/columns/${columnId}", operationName = info.operation)
+        }) { Unit }
     }
 }

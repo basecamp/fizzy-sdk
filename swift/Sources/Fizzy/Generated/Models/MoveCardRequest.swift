@@ -2,10 +2,10 @@
 import Foundation
 
 public struct MoveCardRequest: Codable, Sendable {
-    public let boardId: Int
-    public var columnId: Int?
+    public let boardId: String
+    public var columnId: String?
 
-    public init(boardId: Int, columnId: Int? = nil) {
+    public init(boardId: String, columnId: String? = nil) {
         self.boardId = boardId
         self.columnId = columnId
     }

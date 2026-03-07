@@ -17,7 +17,11 @@ export interface ListNotificationsOptions extends PaginationOptions {
 }
 
 export interface BulkReadNotificationsRequest {
-  notificationIds?: number[];
+  notificationIds?: string[];
+}
+
+export interface TrayNotificationtrayOptions extends PaginationOptions {
+  includeRead?: boolean;
 }
 
 export class NotificationsService extends BaseService {
@@ -34,6 +38,7 @@ export class NotificationsService extends BaseService {
         isMutation: false,
       },
       () => this.client.GET("/notifications.json" as never, {
+        params: { query: { read: options?.read } },
       } as never),
       options,
     );
@@ -59,7 +64,7 @@ export class NotificationsService extends BaseService {
   /**
    * GetNotificationTray
    */
-  async tray(): Promise<NotificationTray> {
+  async tray(options?: TrayNotificationtrayOptions): Promise<NotificationTray> {
     return this.request(
       {
         service: "Notification tray",
@@ -68,6 +73,7 @@ export class NotificationsService extends BaseService {
         isMutation: false,
       },
       () => this.client.GET("/notifications/tray.json" as never, {
+        params: { query: { include_read: options?.includeRead } },
       } as never),
     );
   }
@@ -75,7 +81,7 @@ export class NotificationsService extends BaseService {
   /**
    * UnreadNotification
    */
-  async unread(notificationId: number): Promise<void> {
+  async unread(notificationId: string): Promise<void> {
     return this.request(
       {
         service: "Notification",
@@ -92,7 +98,7 @@ export class NotificationsService extends BaseService {
   /**
    * ReadNotification
    */
-  async read(notificationId: number): Promise<void> {
+  async read(notificationId: string): Promise<void> {
     return this.request(
       {
         service: "Notification",

@@ -12,6 +12,6 @@ import kotlinx.serialization.json.JsonObject
  */
 @Serializable
 data class ColumnSummary(
-    val id: Long,
+    val id: String,
     val name: String
 )

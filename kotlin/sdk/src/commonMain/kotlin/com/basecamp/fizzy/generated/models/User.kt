@@ -12,7 +12,7 @@ import kotlinx.serialization.json.JsonObject
  */
 @Serializable
 data class User(
-    val id: Long,
+    val id: String,
     val name: String,
     val role: String,
     val active: Boolean,

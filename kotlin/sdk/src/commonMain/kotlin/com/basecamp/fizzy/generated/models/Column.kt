@@ -12,7 +12,7 @@ import kotlinx.serialization.json.JsonObject
  */
 @Serializable
 data class Column(
-    val id: Long,
+    val id: String,
     val name: String,
     @SerialName("created_at") val createdAt: String,
     val color: String? = null

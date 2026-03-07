@@ -14,8 +14,9 @@ class UsersService(client: AccountClient) : BaseService(client) {
 
     /**
      * list operation
+     * @param options Optional query parameters and pagination control
      */
-    suspend fun list(): List<User> {
+    suspend fun list(options: PaginationOptions? = null): ListResult<User> {
         val info = OperationInfo(
             service = "Users",
             operation = "ListUsers",
@@ -24,7 +25,7 @@ class UsersService(client: AccountClient) : BaseService(client) {
             boardId = null,
             resourceId = null,
         )
-        return request(info, {
+        return requestPaginated(info, options, {
             httpGet("/users.json", operationName = info.operation)
         }) { body ->
             json.decodeFromString<List<User>>(body)
@@ -35,7 +36,7 @@ class UsersService(client: AccountClient) : BaseService(client) {
      * get operation
      * @param userId The user ID
      */
-    suspend fun get(userId: Long): User {
+    suspend fun get(userId: String): User {
         val info = OperationInfo(
             service = "Users",
             operation = "GetUser",
@@ -56,7 +57,7 @@ class UsersService(client: AccountClient) : BaseService(client) {
      * @param userId The user ID
      * @param body Request body
      */
-    suspend fun update(userId: Long, body: UpdateUserBody): User {
+    suspend fun update(userId: String, body: UpdateUserBody): User {
         val info = OperationInfo(
             service = "Users",
             operation = "UpdateUser",
@@ -78,7 +79,7 @@ class UsersService(client: AccountClient) : BaseService(client) {
      * deactivate operation
      * @param userId The user ID
      */
-    suspend fun deactivate(userId: Long): Unit {
+    suspend fun deactivate(userId: String): Unit {
         val info = OperationInfo(
             service = "Users",
             operation = "DeactivateUser",

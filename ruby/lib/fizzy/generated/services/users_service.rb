@@ -9,16 +9,16 @@ module Fizzy
 
       # list operation
       # @param account_id [String] account id ID
-      # @return [Hash] response data
+      # @return [Enumerator<Hash>] paginated results
       def list(account_id:)
-        with_operation(service: "users", operation: "ListUsers", is_mutation: false, resource_id: account_id) do
-          http_get("/#{account_id}/users.json").json
+        wrap_paginated(service: "users", operation: "ListUsers", is_mutation: false, resource_id: account_id) do
+          paginate("/#{account_id}/users.json")
         end
       end
 
       # get operation
       # @param account_id [String] account id ID
-      # @param user_id [Integer] user id ID
+      # @param user_id [String] user id ID
       # @return [Hash] response data
       def get(account_id:, user_id:)
         with_operation(service: "users", operation: "GetUser", is_mutation: false, resource_id: user_id) do
@@ -28,7 +28,7 @@ module Fizzy
 
       # update operation
       # @param account_id [String] account id ID
-      # @param user_id [Integer] user id ID
+      # @param user_id [String] user id ID
       # @param name [String, nil] name
       # @return [Hash] response data
       def update(account_id:, user_id:, name: nil)
@@ -39,7 +39,7 @@ module Fizzy
 
       # deactivate operation
       # @param account_id [String] account id ID
-      # @param user_id [Integer] user id ID
+      # @param user_id [String] user id ID
       # @return [void]
       def deactivate(account_id:, user_id:)
         with_operation(service: "users", operation: "DeactivateUser", is_mutation: true, resource_id: user_id) do

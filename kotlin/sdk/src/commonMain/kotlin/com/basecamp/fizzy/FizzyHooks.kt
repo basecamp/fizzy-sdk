@@ -42,9 +42,9 @@ data class OperationInfo(
     /** Whether this operation modifies state. */
     val isMutation: Boolean,
     /** Board ID if applicable. */
-    val boardId: Long? = null,
+    val boardId: Any? = null,
     /** Specific resource ID if applicable. */
-    val resourceId: Long? = null,
+    val resourceId: Any? = null,
 )
 
 /** Result of a service operation. */

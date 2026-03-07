@@ -26,7 +26,7 @@ export class ReactionsService extends BaseService {
   /**
    * ListCommentReactions
    */
-  async listForComment(cardNumber: number, commentId: number): Promise<ListResult<Reaction>> {
+  async listForComment(cardNumber: number, commentId: string): Promise<ListResult<Reaction>> {
     return this.request(
       {
         service: "Comment reactions",
@@ -43,7 +43,7 @@ export class ReactionsService extends BaseService {
   /**
    * CreateCommentReaction
    */
-  async createForComment(cardNumber: number, commentId: number, body: CreateCommentReactionRequest): Promise<Reaction> {
+  async createForComment(cardNumber: number, commentId: string, body: CreateCommentReactionRequest): Promise<Reaction> {
     return this.request(
       {
         service: "Comment reaction",
@@ -61,7 +61,7 @@ export class ReactionsService extends BaseService {
   /**
    * DeleteCommentReaction
    */
-  async deleteForComment(cardNumber: number, commentId: number, reactionId: number): Promise<void> {
+  async deleteForComment(cardNumber: number, commentId: string, reactionId: string): Promise<void> {
     return this.request(
       {
         service: "Comment reaction",
@@ -113,7 +113,7 @@ export class ReactionsService extends BaseService {
   /**
    * DeleteCardReaction
    */
-  async deleteForCard(cardNumber: number, reactionId: number): Promise<void> {
+  async deleteForCard(cardNumber: number, reactionId: string): Promise<void> {
     return this.request(
       {
         service: "Card reaction",

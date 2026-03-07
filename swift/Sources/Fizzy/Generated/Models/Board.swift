@@ -4,7 +4,7 @@ import Foundation
 public struct Board: Codable, Sendable {
     public let allAccess: Bool
     public let createdAt: String
-    public let id: Int
+    public let id: String
     public let name: String
     public let url: String
     public var creator: UserSummary?
@@ -12,7 +12,7 @@ public struct Board: Codable, Sendable {
     public init(
         allAccess: Bool,
         createdAt: String,
-        id: Int,
+        id: String,
         name: String,
         url: String,
         creator: UserSummary? = nil

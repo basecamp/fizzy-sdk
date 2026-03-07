@@ -5,7 +5,7 @@ public struct User: Codable, Sendable {
     public let active: Bool
     public let createdAt: String
     public let emailAddress: String
-    public let id: Int
+    public let id: String
     public let name: String
     public let role: String
     public let url: String
@@ -15,7 +15,7 @@ public struct User: Codable, Sendable {
         active: Bool,
         createdAt: String,
         emailAddress: String,
-        id: Int,
+        id: String,
         name: String,
         role: String,
         url: String,

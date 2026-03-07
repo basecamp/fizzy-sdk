@@ -31,16 +31,17 @@ module Fizzy
 
       # tray operation
       # @param account_id [String] account id ID
+      # @param include_read [Boolean, nil] include read
       # @return [Hash] response data
-      def tray(account_id:)
+      def tray(account_id:, include_read: nil)
         with_operation(service: "notifications", operation: "GetNotificationTray", is_mutation: false, resource_id: account_id) do
-          http_get("/#{account_id}/notifications/tray.json").json
+          http_get("/#{account_id}/notifications/tray.json", params: compact_params(include_read: include_read)).json
         end
       end
 
       # read operation
       # @param account_id [String] account id ID
-      # @param notification_id [Integer] notification id ID
+      # @param notification_id [String] notification id ID
       # @return [void]
       def read(account_id:, notification_id:)
         with_operation(service: "notifications", operation: "ReadNotification", is_mutation: true, resource_id: notification_id) do
@@ -51,7 +52,7 @@ module Fizzy
 
       # unread operation
       # @param account_id [String] account id ID
-      # @param notification_id [Integer] notification id ID
+      # @param notification_id [String] notification id ID
       # @return [void]
       def unread(account_id:, notification_id:)
         with_operation(service: "notifications", operation: "UnreadNotification", is_mutation: true, resource_id: notification_id) do

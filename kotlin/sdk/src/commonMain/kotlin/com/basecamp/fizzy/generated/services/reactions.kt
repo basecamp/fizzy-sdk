@@ -17,7 +17,7 @@ class ReactionsService(client: AccountClient) : BaseService(client) {
      * @param cardNumber The card number
      * @param commentId The comment ID
      */
-    suspend fun listForComment(cardNumber: Long, commentId: Long): List<Reaction> {
+    suspend fun listForComment(cardNumber: Long, commentId: String): List<Reaction> {
         val info = OperationInfo(
             service = "Reactions",
             operation = "ListCommentReactions",
@@ -39,7 +39,7 @@ class ReactionsService(client: AccountClient) : BaseService(client) {
      * @param commentId The comment ID
      * @param body Request body
      */
-    suspend fun createForComment(cardNumber: Long, commentId: Long, body: CreateCommentReactionBody): Reaction {
+    suspend fun createForComment(cardNumber: Long, commentId: String, body: CreateCommentReactionBody): Reaction {
         val info = OperationInfo(
             service = "Reactions",
             operation = "CreateCommentReaction",
@@ -63,7 +63,7 @@ class ReactionsService(client: AccountClient) : BaseService(client) {
      * @param commentId The comment ID
      * @param reactionId The reaction ID
      */
-    suspend fun deleteForComment(cardNumber: Long, commentId: Long, reactionId: Long): Unit {
+    suspend fun deleteForComment(cardNumber: Long, commentId: String, reactionId: String): Unit {
         val info = OperationInfo(
             service = "Reactions",
             operation = "DeleteCommentReaction",
@@ -125,7 +125,7 @@ class ReactionsService(client: AccountClient) : BaseService(client) {
      * @param cardNumber The card number
      * @param reactionId The reaction ID
      */
-    suspend fun deleteForCard(cardNumber: Long, reactionId: Long): Unit {
+    suspend fun deleteForCard(cardNumber: Long, reactionId: String): Unit {
         val info = OperationInfo(
             service = "Reactions",
             operation = "DeleteCardReaction",

@@ -57,8 +57,9 @@ class NotificationsService(client: AccountClient) : BaseService(client) {
 
     /**
      * tray operation
+     * @param options Optional query parameters and pagination control
      */
-    suspend fun tray(): NotificationTray {
+    suspend fun tray(options: GetNotificationTrayOptions? = null): List<Notification> {
         val info = OperationInfo(
             service = "Notifications",
             operation = "GetNotificationTray",
@@ -67,10 +68,13 @@ class NotificationsService(client: AccountClient) : BaseService(client) {
             boardId = null,
             resourceId = null,
         )
+        val qs = buildQueryString(
+            "include_read" to options?.includeRead,
+        )
         return request(info, {
-            httpGet("/notifications/tray.json", operationName = info.operation)
+            httpGet("/notifications/tray.json" + qs, operationName = info.operation)
         }) { body ->
-            json.decodeFromString<NotificationTray>(body)
+            json.decodeFromString<List<Notification>>(body)
         }
     }
 
@@ -78,7 +82,7 @@ class NotificationsService(client: AccountClient) : BaseService(client) {
      * read operation
      * @param notificationId The notification ID
      */
-    suspend fun read(notificationId: Long): Unit {
+    suspend fun read(notificationId: String): Unit {
         val info = OperationInfo(
             service = "Notifications",
             operation = "ReadNotification",
@@ -96,7 +100,7 @@ class NotificationsService(client: AccountClient) : BaseService(client) {
      * unread operation
      * @param notificationId The notification ID
      */
-    suspend fun unread(notificationId: Long): Unit {
+    suspend fun unread(notificationId: String): Unit {
         val info = OperationInfo(
             service = "Notifications",
             operation = "UnreadNotification",

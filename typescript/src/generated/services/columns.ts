@@ -30,7 +30,7 @@ export class ColumnsService extends BaseService {
   /**
    * ListColumns
    */
-  async list(boardId: number): Promise<ListResult<Column>> {
+  async list(boardId: string): Promise<ListResult<Column>> {
     return this.request(
       {
         service: "Columns",
@@ -47,7 +47,7 @@ export class ColumnsService extends BaseService {
   /**
    * CreateColumn
    */
-  async create(boardId: number, body: CreateColumnRequest): Promise<Column> {
+  async create(boardId: string, body: CreateColumnRequest): Promise<Column> {
     return this.request(
       {
         service: "Column",
@@ -63,9 +63,26 @@ export class ColumnsService extends BaseService {
   }
 
   /**
+   * DeleteColumn
+   */
+  async delete(boardId: string, columnId: string): Promise<void> {
+    return this.request(
+      {
+        service: "Column",
+        operation: "DeleteColumn",
+        resourceType: "column",
+        isMutation: true,
+      },
+      () => this.client.DELETE("/boards/{boardId}/columns/{columnId}" as never, {
+        params: { path: { boardId, columnId } },
+      } as never),
+    );
+  }
+
+  /**
    * GetColumn
    */
-  async get(boardId: number, columnId: number): Promise<Column> {
+  async get(boardId: string, columnId: string): Promise<Column> {
     return this.request(
       {
         service: "Column",
@@ -82,7 +99,7 @@ export class ColumnsService extends BaseService {
   /**
    * UpdateColumn
    */
-  async update(boardId: number, columnId: number, body?: UpdateColumnRequest): Promise<Column> {
+  async update(boardId: string, columnId: string, body?: UpdateColumnRequest): Promise<Column> {
     return this.request(
       {
         service: "Column",

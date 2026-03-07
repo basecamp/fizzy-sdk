@@ -1,6 +1,14 @@
 // @generated from OpenAPI spec — do not edit directly
 import Foundation
 
+public struct TrayNotificationOptions: Sendable {
+    public var includeRead: Bool?
+
+    public init(includeRead: Bool? = nil) {
+        self.includeRead = includeRead
+    }
+}
+
 public struct ListNotificationOptions: Sendable {
     public var read: Bool?
     public var maxItems: Int?
@@ -23,11 +31,15 @@ public final class NotificationsService: BaseService, @unchecked Sendable {
         )
     }
 
-    public func tray(accountId: String) async throws -> NotificationTray {
+    public func tray(accountId: String, options: TrayNotificationOptions? = nil) async throws -> NotificationTray {
+        var queryItems: [URLQueryItem] = []
+        if let includeRead = options?.includeRead {
+            queryItems.append(URLQueryItem(name: "include_read", value: String(includeRead)))
+        }
         return try await request(
             OperationInfo(service: "Notifications", operation: "GetNotificationTray", resourceType: "notification_tray", isMutation: false),
             method: "GET",
-            path: "/\(accountId)/notifications/tray.json",
+            path: "/\(accountId)/notifications/tray.json" + queryString(queryItems),
             retryConfig: Metadata.retryConfig(for: "GetNotificationTray")
         )
     }
@@ -46,18 +58,18 @@ public final class NotificationsService: BaseService, @unchecked Sendable {
         )
     }
 
-    public func read(accountId: String, notificationId: Int) async throws {
+    public func read(accountId: String, notificationId: String) async throws {
         try await requestVoid(
-            OperationInfo(service: "Notifications", operation: "ReadNotification", resourceType: "notification", isMutation: true, resourceId: notificationId),
+            OperationInfo(service: "Notifications", operation: "ReadNotification", resourceType: "notification", isMutation: true),
             method: "POST",
             path: "/\(accountId)/notifications/\(notificationId)/reading.json",
             retryConfig: Metadata.retryConfig(for: "ReadNotification")
         )
     }
 
-    public func unread(accountId: String, notificationId: Int) async throws {
+    public func unread(accountId: String, notificationId: String) async throws {
         try await requestVoid(
-            OperationInfo(service: "Notifications", operation: "UnreadNotification", resourceType: "notification", isMutation: true, resourceId: notificationId),
+            OperationInfo(service: "Notifications", operation: "UnreadNotification", resourceType: "notification", isMutation: true),
             method: "DELETE",
             path: "/\(accountId)/notifications/\(notificationId)/reading.json",
             retryConfig: Metadata.retryConfig(for: "UnreadNotification")

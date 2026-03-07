@@ -21,8 +21,8 @@ export class UsersService extends BaseService {
   /**
    * ListUsers
    */
-  async list(): Promise<ListResult<User>> {
-    return this.request(
+  async list(options?: PaginationOptions): Promise<ListResult<User>> {
+    return this.requestPaginated(
       {
         service: "Users",
         operation: "ListUsers",
@@ -31,13 +31,14 @@ export class UsersService extends BaseService {
       },
       () => this.client.GET("/users.json" as never, {
       } as never),
+      options,
     );
   }
 
   /**
    * DeactivateUser
    */
-  async deactivate(userId: number): Promise<void> {
+  async deactivate(userId: string): Promise<void> {
     return this.request(
       {
         service: "User",
@@ -54,7 +55,7 @@ export class UsersService extends BaseService {
   /**
    * GetUser
    */
-  async get(userId: number): Promise<User> {
+  async get(userId: string): Promise<User> {
     return this.request(
       {
         service: "User",
@@ -71,7 +72,7 @@ export class UsersService extends BaseService {
   /**
    * UpdateUser
    */
-  async update(userId: number, body?: UpdateUserRequest): Promise<User> {
+  async update(userId: string, body?: UpdateUserRequest): Promise<User> {
     return this.request(
       {
         service: "User",

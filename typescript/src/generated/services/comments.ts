@@ -14,6 +14,7 @@ export type Comment = components["schemas"]["Comment"];
 export interface CreateCommentRequest {
   /** Body content (Markdown or HTML) */
   body: string;
+  createdAt?: string;
 }
 
 export interface UpdateCommentRequest {
@@ -54,7 +55,7 @@ export class CommentsService extends BaseService {
       },
       () => this.client.POST("/cards/{cardNumber}/comments.json" as never, {
         params: { path: { cardNumber } },
-        body: { body: body.body } as never,
+        body: { body: body.body, created_at: body.createdAt } as never,
       } as never),
     );
   }
@@ -62,7 +63,7 @@ export class CommentsService extends BaseService {
   /**
    * DeleteComment
    */
-  async delete(cardNumber: number, commentId: number): Promise<void> {
+  async delete(cardNumber: number, commentId: string): Promise<void> {
     return this.request(
       {
         service: "Comment",
@@ -79,7 +80,7 @@ export class CommentsService extends BaseService {
   /**
    * GetComment
    */
-  async get(cardNumber: number, commentId: number): Promise<Comment> {
+  async get(cardNumber: number, commentId: string): Promise<Comment> {
     return this.request(
       {
         service: "Comment",
@@ -96,7 +97,7 @@ export class CommentsService extends BaseService {
   /**
    * UpdateComment
    */
-  async update(cardNumber: number, commentId: number, body: UpdateCommentRequest): Promise<Comment> {
+  async update(cardNumber: number, commentId: string, body: UpdateCommentRequest): Promise<Comment> {
     return this.request(
       {
         service: "Comment",

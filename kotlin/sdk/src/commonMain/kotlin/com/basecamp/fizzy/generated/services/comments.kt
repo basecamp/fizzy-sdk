@@ -50,6 +50,7 @@ class CommentsService(client: AccountClient) : BaseService(client) {
         return request(info, {
             httpPost("/cards/${cardNumber}/comments.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
                 put("body", kotlinx.serialization.json.JsonPrimitive(body.body))
+                body.createdAt?.let { put("created_at", kotlinx.serialization.json.JsonPrimitive(it)) }
             }), operationName = info.operation)
         }) { body ->
             json.decodeFromString<Comment>(body)
@@ -61,7 +62,7 @@ class CommentsService(client: AccountClient) : BaseService(client) {
      * @param cardNumber The card number
      * @param commentId The comment ID
      */
-    suspend fun get(cardNumber: Long, commentId: Long): Comment {
+    suspend fun get(cardNumber: Long, commentId: String): Comment {
         val info = OperationInfo(
             service = "Comments",
             operation = "GetComment",
@@ -83,7 +84,7 @@ class CommentsService(client: AccountClient) : BaseService(client) {
      * @param commentId The comment ID
      * @param body Request body
      */
-    suspend fun update(cardNumber: Long, commentId: Long, body: UpdateCommentBody): Comment {
+    suspend fun update(cardNumber: Long, commentId: String, body: UpdateCommentBody): Comment {
         val info = OperationInfo(
             service = "Comments",
             operation = "UpdateComment",
@@ -106,7 +107,7 @@ class CommentsService(client: AccountClient) : BaseService(client) {
      * @param cardNumber The card number
      * @param commentId The comment ID
      */
-    suspend fun delete(cardNumber: Long, commentId: Long): Unit {
+    suspend fun delete(cardNumber: Long, commentId: String): Unit {
         val info = OperationInfo(
             service = "Comments",
             operation = "DeleteComment",

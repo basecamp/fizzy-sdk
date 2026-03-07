@@ -2,18 +2,18 @@
 import Foundation
 
 public struct ListCardOptions: Sendable {
-    public var boardId: Int?
-    public var columnId: Int?
-    public var assigneeId: Int?
+    public var boardId: String?
+    public var columnId: String?
+    public var assigneeId: String?
     public var tag: String?
     public var status: String?
     public var q: String?
     public var maxItems: Int?
 
     public init(
-        boardId: Int? = nil,
-        columnId: Int? = nil,
-        assigneeId: Int? = nil,
+        boardId: String? = nil,
+        columnId: String? = nil,
+        assigneeId: String? = nil,
         tag: String? = nil,
         status: String? = nil,
         q: String? = nil,
@@ -99,13 +99,13 @@ public final class CardsService: BaseService, @unchecked Sendable {
     public func list(accountId: String, options: ListCardOptions? = nil) async throws -> ListResult<Card> {
         var queryItems: [URLQueryItem] = []
         if let boardId = options?.boardId {
-            queryItems.append(URLQueryItem(name: "board_id", value: String(boardId)))
+            queryItems.append(URLQueryItem(name: "board_id", value: boardId))
         }
         if let columnId = options?.columnId {
-            queryItems.append(URLQueryItem(name: "column_id", value: String(columnId)))
+            queryItems.append(URLQueryItem(name: "column_id", value: columnId))
         }
         if let assigneeId = options?.assigneeId {
-            queryItems.append(URLQueryItem(name: "assignee_id", value: String(assigneeId)))
+            queryItems.append(URLQueryItem(name: "assignee_id", value: assigneeId))
         }
         if let tag = options?.tag {
             queryItems.append(URLQueryItem(name: "tag", value: tag))
@@ -181,11 +181,12 @@ public final class CardsService: BaseService, @unchecked Sendable {
         )
     }
 
-    public func triage(accountId: String, cardNumber: Int) async throws {
+    public func triage(accountId: String, cardNumber: Int, req: TriageCardRequest) async throws {
         try await requestVoid(
             OperationInfo(service: "Cards", operation: "TriageCard", resourceType: "card", isMutation: true),
             method: "POST",
             path: "/\(accountId)/cards/\(cardNumber)/triage.json",
+            body: req,
             retryConfig: Metadata.retryConfig(for: "TriageCard")
         )
     }

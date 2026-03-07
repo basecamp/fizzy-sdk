@@ -3,13 +3,13 @@ import Foundation
 
 public struct Column: Codable, Sendable {
     public let createdAt: String
-    public let id: Int
+    public let id: String
     public let name: String
     public var color: String?
 
     public init(
         createdAt: String,
-        id: Int,
+        id: String,
         name: String,
         color: String? = nil
     ) {

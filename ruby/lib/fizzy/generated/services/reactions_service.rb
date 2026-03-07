@@ -10,7 +10,7 @@ module Fizzy
       # list_for_comment operation
       # @param account_id [String] account id ID
       # @param card_number [Integer] card number ID
-      # @param comment_id [Integer] comment id ID
+      # @param comment_id [String] comment id ID
       # @return [Hash] response data
       def list_for_comment(account_id:, card_number:, comment_id:)
         with_operation(service: "reactions", operation: "ListCommentReactions", is_mutation: false, resource_id: comment_id) do
@@ -21,7 +21,7 @@ module Fizzy
       # create_for_comment operation
       # @param account_id [String] account id ID
       # @param card_number [Integer] card number ID
-      # @param comment_id [Integer] comment id ID
+      # @param comment_id [String] comment id ID
       # @param content [String] content
       # @return [Hash] response data
       def create_for_comment(account_id:, card_number:, comment_id:, content:)
@@ -33,8 +33,8 @@ module Fizzy
       # delete_for_comment operation
       # @param account_id [String] account id ID
       # @param card_number [Integer] card number ID
-      # @param comment_id [Integer] comment id ID
-      # @param reaction_id [Integer] reaction id ID
+      # @param comment_id [String] comment id ID
+      # @param reaction_id [String] reaction id ID
       # @return [void]
       def delete_for_comment(account_id:, card_number:, comment_id:, reaction_id:)
         with_operation(service: "reactions", operation: "DeleteCommentReaction", is_mutation: true, resource_id: reaction_id) do
@@ -67,7 +67,7 @@ module Fizzy
       # delete_for_card operation
       # @param account_id [String] account id ID
       # @param card_number [Integer] card number ID
-      # @param reaction_id [Integer] reaction id ID
+      # @param reaction_id [String] reaction id ID
       # @return [void]
       def delete_for_card(account_id:, card_number:, reaction_id:)
         with_operation(service: "reactions", operation: "DeleteCardReaction", is_mutation: true, resource_id: reaction_id) do

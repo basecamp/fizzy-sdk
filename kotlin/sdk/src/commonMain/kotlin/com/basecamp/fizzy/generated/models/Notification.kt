@@ -12,7 +12,7 @@ import kotlinx.serialization.json.JsonObject
  */
 @Serializable
 data class Notification(
-    val id: Long,
+    val id: String,
     @SerialName("unread_count") val unreadCount: Int,
     val read: Boolean,
     @SerialName("created_at") val createdAt: String,

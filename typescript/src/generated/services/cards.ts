@@ -12,9 +12,9 @@ import type { components } from "../schema.js";
 export type Card = components["schemas"]["Card"];
 
 export interface ListCardsOptions extends PaginationOptions {
-  boardId?: number;
-  columnId?: number;
-  assigneeId?: number;
+  boardId?: string;
+  columnId?: string;
+  assigneeId?: string;
   tag?: string;
   status?: string;
   q?: string;
@@ -23,13 +23,16 @@ export interface ListCardsOptions extends PaginationOptions {
 export interface CreateCardRequest {
   /** Title */
   title: string;
-  boardId?: number;
-  columnId?: number;
+  boardId?: string;
+  columnId?: string;
   /** Rich text description (HTML) */
   description?: string;
   /** User IDs to assign to */
-  assigneeIds?: number[];
+  assigneeIds?: string[];
   tagNames?: string[];
+  image?: string;
+  createdAt?: string;
+  lastActiveAt?: string;
 }
 
 export interface UpdateCardRequest {
@@ -37,21 +40,26 @@ export interface UpdateCardRequest {
   title?: string;
   /** Rich text description (HTML) */
   description?: string;
-  columnId?: number;
+  columnId?: string;
+  image?: string;
+  createdAt?: string;
 }
 
 export interface AssignCardRequest {
-  userId: number;
+  assigneeId: string;
 }
 
 export interface MoveCardRequest {
-  boardId: number;
-  columnId?: number;
+  boardId: string;
+  columnId?: string;
 }
 
 export interface TagCardRequest {
-  /** Display name */
-  name: string;
+  tagTitle: string;
+}
+
+export interface TriageCardRequest {
+  columnId?: string;
 }
 
 export class CardsService extends BaseService {
@@ -68,6 +76,7 @@ export class CardsService extends BaseService {
         isMutation: false,
       },
       () => this.client.GET("/cards.json" as never, {
+        params: { query: { board_id: options?.boardId, column_id: options?.columnId, assignee_id: options?.assigneeId, tag: options?.tag, status: options?.status, q: options?.q } },
       } as never),
       options,
     );
@@ -85,7 +94,7 @@ export class CardsService extends BaseService {
         isMutation: true,
       },
       () => this.client.POST("/cards.json" as never, {
-        body: { title: body.title, board_id: body.boardId, column_id: body.columnId, description: body.description, assignee_ids: body.assigneeIds, tag_names: body.tagNames } as never,
+        body: { title: body.title, board_id: body.boardId, column_id: body.columnId, description: body.description, assignee_ids: body.assigneeIds, tag_names: body.tagNames, image: body.image, created_at: body.createdAt, last_active_at: body.lastActiveAt } as never,
       } as never),
     );
   }
@@ -101,7 +110,7 @@ export class CardsService extends BaseService {
         resourceType: "card",
         isMutation: true,
       },
-      () => this.client.DELETE("/cards/{cardNumber}.json" as never, {
+      () => this.client.DELETE("/cards/{cardNumber}" as never, {
         params: { path: { cardNumber } },
       } as never),
     );
@@ -118,7 +127,7 @@ export class CardsService extends BaseService {
         resourceType: "card",
         isMutation: false,
       },
-      () => this.client.GET("/cards/{cardNumber}.json" as never, {
+      () => this.client.GET("/cards/{cardNumber}" as never, {
         params: { path: { cardNumber } },
       } as never),
     );
@@ -135,9 +144,9 @@ export class CardsService extends BaseService {
         resourceType: "card",
         isMutation: true,
       },
-      () => this.client.PATCH("/cards/{cardNumber}.json" as never, {
+      () => this.client.PATCH("/cards/{cardNumber}" as never, {
         params: { path: { cardNumber } },
-        body: { title: body?.title, description: body?.description, column_id: body?.columnId } as never,
+        body: { title: body?.title, description: body?.description, column_id: body?.columnId, image: body?.image, created_at: body?.createdAt } as never,
       } as never),
     );
   }
@@ -155,7 +164,7 @@ export class CardsService extends BaseService {
       },
       () => this.client.POST("/cards/{cardNumber}/assignments.json" as never, {
         params: { path: { cardNumber } },
-        body: { user_id: body.userId } as never,
+        body: { assignee_id: body.assigneeId } as never,
       } as never),
     );
   }
@@ -344,7 +353,7 @@ export class CardsService extends BaseService {
       },
       () => this.client.POST("/cards/{cardNumber}/taggings.json" as never, {
         params: { path: { cardNumber } },
-        body: { name: body.name } as never,
+        body: { tag_title: body.tagTitle } as never,
       } as never),
     );
   }
@@ -369,7 +378,7 @@ export class CardsService extends BaseService {
   /**
    * TriageCard
    */
-  async triage(cardNumber: number): Promise<void> {
+  async triage(cardNumber: number, body?: TriageCardRequest): Promise<void> {
     return this.request(
       {
         service: "Card",
@@ -379,6 +388,7 @@ export class CardsService extends BaseService {
       },
       () => this.client.POST("/cards/{cardNumber}/triage.json" as never, {
         params: { path: { cardNumber } },
+        body: { column_id: body?.columnId } as never,
       } as never),
     );
   }

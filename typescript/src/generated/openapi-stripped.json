@@ -790,7 +790,7 @@
         }
       }
     },
-    "/boards/{boardId}.json": {
+    "/boards/{boardId}": {
       "delete": {
         "operationId": "DeleteBoard",
         "parameters": [
@@ -798,8 +798,7 @@
             "name": "boardId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -900,8 +899,7 @@
             "name": "boardId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -1015,8 +1013,7 @@
             "name": "boardId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -1126,8 +1123,7 @@
             "name": "boardId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -1242,8 +1238,7 @@
             "name": "boardId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -1336,15 +1331,14 @@
       }
     },
     "/boards/{boardId}/columns/{columnId}": {
-      "get": {
-        "operationId": "GetColumn",
+      "delete": {
+        "operationId": "DeleteColumn",
         "parameters": [
           {
             "name": "boardId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           },
@@ -1352,8 +1346,116 @@
             "name": "columnId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "DeleteColumn 200 response"
+          },
+          "400": {
+            "description": "BadRequestError 400 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestErrorResponseContent"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UnauthorizedError 401 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorResponseContent"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "ForbiddenError 403 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenErrorResponseContent"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NotFoundError 404 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundErrorResponseContent"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "ValidationError 422 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponseContent"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RateLimitError 429 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitErrorResponseContent"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "InternalServerError 500 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseContent"
+                }
+              }
+            }
+          }
+        },
+        "x-fizzy-idempotent": {
+          "natural": true
+        },
+        "x-fizzy-retry": {
+          "maxAttempts": 3,
+          "baseDelayMs": 1000,
+          "backoff": "exponential",
+          "retryOn": [
+            429,
+            500,
+            503
+          ]
+        }
+      },
+      "get": {
+        "operationId": "GetColumn",
+        "parameters": [
+          {
+            "name": "boardId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "columnId",
+            "in": "path",
+            "schema": {
+              "type": "string"
             },
             "required": true
           }
@@ -1467,8 +1569,7 @@
             "name": "boardId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           },
@@ -1476,8 +1577,7 @@
             "name": "columnId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -1587,8 +1687,7 @@
             "name": "boardId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -1703,8 +1802,7 @@
             "name": "boardId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -1804,8 +1902,7 @@
             "name": "boardId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           },
@@ -1813,8 +1910,7 @@
             "name": "webhookId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -1915,8 +2011,7 @@
             "name": "boardId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           },
@@ -1924,8 +2019,7 @@
             "name": "webhookId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -2039,8 +2133,7 @@
             "name": "boardId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           },
@@ -2048,8 +2141,7 @@
             "name": "webhookId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -2159,8 +2251,7 @@
             "name": "boardId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           },
@@ -2168,8 +2259,7 @@
             "name": "webhookId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -2272,24 +2362,21 @@
             "name": "board_id",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             }
           },
           {
             "name": "column_id",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             }
           },
           {
             "name": "assignee_id",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             }
           },
           {
@@ -2511,7 +2598,7 @@
         }
       }
     },
-    "/cards/{cardNumber}.json": {
+    "/cards/{cardNumber}": {
       "delete": {
         "operationId": "DeleteCard",
         "parameters": [
@@ -3508,8 +3595,7 @@
             "name": "commentId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -3619,8 +3705,7 @@
             "name": "commentId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -3744,8 +3829,7 @@
             "name": "commentId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -3864,8 +3948,7 @@
             "name": "commentId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -3989,8 +4072,7 @@
             "name": "commentId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -4099,8 +4181,7 @@
             "name": "commentId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           },
@@ -4108,8 +4189,7 @@
             "name": "reactionId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -5058,8 +5138,7 @@
             "name": "reactionId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -5376,8 +5455,7 @@
             "name": "stepId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -5487,8 +5565,7 @@
             "name": "stepId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -5611,8 +5688,7 @@
             "name": "stepId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -5923,6 +5999,15 @@
       },
       "post": {
         "operationId": "TriageCard",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TriageCardRequestContent"
+              }
+            }
+          }
+        },
         "parameters": [
           {
             "name": "cardNumber",
@@ -6633,7 +6718,15 @@
     "/notifications/tray.json": {
       "get": {
         "operationId": "GetNotificationTray",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "include_read",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "GetNotificationTray 200 response",
@@ -6736,8 +6829,7 @@
             "name": "notificationId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -6838,8 +6930,7 @@
             "name": "notificationId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -7121,6 +7212,10 @@
             }
           }
         },
+        "x-fizzy-pagination": {
+          "style": "link",
+          "pageParam": "page"
+        },
         "x-fizzy-retry": {
           "maxAttempts": 3,
           "baseDelayMs": 1000,
@@ -7219,6 +7314,10 @@
             }
           }
         },
+        "x-fizzy-pagination": {
+          "style": "link",
+          "pageParam": "page"
+        },
         "x-fizzy-retry": {
           "maxAttempts": 3,
           "baseDelayMs": 1000,
@@ -7239,8 +7338,7 @@
             "name": "userId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -7341,8 +7439,7 @@
             "name": "userId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -7456,8 +7553,7 @@
             "name": "userId",
             "in": "path",
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             },
             "required": true
           }
@@ -7584,13 +7680,12 @@
       "AssignCardRequestContent": {
         "type": "object",
         "properties": {
-          "user_id": {
-            "type": "integer",
-            "format": "int64"
+          "assignee_id": {
+            "type": "string"
           }
         },
         "required": [
-          "user_id"
+          "assignee_id"
         ]
       },
       "BadRequestErrorResponseContent": {
@@ -7608,8 +7703,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "name": {
             "type": "string"
@@ -7639,8 +7733,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "name": {
             "type": "string"
@@ -7661,8 +7754,7 @@
           "notification_ids": {
             "type": "array",
             "items": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             }
           }
         }
@@ -7671,8 +7763,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "number": {
             "type": "integer",
@@ -7768,8 +7859,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "url": {
             "type": "string"
@@ -7784,8 +7874,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "name": {
             "type": "string"
@@ -7807,8 +7896,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "name": {
             "type": "string"
@@ -7823,8 +7911,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "created_at": {
             "type": "string"
@@ -7879,6 +7966,10 @@
           },
           "all_access": {
             "type": "boolean"
+          },
+          "auto_postpone_period": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "required": [
@@ -7909,12 +8000,10 @@
             "type": "string"
           },
           "board_id": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "column_id": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "description": {
             "type": "string"
@@ -7922,8 +8011,7 @@
           "assignee_ids": {
             "type": "array",
             "items": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             }
           },
           "tag_names": {
@@ -7931,6 +8019,15 @@
             "items": {
               "type": "string"
             }
+          },
+          "image": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "last_active_at": {
+            "type": "string"
           }
         },
         "required": [
@@ -7975,6 +8072,9 @@
         "type": "object",
         "properties": {
           "body": {
+            "type": "string"
+          },
+          "created_at": {
             "type": "string"
           }
         },
@@ -8036,6 +8136,9 @@
         "properties": {
           "content": {
             "type": "string"
+          },
+          "completed": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -8073,8 +8176,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "key": {
             "type": "string"
@@ -8177,8 +8279,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "name": {
             "type": "string",
@@ -8287,12 +8388,10 @@
         "type": "object",
         "properties": {
           "board_id": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "column_id": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           }
         },
         "required": [
@@ -8317,8 +8416,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "unread_count": {
             "type": "integer",
@@ -8360,8 +8458,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "number": {
             "type": "integer",
@@ -8411,8 +8508,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "card": {
             "$ref": "#/components/schemas/CardRef"
@@ -8442,8 +8538,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "content": {
             "type": "string"
@@ -8528,8 +8623,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "content": {
             "type": "string"
@@ -8548,8 +8642,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "name": {
             "type": "string"
@@ -8563,13 +8656,21 @@
       "TagCardRequestContent": {
         "type": "object",
         "properties": {
-          "name": {
+          "tag_title": {
             "type": "string"
           }
         },
         "required": [
-          "name"
+          "tag_title"
         ]
+      },
+      "TriageCardRequestContent": {
+        "type": "object",
+        "properties": {
+          "column_id": {
+            "type": "string"
+          }
+        }
       },
       "UnauthorizedErrorResponseContent": {
         "type": "object",
@@ -8590,6 +8691,10 @@
           },
           "all_access": {
             "type": "boolean"
+          },
+          "auto_postpone_period": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },
@@ -8606,8 +8711,13 @@
             "type": "string"
           },
           "column_id": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
+          },
+          "image": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
           }
         }
       },
@@ -8691,8 +8801,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "name": {
             "type": "string",
@@ -8736,8 +8845,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "name": {
             "type": "string",
@@ -8773,8 +8881,7 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer",
-            "format": "int64"
+            "type": "string"
           },
           "name": {
             "type": "string"

@@ -4,13 +4,13 @@ import Foundation
 public struct Identity: Codable, Sendable {
     public let accounts: [Account]
     public let emailAddress: String
-    public let id: Int
+    public let id: String
     public let name: String
 
     public init(
         accounts: [Account],
         emailAddress: String,
-        id: Int,
+        id: String,
         name: String
     ) {
         self.accounts = accounts

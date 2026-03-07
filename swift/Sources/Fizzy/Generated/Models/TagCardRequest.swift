@@ -2,9 +2,9 @@
 import Foundation
 
 public struct TagCardRequest: Codable, Sendable {
-    public let name: String
+    public let tagTitle: String
 
-    public init(name: String) {
-        self.name = name
+    public init(tagTitle: String) {
+        self.tagTitle = tagTitle
     }
 }

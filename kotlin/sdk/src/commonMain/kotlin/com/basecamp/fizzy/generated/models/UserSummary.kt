@@ -12,7 +12,7 @@ import kotlinx.serialization.json.JsonObject
  */
 @Serializable
 data class UserSummary(
-    val id: Long,
+    val id: String,
     val name: String,
     @SerialName("avatar_url") val avatarUrl: String? = null
 )

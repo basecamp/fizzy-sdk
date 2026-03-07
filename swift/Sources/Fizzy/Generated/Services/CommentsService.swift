@@ -21,18 +21,18 @@ public final class CommentsService: BaseService, @unchecked Sendable {
         )
     }
 
-    public func delete(accountId: String, cardNumber: Int, commentId: Int) async throws {
+    public func delete(accountId: String, cardNumber: Int, commentId: String) async throws {
         try await requestVoid(
-            OperationInfo(service: "Comments", operation: "DeleteComment", resourceType: "comment", isMutation: true, resourceId: commentId),
+            OperationInfo(service: "Comments", operation: "DeleteComment", resourceType: "comment", isMutation: true),
             method: "DELETE",
             path: "/\(accountId)/cards/\(cardNumber)/comments/\(commentId)",
             retryConfig: Metadata.retryConfig(for: "DeleteComment")
         )
     }
 
-    public func get(accountId: String, cardNumber: Int, commentId: Int) async throws -> Comment {
+    public func get(accountId: String, cardNumber: Int, commentId: String) async throws -> Comment {
         return try await request(
-            OperationInfo(service: "Comments", operation: "GetComment", resourceType: "comment", isMutation: false, resourceId: commentId),
+            OperationInfo(service: "Comments", operation: "GetComment", resourceType: "comment", isMutation: false),
             method: "GET",
             path: "/\(accountId)/cards/\(cardNumber)/comments/\(commentId)",
             retryConfig: Metadata.retryConfig(for: "GetComment")
@@ -48,9 +48,9 @@ public final class CommentsService: BaseService, @unchecked Sendable {
         )
     }
 
-    public func update(accountId: String, cardNumber: Int, commentId: Int, req: UpdateCommentRequest) async throws -> Comment {
+    public func update(accountId: String, cardNumber: Int, commentId: String, req: UpdateCommentRequest) async throws -> Comment {
         return try await request(
-            OperationInfo(service: "Comments", operation: "UpdateComment", resourceType: "comment", isMutation: true, resourceId: commentId),
+            OperationInfo(service: "Comments", operation: "UpdateComment", resourceType: "comment", isMutation: true),
             method: "PATCH",
             path: "/\(accountId)/cards/\(cardNumber)/comments/\(commentId)",
             body: req,

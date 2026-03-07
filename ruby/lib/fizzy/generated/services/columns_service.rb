@@ -9,7 +9,7 @@ module Fizzy
 
       # list operation
       # @param account_id [String] account id ID
-      # @param board_id [Integer] board id ID
+      # @param board_id [String] board id ID
       # @return [Hash] response data
       def list(account_id:, board_id:)
         with_operation(service: "columns", operation: "ListColumns", is_mutation: false, resource_id: board_id) do
@@ -19,7 +19,7 @@ module Fizzy
 
       # create operation
       # @param account_id [String] account id ID
-      # @param board_id [Integer] board id ID
+      # @param board_id [String] board id ID
       # @param name [String] name
       # @param color [String, nil] color
       # @return [Hash] response data
@@ -31,8 +31,8 @@ module Fizzy
 
       # get operation
       # @param account_id [String] account id ID
-      # @param board_id [Integer] board id ID
-      # @param column_id [Integer] column id ID
+      # @param board_id [String] board id ID
+      # @param column_id [String] column id ID
       # @return [Hash] response data
       def get(account_id:, board_id:, column_id:)
         with_operation(service: "columns", operation: "GetColumn", is_mutation: false, resource_id: column_id) do
@@ -42,14 +42,26 @@ module Fizzy
 
       # update operation
       # @param account_id [String] account id ID
-      # @param board_id [Integer] board id ID
-      # @param column_id [Integer] column id ID
+      # @param board_id [String] board id ID
+      # @param column_id [String] column id ID
       # @param name [String, nil] name
       # @param color [String, nil] color
       # @return [Hash] response data
       def update(account_id:, board_id:, column_id:, name: nil, color: nil)
         with_operation(service: "columns", operation: "UpdateColumn", is_mutation: true, resource_id: column_id) do
           http_patch("/#{account_id}/boards/#{board_id}/columns/#{column_id}", body: compact_params(name: name, color: color)).json
+        end
+      end
+
+      # delete operation
+      # @param account_id [String] account id ID
+      # @param board_id [String] board id ID
+      # @param column_id [String] column id ID
+      # @return [void]
+      def delete(account_id:, board_id:, column_id:)
+        with_operation(service: "columns", operation: "DeleteColumn", is_mutation: true, resource_id: column_id) do
+          http_delete("/#{account_id}/boards/#{board_id}/columns/#{column_id}")
+          nil
         end
       end
     end

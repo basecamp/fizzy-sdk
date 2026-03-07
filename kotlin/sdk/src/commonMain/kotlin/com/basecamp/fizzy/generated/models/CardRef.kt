@@ -12,6 +12,6 @@ import kotlinx.serialization.json.JsonObject
  */
 @Serializable
 data class CardRef(
-    val id: Long,
+    val id: String,
     val url: String
 )

@@ -61,6 +61,9 @@ class CardsService(client: AccountClient) : BaseService(client) {
                 body.description?.let { put("description", kotlinx.serialization.json.JsonPrimitive(it)) }
                 body.assigneeIds?.let { put("assignee_ids", kotlinx.serialization.json.JsonArray(it.map { kotlinx.serialization.json.JsonPrimitive(it) })) }
                 body.tagNames?.let { put("tag_names", kotlinx.serialization.json.JsonArray(it.map { kotlinx.serialization.json.JsonPrimitive(it) })) }
+                body.image?.let { put("image", kotlinx.serialization.json.JsonPrimitive(it)) }
+                body.createdAt?.let { put("created_at", kotlinx.serialization.json.JsonPrimitive(it)) }
+                body.lastActiveAt?.let { put("last_active_at", kotlinx.serialization.json.JsonPrimitive(it)) }
             }), operationName = info.operation)
         }) { body ->
             json.decodeFromString<Card>(body)
@@ -81,7 +84,7 @@ class CardsService(client: AccountClient) : BaseService(client) {
             resourceId = cardNumber,
         )
         return request(info, {
-            httpGet("/cards/${cardNumber}.json", operationName = info.operation)
+            httpGet("/cards/${cardNumber}", operationName = info.operation)
         }) { body ->
             json.decodeFromString<Card>(body)
         }
@@ -102,10 +105,12 @@ class CardsService(client: AccountClient) : BaseService(client) {
             resourceId = cardNumber,
         )
         return request(info, {
-            httpPatch("/cards/${cardNumber}.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
+            httpPatch("/cards/${cardNumber}", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
                 body.title?.let { put("title", kotlinx.serialization.json.JsonPrimitive(it)) }
                 body.description?.let { put("description", kotlinx.serialization.json.JsonPrimitive(it)) }
                 body.columnId?.let { put("column_id", kotlinx.serialization.json.JsonPrimitive(it)) }
+                body.image?.let { put("image", kotlinx.serialization.json.JsonPrimitive(it)) }
+                body.createdAt?.let { put("created_at", kotlinx.serialization.json.JsonPrimitive(it)) }
             }), operationName = info.operation)
         }) { body ->
             json.decodeFromString<Card>(body)
@@ -126,7 +131,7 @@ class CardsService(client: AccountClient) : BaseService(client) {
             resourceId = cardNumber,
         )
         request(info, {
-            httpDelete("/cards/${cardNumber}.json", operationName = info.operation)
+            httpDelete("/cards/${cardNumber}", operationName = info.operation)
         }) { Unit }
     }
 
@@ -146,7 +151,7 @@ class CardsService(client: AccountClient) : BaseService(client) {
         )
         request(info, {
             httpPost("/cards/${cardNumber}/assignments.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
-                put("user_id", kotlinx.serialization.json.JsonPrimitive(body.userId))
+                put("assignee_id", kotlinx.serialization.json.JsonPrimitive(body.assigneeId))
             }), operationName = info.operation)
         }) { Unit }
     }
@@ -353,7 +358,7 @@ class CardsService(client: AccountClient) : BaseService(client) {
         )
         request(info, {
             httpPost("/cards/${cardNumber}/taggings.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
-                put("name", kotlinx.serialization.json.JsonPrimitive(body.name))
+                put("tag_title", kotlinx.serialization.json.JsonPrimitive(body.tagTitle))
             }), operationName = info.operation)
         }) { Unit }
     }
@@ -361,8 +366,9 @@ class CardsService(client: AccountClient) : BaseService(client) {
     /**
      * triage operation
      * @param cardNumber The card number
+     * @param body Request body
      */
-    suspend fun triage(cardNumber: Long): Unit {
+    suspend fun triage(cardNumber: Long, body: TriageCardBody): Unit {
         val info = OperationInfo(
             service = "Cards",
             operation = "TriageCard",
@@ -372,7 +378,9 @@ class CardsService(client: AccountClient) : BaseService(client) {
             resourceId = cardNumber,
         )
         request(info, {
-            httpPost("/cards/${cardNumber}/triage.json", operationName = info.operation)
+            httpPost("/cards/${cardNumber}/triage.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
+                body.columnId?.let { put("column_id", kotlinx.serialization.json.JsonPrimitive(it)) }
+            }), operationName = info.operation)
         }) { Unit }
     }
 

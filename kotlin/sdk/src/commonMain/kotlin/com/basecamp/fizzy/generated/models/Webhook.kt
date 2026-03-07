@@ -12,7 +12,7 @@ import kotlinx.serialization.json.JsonObject
  */
 @Serializable
 data class Webhook(
-    val id: Long,
+    val id: String,
     val name: String,
     val url: String,
     @SerialName("subscribed_actions") val subscribedActions: List<String>,

@@ -12,7 +12,7 @@ import kotlinx.serialization.json.JsonObject
  */
 @Serializable
 data class Step(
-    val id: Long,
+    val id: String,
     val content: String,
     val completed: Boolean
 )
