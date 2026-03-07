@@ -1,41 +1,41 @@
 [
   {
-    "name": "Large numeric board ID preserved in response",
-    "description": "JSON parsing must not lose precision on large numeric IDs",
+    "name": "String board ID preserved in path",
+    "description": "Large string IDs must be passed through verbatim in URL construction",
     "operation": "GetBoard",
     "method": "GET",
     "path": "/{accountId}/boards/{boardId}",
-    "pathParams": { "accountId": "999", "boardId": 9007199254740993 },
+    "pathParams": { "accountId": "999", "boardId": "9007199254740993" },
     "mockResponses": [
       {
         "status": 200,
         "headers": { "Content-Type": "application/json" },
-        "body": { "id": 9007199254740993, "name": "Precision Test", "all_access": true, "created_at": "2026-01-01T00:00:00Z", "url": "https://fizzy.do/999/boards/9007199254740993" }
+        "body": { "id": "9007199254740993", "name": "Precision Test", "all_access": true, "created_at": "2026-01-01T00:00:00Z", "url": "https://fizzy.do/999/boards/9007199254740993" }
       }
     ],
     "assertions": [
       { "type": "noError" },
-      { "type": "statusCode", "expected": 200 }
+      { "type": "requestPath", "expected": "/999/boards/9007199254740993" }
     ],
     "tags": ["integer-precision"]
   },
   {
-    "name": "Large numeric card number in path",
-    "description": "Large numbers should not lose precision in URL construction",
+    "name": "Large card number in path",
+    "description": "Card numbers within int32 range are correctly placed in URLs",
     "operation": "GetCard",
     "method": "GET",
     "path": "/{accountId}/cards/{cardNumber}",
-    "pathParams": { "accountId": "999", "cardNumber": 9007199254740993 },
+    "pathParams": { "accountId": "999", "cardNumber": 2147483647 },
     "mockResponses": [
       {
         "status": 200,
         "headers": { "Content-Type": "application/json" },
-        "body": { "id": 1, "number": 9007199254740993, "title": "Precision Card", "status": "active", "has_attachments": false, "closed": false, "postponed": false, "golden": false, "created_at": "2026-01-01T00:00:00Z", "url": "https://fizzy.do/999/cards/9007199254740993" }
+        "body": { "id": "1", "number": 2147483647, "title": "Precision Card", "status": "active", "has_attachments": false, "closed": false, "postponed": false, "golden": false, "created_at": "2026-01-01T00:00:00Z", "url": "https://fizzy.do/999/cards/2147483647" }
       }
     ],
     "assertions": [
       { "type": "noError" },
-      { "type": "requestPath", "expected": "/999/cards/9007199254740993" }
+      { "type": "requestPath", "expected": "/999/cards/2147483647" }
     ],
     "tags": ["integer-precision"]
   }

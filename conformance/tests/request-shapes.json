@@ -129,7 +129,7 @@
       {
         "status": 200,
         "headers": { "Content-Type": "application/json" },
-        "body": { "read_count": 5, "unread_count": 3, "notifications": [] }
+        "body": []
       }
     ],
     "assertions": [

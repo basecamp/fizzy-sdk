@@ -3,7 +3,7 @@
     "name": "GetBoard path construction",
     "operation": "GetBoard",
     "method": "GET",
-    "path": "/{accountId}/boards/{boardId}.json",
+    "path": "/{accountId}/boards/{boardId}",
     "pathParams": { "accountId": "999", "boardId": 42 },
     "mockResponses": [
       {
@@ -13,7 +13,7 @@
       }
     ],
     "assertions": [
-      { "type": "requestPath", "expected": "/999/boards/42.json" },
+      { "type": "requestPath", "expected": "/999/boards/42" },
       { "type": "noError" }
     ],
     "tags": ["paths"]
@@ -22,7 +22,7 @@
     "name": "GetCard uses cardNumber not ID",
     "operation": "GetCard",
     "method": "GET",
-    "path": "/{accountId}/cards/{cardNumber}.json",
+    "path": "/{accountId}/cards/{cardNumber}",
     "pathParams": { "accountId": "999", "cardNumber": 123 },
     "mockResponses": [
       {
@@ -32,7 +32,7 @@
       }
     ],
     "assertions": [
-      { "type": "requestPath", "expected": "/999/cards/123.json" },
+      { "type": "requestPath", "expected": "/999/cards/123" },
       { "type": "noError" }
     ],
     "tags": ["paths"]
@@ -106,7 +106,7 @@
       {
         "status": 201,
         "headers": { "Content-Type": "application/json" },
-        "body": { "id": 1, "key": "abc", "filename": "test.png", "content_type": "image/png", "byte_size": 1024, "checksum": "abc123", "direct_upload": { "url": "https://storage.example.com/upload", "headers": { "Content-Type": "image/png" } } }
+        "body": { "id": 1, "key": "abc", "filename": "test.png", "content_type": "image/png", "byte_size": 1024, "checksum": "abc123", "direct_upload": { "url": "https://storage.example.com/upload", "headers": { "Content_Type": "image/png" } } }
       }
     ],
     "assertions": [

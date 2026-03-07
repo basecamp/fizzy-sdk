@@ -4,7 +4,7 @@
     "description": "PATCH operations are naturally idempotent and should be retried",
     "operation": "UpdateBoard",
     "method": "PATCH",
-    "path": "/{accountId}/boards/{boardId}.json",
+    "path": "/{accountId}/boards/{boardId}",
     "pathParams": { "accountId": "999", "boardId": 1 },
     "requestBody": { "name": "Updated" },
     "mockResponses": [
@@ -30,7 +30,7 @@
     "description": "DELETE operations are naturally idempotent and should be retried",
     "operation": "DeleteBoard",
     "method": "DELETE",
-    "path": "/{accountId}/boards/{boardId}.json",
+    "path": "/{accountId}/boards/{boardId}",
     "pathParams": { "accountId": "999", "boardId": 1 },
     "mockResponses": [
       {
