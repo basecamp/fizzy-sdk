@@ -91,9 +91,10 @@ module Fizzy
 
     # Performs a DELETE request.
     # @param path [String] URL path
+    # @param retryable [Boolean, nil] override retry behavior
     # @return [Response]
-    def delete(path)
-      @http.delete(path)
+    def delete(path, retryable: nil)
+      @http.delete(path, retryable: retryable)
     end
 
     # Performs a POST request with raw binary data.

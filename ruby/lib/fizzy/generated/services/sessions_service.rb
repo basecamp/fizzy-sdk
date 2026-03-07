@@ -20,7 +20,7 @@ module Fizzy
       # @return [void]
       def destroy()
         with_operation(service: "sessions", operation: "DestroySession", is_mutation: true) do
-          http_delete("/session.json")
+          http_delete("/session.json", retryable: false)
           nil
         end
       end

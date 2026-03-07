@@ -72,9 +72,10 @@ module Fizzy
 
     # Performs a DELETE request.
     # @param path [String] URL path
+    # @param retryable [Boolean, nil] override retry behavior
     # @return [Response]
-    def delete(path)
-      request(:delete, path)
+    def delete(path, retryable: nil)
+      request(:delete, path, retryable: retryable)
     end
 
     # Performs a POST request with raw binary data.
@@ -123,11 +124,7 @@ module Fizzy
 
         next_url = Security.resolve_url(url, next_url)
 
-        unless Security.same_origin?(next_url, base_url)
-          raise Fizzy::APIError.new(
-            "Pagination Link header points to different origin: #{Security.truncate(next_url)}"
-          )
-        end
+        break unless Security.same_origin?(next_url, base_url)
 
         url = next_url
       end
@@ -145,18 +142,18 @@ module Fizzy
       end
     end
 
-    def request(method, path, params: {}, body: nil)
+    def request(method, path, params: {}, body: nil, retryable: nil)
       url = build_url(path)
+      should_retry = retryable.nil? ? (method != :post) : retryable
 
-      # Mutations don't retry on 429/5xx to avoid duplicating data
-      if method == :get
-        request_with_retry(method, url, params: params)
+      if should_retry
+        request_with_retry(method, url, params: params, body: body)
       else
         single_request(method, url, params: params, body: body, attempt: 1)
       end
     end
 
-    def request_with_retry(method, url, params: {})
+    def request_with_retry(method, url, params: {}, body: nil)
       attempt = 0
       last_error = nil
 
@@ -165,7 +162,7 @@ module Fizzy
         break if attempt > @config.max_retries
 
         begin
-          return single_request(method, url, params: params, body: nil, attempt: attempt)
+          return single_request(method, url, params: params, body: body, attempt: attempt)
         rescue Fizzy::RateLimitError, Fizzy::NetworkError, Fizzy::APIError => e
           raise e unless e.retryable?
 
@@ -321,6 +318,7 @@ module Fizzy
       if path.start_with?("https://")
         return path
       elsif path.start_with?("http://")
+        return path if Security.localhost?(path)
         raise Fizzy::UsageError.new("URL must use HTTPS: #{path}")
       end
 

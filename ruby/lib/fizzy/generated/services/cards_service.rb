@@ -44,7 +44,7 @@ module Fizzy
       # @return [Hash] response data
       def get(account_id:, card_number:)
         with_operation(service: "cards", operation: "GetCard", is_mutation: false, resource_id: card_number) do
-          http_get("/#{account_id}/cards/#{card_number}").json
+          http_get("/#{account_id}/cards/#{card_number}.json").json
         end
       end
 
@@ -57,7 +57,7 @@ module Fizzy
       # @return [Hash] response data
       def update(account_id:, card_number:, title: nil, description: nil, column_id: nil)
         with_operation(service: "cards", operation: "UpdateCard", is_mutation: true, resource_id: card_number) do
-          http_patch("/#{account_id}/cards/#{card_number}", body: compact_params(title: title, description: description, column_id: column_id)).json
+          http_patch("/#{account_id}/cards/#{card_number}.json", body: compact_params(title: title, description: description, column_id: column_id)).json
         end
       end
 
@@ -67,7 +67,7 @@ module Fizzy
       # @return [void]
       def delete(account_id:, card_number:)
         with_operation(service: "cards", operation: "DeleteCard", is_mutation: true, resource_id: card_number) do
-          http_delete("/#{account_id}/cards/#{card_number}")
+          http_delete("/#{account_id}/cards/#{card_number}.json")
           nil
         end
       end

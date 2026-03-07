@@ -33,7 +33,7 @@ module Fizzy
       # @return [Hash] response data
       def get(account_id:, board_id:)
         with_operation(service: "boards", operation: "GetBoard", is_mutation: false, resource_id: board_id) do
-          http_get("/#{account_id}/boards/#{board_id}").json
+          http_get("/#{account_id}/boards/#{board_id}.json").json
         end
       end
 
@@ -45,7 +45,7 @@ module Fizzy
       # @return [Hash] response data
       def update(account_id:, board_id:, name: nil, all_access: nil)
         with_operation(service: "boards", operation: "UpdateBoard", is_mutation: true, resource_id: board_id) do
-          http_patch("/#{account_id}/boards/#{board_id}", body: compact_params(name: name, all_access: all_access)).json
+          http_patch("/#{account_id}/boards/#{board_id}.json", body: compact_params(name: name, all_access: all_access)).json
         end
       end
 
@@ -55,7 +55,7 @@ module Fizzy
       # @return [void]
       def delete(account_id:, board_id:)
         with_operation(service: "boards", operation: "DeleteBoard", is_mutation: true, resource_id: board_id) do
-          http_delete("/#{account_id}/boards/#{board_id}")
+          http_delete("/#{account_id}/boards/#{board_id}.json")
           nil
         end
       end
