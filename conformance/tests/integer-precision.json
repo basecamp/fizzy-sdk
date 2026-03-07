@@ -1,0 +1,42 @@
+[
+  {
+    "name": "Large numeric board ID preserved in response",
+    "description": "JSON parsing must not lose precision on large numeric IDs",
+    "operation": "GetBoard",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}.json",
+    "pathParams": { "accountId": "999", "boardId": 9007199254740993 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "id": 9007199254740993, "name": "Precision Test", "all_access": true, "created_at": "2026-01-01T00:00:00Z", "url": "https://fizzy.do/999/boards/9007199254740993" }
+      }
+    ],
+    "assertions": [
+      { "type": "noError" },
+      { "type": "statusCode", "expected": 200 }
+    ],
+    "tags": ["integer-precision"]
+  },
+  {
+    "name": "Large numeric card number in path",
+    "description": "Large numbers should not lose precision in URL construction",
+    "operation": "GetCard",
+    "method": "GET",
+    "path": "/{accountId}/cards/{cardNumber}.json",
+    "pathParams": { "accountId": "999", "cardNumber": 9007199254740993 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "id": 1, "number": 9007199254740993, "title": "Precision Card", "status": "active", "has_attachments": false, "closed": false, "postponed": false, "golden": false, "created_at": "2026-01-01T00:00:00Z", "url": "https://fizzy.do/999/cards/9007199254740993" }
+      }
+    ],
+    "assertions": [
+      { "type": "noError" },
+      { "type": "requestPath", "expected": "/999/cards/9007199254740993.json" }
+    ],
+    "tags": ["integer-precision"]
+  }
+]

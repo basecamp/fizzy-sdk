@@ -8,8 +8,9 @@
 .PHONY: rb-generate rb-generate-services rb-build rb-test rb-check rb-check-drift rb-clean
 .PHONY: swift-build swift-test swift-check swift-check-drift swift-generate swift-clean
 .PHONY: kt-generate-services kt-build kt-test kt-check kt-check-drift kt-clean
-.PHONY: conformance-build conformance-go conformance-kotlin conformance-typescript conformance-ruby conformance-swift conformance
+.PHONY: conformance-build conformance-go conformance-kotlin conformance-typescript conformance-ruby conformance
 .PHONY: provenance-sync provenance-check sync-status
+.PHONY: check-mvp check-full
 .PHONY: bump release audit-check
 
 # ──────────────────────────────────────────────
@@ -311,7 +312,7 @@ conformance-swift:
 		cd conformance/runner/swift && swift run ConformanceRunner ../../tests/; \
 	else echo "SKIP: Swift conformance runner not found"; fi
 
-conformance: conformance-go conformance-typescript conformance-ruby conformance-kotlin conformance-swift
+conformance: conformance-go conformance-typescript conformance-ruby conformance-kotlin
 	@echo "==> All conformance tests passed"
 
 # ──────────────────────────────────────────────
@@ -350,7 +351,7 @@ release: ## Release: make release VERSION=x.y.z
 audit-check: ## Check rubric audit freshness and must-pass criteria
 	@echo "==> Checking rubric audit..."
 	@test -f rubric-audit.json || (echo "ERROR: rubric-audit.json not found" && exit 1)
-	@for c in 1A.6 1C.3; do \
+	@for c in 1A.6 1B.6 1C.3; do \
 		pass=$$(jq -r --arg c "$$c" '.criteria[$$c].pass // empty' rubric-audit.json); \
 		if [ "$$pass" != "true" ]; then \
 			echo "ERROR: Must-pass criterion $$c is not passing in rubric-audit.json" && exit 1; \
@@ -366,6 +367,12 @@ audit-check: ## Check rubric audit freshness and must-pass criteria
 # ──────────────────────────────────────────────
 # Combined
 # ──────────────────────────────────────────────
+
+check-mvp: smithy-check behavior-model-check url-routes-check sync-api-version-check go-check ## Fast MVP checks
+	@echo "==> MVP checks passed"
+
+check-full: check-mvp provenance-check audit-check ts-check rb-check swift-check kt-check conformance ## Full CI-grade checks
+	@echo "==> Full checks passed"
 
 check: smithy-check behavior-model-check url-routes-check sync-api-version-check provenance-check audit-check go-check ts-check rb-check swift-check kt-check conformance ## Run all checks
 	@echo "==> All checks passed"

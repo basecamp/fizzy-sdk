@@ -1,0 +1,16 @@
+{
+  "name": "@basecamp/fizzy-conformance",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@basecamp/fizzy-sdk": "file:../../../typescript"
+  },
+  "devDependencies": {
+    "vitest": "^3.0.0",
+    "msw": "^2.7.0",
+    "typescript": "^5.8.0"
+  }
+}

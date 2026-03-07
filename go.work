@@ -1,3 +1,6 @@
 go 1.26
 
-use ./go
+use (
+	./go
+	./conformance/runner/go
+)
