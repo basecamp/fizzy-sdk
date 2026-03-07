@@ -47,7 +47,7 @@ jobs:
         if: github.event_name == 'push' || inputs.dry_run == false
         run: |
           cd ruby
-          GEM_FILE=$(ls *.gem | head -1)
+          GEM_FILE=$(find . -maxdepth 1 -name '*.gem' -print -quit)
           gem push "$GEM_FILE" || true
 
       - name: Wait for availability

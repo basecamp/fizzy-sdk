@@ -43,6 +43,7 @@ service Fizzy {
         CreateColumn
         GetColumn
         UpdateColumn
+        DeleteColumn
 
         // Cards
         ListCards
@@ -215,25 +216,25 @@ string ISO8601Date
 
 string URL
 
-long BoardId
+string BoardId
 
-long ColumnId
+string ColumnId
 
 integer CardNumber
 
-long CommentId
+string CommentId
 
-long StepId
+string StepId
 
-long ReactionId
+string ReactionId
 
-long NotificationId
+string NotificationId
 
-long UserId
+string UserId
 
-long TagId
+string TagId
 
-long WebhookId
+string WebhookId
 
 string AccountId
 
@@ -269,7 +270,7 @@ structure Column {
 
 structure Card {
     @required
-    id: Long
+    id: String
     @required
     number: CardNumber
     @required
@@ -384,7 +385,7 @@ structure RichTextBody {
 
 structure CardRef {
     @required
-    id: Long
+    id: String
     @required
     url: URL
 }
@@ -430,7 +431,7 @@ structure Notification {
 
 structure NotificationCard {
     @required
-    id: Long
+    id: String
     @required
     number: CardNumber
     @required
@@ -438,11 +439,6 @@ structure NotificationCard {
     @required
     url: URL
     board: BoardSummary
-}
-
-structure NotificationTray {
-    @required
-    unread_count: Integer
 }
 
 structure Tag {
@@ -477,7 +473,7 @@ list WebhookActions {
 
 structure Pin {
     @required
-    id: Long
+    id: String
     @required
     card: CardRef
     @required
@@ -531,7 +527,7 @@ list AccountList {
 
 structure DirectUpload {
     @required
-    id: Long
+    id: String
     @required
     key: String
     @required
@@ -645,6 +641,8 @@ structure CreateBoardInput {
     name: String
 
     all_access: Boolean
+
+    auto_postpone_period: Integer
 }
 
 structure CreateBoardOutput {
@@ -699,6 +697,8 @@ structure UpdateBoardInput {
     name: String
 
     all_access: Boolean
+
+    auto_postpone_period: Integer
 }
 
 structure UpdateBoardOutput {
@@ -846,6 +846,30 @@ structure UpdateColumnOutput {
     column: Column
 }
 
+@idempotent
+@http(method: "DELETE", uri: "/{accountId}/boards/{boardId}/columns/{columnId}")
+@tags(["Columns"])
+@fizzyIdempotent(natural: true)
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation DeleteColumn {
+    input: DeleteColumnInput
+    errors: [UnauthorizedError, ForbiddenError, NotFoundError]
+}
+
+structure DeleteColumnInput {
+    @required
+    @httpLabel
+    accountId: AccountId
+
+    @required
+    @httpLabel
+    boardId: BoardId
+
+    @required
+    @httpLabel
+    columnId: ColumnId
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Cards
 // ═══════════════════════════════════════════════════════════════════════════
@@ -867,13 +891,13 @@ structure ListCardsInput {
     accountId: AccountId
 
     @httpQuery("board_id")
-    board_id: Long
+    board_id: String
 
     @httpQuery("column_id")
-    column_id: Long
+    column_id: String
 
     @httpQuery("assignee_id")
-    assignee_id: Long
+    assignee_id: String
 
     @httpQuery("tag")
     tag: String
@@ -907,19 +931,25 @@ structure CreateCardInput {
     @required
     title: String
 
-    board_id: Long
+    board_id: String
 
-    column_id: Long
+    column_id: String
 
     description: String
 
-    assignee_ids: LongList
+    assignee_ids: StringList
 
     tag_names: TagNames
+
+    image: String
+
+    created_at: String
+
+    last_active_at: String
 }
 
-list LongList {
-    member: Long
+list StringList {
+    member: String
 }
 
 structure CreateCardOutput {
@@ -975,7 +1005,11 @@ structure UpdateCardInput {
 
     description: String
 
-    column_id: Long
+    column_id: String
+
+    image: String
+
+    created_at: String
 }
 
 structure UpdateCardOutput {
@@ -1038,8 +1072,20 @@ operation PostponeCard {
 @fizzyIdempotent(natural: true)
 @fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation TriageCard {
-    input: CardNumberInput
+    input: TriageCardInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
+}
+
+structure TriageCardInput {
+    @required
+    @httpLabel
+    accountId: AccountId
+
+    @required
+    @httpLabel
+    cardNumber: CardNumber
+
+    column_id: String
 }
 
 @idempotent
@@ -1089,7 +1135,7 @@ structure AssignCardInput {
     cardNumber: CardNumber
 
     @required
-    user_id: UserId
+    assignee_id: UserId
 }
 
 @http(method: "POST", uri: "/{accountId}/cards/{cardNumber}/self_assignment.json")
@@ -1118,7 +1164,7 @@ structure TagCardInput {
     cardNumber: CardNumber
 
     @required
-    name: String
+    tag_title: String
 }
 
 @http(method: "POST", uri: "/{accountId}/cards/{cardNumber}/watch.json")
@@ -1260,6 +1306,8 @@ structure CreateCommentInput {
 
     @required
     body: String
+
+    created_at: String
 }
 
 structure CreateCommentOutput {
@@ -1376,6 +1424,8 @@ structure CreateStepInput {
 
     @required
     content: String
+
+    completed: Boolean
 }
 
 structure CreateStepOutput {
@@ -1733,11 +1783,14 @@ structure GetNotificationTrayInput {
     @required
     @httpLabel
     accountId: AccountId
+
+    @httpQuery("include_read")
+    include_read: Boolean
 }
 
 structure GetNotificationTrayOutput {
     @required
-    tray: NotificationTray
+    notifications: NotificationList
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1747,6 +1800,7 @@ structure GetNotificationTrayOutput {
 @readonly
 @http(method: "GET", uri: "/{accountId}/tags.json")
 @tags(["Tags"])
+@fizzyPagination(style: "link", pageParam: "page")
 @fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation ListTags {
     input: ListTagsInput
@@ -1772,6 +1826,7 @@ structure ListTagsOutput {
 @readonly
 @http(method: "GET", uri: "/{accountId}/users.json")
 @tags(["Users"])
+@fizzyPagination(style: "link", pageParam: "page")
 @fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation ListUsers {
     input: ListUsersInput

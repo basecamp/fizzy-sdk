@@ -42,7 +42,7 @@ JQSCRIPT
 openapi_ops=$(bash "$TMPSCRIPT" "$OPENAPI" | LC_ALL=C sort -u)
 
 # Extract operationIds from Go registry (map keys: first quoted string on each entry line)
-registry_ops=$(grep -E '^\s+"[A-Z]' "$REGISTRY" | sed 's/.*"\([^"]*\)".*/\1/' | LC_ALL=C sort -u)
+registry_ops=$(grep -E '^\s+"[A-Z]' "$REGISTRY" | sed 's/^[[:space:]]*"\([^"]*\)".*/\1/' | LC_ALL=C sort -u)
 
 missing=$(comm -23 <(echo "$openapi_ops") <(echo "$registry_ops"))
 extra=$(comm -13 <(echo "$openapi_ops") <(echo "$registry_ops"))

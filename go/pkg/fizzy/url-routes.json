@@ -96,6 +96,7 @@
       "pattern": "/{accountId}/boards/{boardId}/columns/{columnId}",
       "resource": "unknown",
       "operations": {
+        "DELETE": "DeleteColumn",
         "GET": "GetColumn",
         "PATCH": "UpdateColumn"
       },

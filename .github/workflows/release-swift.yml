@@ -28,7 +28,7 @@ jobs:
           else
             VERSION="0.0.0-dryrun"
           fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Verify version matches
         if: github.event_name == 'push'

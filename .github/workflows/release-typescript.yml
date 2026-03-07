@@ -37,7 +37,7 @@ jobs:
           else
             VERSION="0.0.0-dryrun"
           fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Install and test
         run: |
@@ -51,9 +51,9 @@ jobs:
         run: |
           PKG_VERSION=$(jq -r .version typescript/package.json)
           if npm view "@basecamp/fizzy-sdk@$PKG_VERSION" version 2>/dev/null; then
-            echo "already_published=true" >> $GITHUB_OUTPUT
+            echo "already_published=true" >> "$GITHUB_OUTPUT"
           else
-            echo "already_published=false" >> $GITHUB_OUTPUT
+            echo "already_published=false" >> "$GITHUB_OUTPUT"
           fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -23,7 +23,7 @@ jobs:
           SMITHY_VERSION="1.66.0"
           curl -sL "https://github.com/smithy-lang/smithy/releases/download/${SMITHY_VERSION}/smithy-cli-linux-x86_64.zip" -o smithy-cli.zip
           unzip -q smithy-cli.zip
-          echo "${PWD}/smithy-cli-linux-x86_64/bin" >> $GITHUB_PATH
+          echo "${PWD}/smithy-cli-linux-x86_64/bin" >> "$GITHUB_PATH"
 
       - name: Validate spec
         run: cd spec && smithy validate
@@ -54,5 +54,5 @@ jobs:
       - name: Store operation count
         run: |
           OP_COUNT=$(jq '[.paths | to_entries[] | .value | keys[] | select(. != "parameters")] | length' openapi.json)
-          echo "operation_count=$OP_COUNT" >> $GITHUB_OUTPUT
+          echo "operation_count=$OP_COUNT" >> "$GITHUB_OUTPUT"
           echo "Operation count: $OP_COUNT"
