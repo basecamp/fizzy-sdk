@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "json"
+
 # Error types and codes for the Fizzy SDK.
 module Fizzy
   # Error codes for API responses

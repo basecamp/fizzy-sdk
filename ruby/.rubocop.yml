@@ -12,3 +12,7 @@ AllCops:
 Style/Documentation:
   Exclude:
     - "test/**/*"
+
+# This gem uses Minitest (not Rails), so refute is correct
+Rails/RefuteMethods:
+  Enabled: false

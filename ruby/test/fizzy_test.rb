@@ -186,7 +186,7 @@ class FizzyErrorSubclassTest < Minitest::Test
   end
 
   def test_ambiguous_error
-    e = Fizzy::AmbiguousError.new("board", matches: ["a", "b"])
+    e = Fizzy::AmbiguousError.new("board", matches: [ "a", "b" ])
     assert_equal "ambiguous", e.code
     assert_equal %w[a b], e.matches
     assert_includes e.hint, "a"
