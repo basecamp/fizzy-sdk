@@ -32,7 +32,7 @@ func (s *CardsService) Create(ctx context.Context, req *generated.CreateCardRequ
 
 // Delete deletes a card.
 func (s *CardsService) Delete(ctx context.Context, cardNumber string) (*Response, error) {
-	return s.client.Delete(ctx, fmt.Sprintf("/cards/%s", cardNumber))
+	return s.client.Delete(ctx, fmt.Sprintf("/cards/%s.json", cardNumber))
 }
 
 // DeleteImage deletes an image.
@@ -42,7 +42,7 @@ func (s *CardsService) DeleteImage(ctx context.Context, cardNumber string) (*Res
 
 // Get returns a card.
 func (s *CardsService) Get(ctx context.Context, cardNumber string) (json.RawMessage, *Response, error) {
-	resp, err := s.client.Get(ctx, fmt.Sprintf("/cards/%s", cardNumber))
+	resp, err := s.client.Get(ctx, fmt.Sprintf("/cards/%s.json", cardNumber))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -133,7 +133,7 @@ func (s *CardsService) Unwatch(ctx context.Context, cardNumber string) (*Respons
 
 // Update updates a card.
 func (s *CardsService) Update(ctx context.Context, cardNumber string, req *generated.UpdateCardRequest) (json.RawMessage, *Response, error) {
-	resp, err := s.client.Patch(ctx, fmt.Sprintf("/cards/%s", cardNumber), req)
+	resp, err := s.client.Patch(ctx, fmt.Sprintf("/cards/%s.json", cardNumber), req)
 	if err != nil {
 		return nil, nil, err
 	}

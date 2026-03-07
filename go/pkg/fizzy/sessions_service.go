@@ -28,7 +28,7 @@ func (s *SessionsService) Create(ctx context.Context, req *generated.CreateSessi
 
 // Destroy performs the Destroy operation on a session.
 func (s *SessionsService) Destroy(ctx context.Context) (*Response, error) {
-	return s.client.Delete(ctx, "/session.json")
+	return s.client.Delete(WithNoRetry(ctx), "/session.json")
 }
 
 // RedeemMagicLink performs the RedeemMagicLink operation on a session.

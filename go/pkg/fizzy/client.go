@@ -362,8 +362,8 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body any) (
 }
 
 func (c *Client) doRequestURL(ctx context.Context, method, url string, body any) (*Response, error) {
-	// Mutations (POST/PUT/DELETE): Don't retry on 429/5xx to avoid duplicating data.
-	if method != "GET" {
+	// POST requests and operations that opt out via WithNoRetry: single attempt only.
+	if method == "POST" || isNoRetry(ctx) {
 		resp, err := c.singleRequest(ctx, method, url, body, 1)
 		if err == nil {
 			return resp, nil
@@ -466,6 +466,8 @@ func (c *Client) singleRequest(ctx context.Context, method, url string, body any
 
 	c.logger.Debug("http response", "status", resp.StatusCode)
 
+	requestID := resp.Header.Get("X-Request-Id")
+
 	switch resp.StatusCode {
 	case http.StatusNotModified: // 304
 		if cacheKey != "" {
@@ -508,22 +510,48 @@ func (c *Client) singleRequest(ctx context.Context, method, url string, body any
 
 	case http.StatusTooManyRequests: // 429
 		retryAfter := parseRetryAfter(resp.Header.Get("Retry-After"))
-		return nil, ErrRateLimit(retryAfter)
+		return nil, &retryableError{
+			err: &Error{
+				Code:       CodeRateLimit,
+				Message:    "Rate limited",
+				HTTPStatus: 429,
+				Retryable:  true,
+				RequestID:  requestID,
+			},
+			retryAfter: time.Duration(retryAfter) * time.Second,
+		}
 
 	case http.StatusUnauthorized: // 401
-		return nil, ErrAuth("Authentication failed")
+		return nil, &Error{Code: CodeAuth, Message: "Authentication failed", HTTPStatus: 401, RequestID: requestID}
 
 	case http.StatusForbidden: // 403
 		if method != "GET" {
-			return nil, ErrForbiddenScope()
+			return nil, &Error{Code: CodeForbidden, Message: "Access denied: insufficient scope", Hint: "Re-authenticate with full scope", HTTPStatus: 403, RequestID: requestID}
 		}
-		return nil, ErrForbidden("Access denied")
+		return nil, &Error{Code: CodeForbidden, Message: "Access denied", HTTPStatus: 403, RequestID: requestID}
 
 	case http.StatusNotFound: // 404
-		return nil, ErrNotFound("Resource", url)
+		return nil, &Error{Code: CodeNotFound, Message: fmt.Sprintf("Resource not found: %s", url), HTTPStatus: 404, RequestID: requestID}
+
+	case http.StatusUnprocessableEntity: // 422
+		respBody, _ := limitedReadAll(resp.Body, MaxErrorBodyBytes)
+		msg := "Validation failed"
+		var parsed struct {
+			Error   string `json:"error"`
+			Message string `json:"message"`
+		}
+		if json.Unmarshal(respBody, &parsed) == nil {
+			if parsed.Error != "" {
+				msg = truncateString(parsed.Error, MaxErrorMessageBytes)
+			}
+			if parsed.Message != "" {
+				msg = truncateString(parsed.Message, MaxErrorMessageBytes)
+			}
+		}
+		return nil, &Error{Code: CodeValidation, Message: msg, HTTPStatus: 422, RequestID: requestID}
 
 	case http.StatusInternalServerError: // 500
-		return nil, ErrAPI(500, "Server error (500)")
+		return nil, &Error{Code: CodeAPI, Message: "Server error (500)", HTTPStatus: 500, Retryable: true, RequestID: requestID}
 
 	case http.StatusBadGateway, http.StatusServiceUnavailable, http.StatusGatewayTimeout: // 502, 503, 504
 		return nil, &Error{
@@ -531,6 +559,7 @@ func (c *Client) singleRequest(ctx context.Context, method, url string, body any
 			Message:    fmt.Sprintf("Gateway error (%d)", resp.StatusCode),
 			HTTPStatus: resp.StatusCode,
 			Retryable:  true,
+			RequestID:  requestID,
 		}
 
 	default:
@@ -545,10 +574,10 @@ func (c *Client) singleRequest(ctx context.Context, method, url string, body any
 				msg = apiErr.Message
 			}
 			if msg != "" {
-				return nil, ErrAPI(resp.StatusCode, truncateString(msg, MaxErrorMessageBytes))
+				return nil, &Error{Code: CodeAPI, Message: truncateString(msg, MaxErrorMessageBytes), HTTPStatus: resp.StatusCode, RequestID: requestID}
 			}
 		}
-		return nil, ErrAPI(resp.StatusCode, fmt.Sprintf("Request failed (HTTP %d)", resp.StatusCode))
+		return nil, &Error{Code: CodeAPI, Message: fmt.Sprintf("Request failed (HTTP %d)", resp.StatusCode), HTTPStatus: resp.StatusCode, RequestID: requestID}
 	}
 }
 

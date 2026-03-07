@@ -117,6 +117,19 @@ func newDefaultTransport() http.RoundTripper {
 	return t
 }
 
+// noRetryKey is the context key for disabling retry on a request.
+type noRetryKey struct{}
+
+// WithNoRetry returns a context that disables retry for the request.
+func WithNoRetry(ctx context.Context) context.Context {
+	return context.WithValue(ctx, noRetryKey{}, true)
+}
+
+func isNoRetry(ctx context.Context) bool {
+	v, _ := ctx.Value(noRetryKey{}).(bool)
+	return v
+}
+
 // attemptKey is the context key for tracking request attempt number.
 type attemptKey struct{}
 

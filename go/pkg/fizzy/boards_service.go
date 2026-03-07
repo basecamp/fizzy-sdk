@@ -20,12 +20,12 @@ func (s *BoardsService) Create(ctx context.Context, req *generated.CreateBoardRe
 
 // Delete deletes a board.
 func (s *BoardsService) Delete(ctx context.Context, boardID string) (*Response, error) {
-	return s.client.Delete(ctx, fmt.Sprintf("/boards/%s", boardID))
+	return s.client.Delete(ctx, fmt.Sprintf("/boards/%s.json", boardID))
 }
 
 // Get returns a board.
 func (s *BoardsService) Get(ctx context.Context, boardID string) (json.RawMessage, *Response, error) {
-	resp, err := s.client.Get(ctx, fmt.Sprintf("/boards/%s", boardID))
+	resp, err := s.client.Get(ctx, fmt.Sprintf("/boards/%s.json", boardID))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -46,7 +46,7 @@ func (s *BoardsService) List(ctx context.Context, path string) (json.RawMessage,
 
 // Update updates a board.
 func (s *BoardsService) Update(ctx context.Context, boardID string, req *generated.UpdateBoardRequest) (json.RawMessage, *Response, error) {
-	resp, err := s.client.Patch(ctx, fmt.Sprintf("/boards/%s", boardID), req)
+	resp, err := s.client.Patch(ctx, fmt.Sprintf("/boards/%s.json", boardID), req)
 	if err != nil {
 		return nil, nil, err
 	}

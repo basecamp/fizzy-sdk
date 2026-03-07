@@ -54,6 +54,20 @@ type SchemaRef struct {
 }
 
 // ---------------------------------------------------------------------------
+// Behavior model types
+// ---------------------------------------------------------------------------
+
+type BehaviorModel struct {
+	Operations map[string]BehaviorEntry `json:"operations"`
+}
+
+type BehaviorEntry struct {
+	Retry struct {
+		RetryOn json.RawMessage `json:"retry_on"`
+	} `json:"retry"`
+}
+
+// ---------------------------------------------------------------------------
 // Parsed operation
 // ---------------------------------------------------------------------------
 
@@ -66,6 +80,7 @@ type ParsedOp struct {
 	BodyRefName    string // e.g. "CreateBoardRequestContent"
 	HasResponseData bool
 	HasPagination  bool
+	NoRetry        bool // true for non-POST operations with retry_on: null
 }
 
 // ---------------------------------------------------------------------------
@@ -571,7 +586,11 @@ func generateMethodBody(serviceName string, op ParsedOp, fmtStr string, hasForma
 		buf.WriteString("\treturn resp.Data, resp, nil\n")
 
 	case "DELETE":
-		buf.WriteString(fmt.Sprintf("\treturn s.client.Delete(ctx, %s)\n", pathExpr))
+		ctxArg := "ctx"
+		if op.NoRetry {
+			ctxArg = "WithNoRetry(ctx)"
+		}
+		buf.WriteString(fmt.Sprintf("\treturn s.client.Delete(%s, %s)\n", ctxArg, pathExpr))
 	}
 
 	return buf.String()
@@ -633,8 +652,9 @@ func generateOperationsRegistry(services map[string]*ServiceDef) string {
 func main() {
 	// Determine paths
 	// The generator runs from go/ directory: cd go && go run ./cmd/generate-services/
-	// openapi.json is in the repo root (one level up)
+	// openapi.json and behavior-model.json are in the repo root (one level up)
 	openapiPath := filepath.Join("..", "openapi.json")
+	behaviorPath := filepath.Join("..", "behavior-model.json")
 	outputDir := filepath.Join("pkg", "fizzy")
 
 	data, err := os.ReadFile(openapiPath)
@@ -645,6 +665,16 @@ func main() {
 	var spec OpenAPISpec
 	if err := json.Unmarshal(data, &spec); err != nil {
 		log.Fatalf("parsing openapi.json: %v", err)
+	}
+
+	// Load behavior model to determine which operations disable retry
+	behaviorData, err := os.ReadFile(behaviorPath)
+	if err != nil {
+		log.Fatalf("reading behavior-model.json: %v", err)
+	}
+	var behaviorModel BehaviorModel
+	if err := json.Unmarshal(behaviorData, &behaviorModel); err != nil {
+		log.Fatalf("parsing behavior-model.json: %v", err)
 	}
 
 	httpMethods := []string{"get", "post", "put", "patch", "delete"}
@@ -707,6 +737,15 @@ func main() {
 
 			// Pagination
 			parsed.HasPagination = op.Pagination != nil
+
+			// NoRetry: non-POST operations with retry_on: null in behavior model
+			if parsed.HTTPMethod != "POST" {
+				if entry, ok := behaviorModel.Operations[op.OperationID]; ok {
+					if string(entry.Retry.RetryOn) == "null" {
+						parsed.NoRetry = true
+					}
+				}
+			}
 
 			// Group into service
 			svcName := deriveServiceName(op.OperationID)
