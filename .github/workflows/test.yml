@@ -16,8 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: smithy
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6
         with:
           go-version: '1.26'
       - name: Check service drift
@@ -39,8 +39,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: smithy
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '20'
       - name: Install
@@ -65,8 +65,8 @@ jobs:
         ruby: ['3.2', '3.3', '3.4', '4.0', 'head']
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - uses: ruby/setup-ruby@v1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: ruby/setup-ruby@6ca151fd1bfcfd6fe0c4eb6837eb0584d0134a0c # v1
         with:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
@@ -82,7 +82,7 @@ jobs:
     runs-on: macos-15
     needs: smithy
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - name: Build
         run: cd swift && swift build
       - name: Test
@@ -93,8 +93,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: smithy
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4
         with:
           distribution: corretto
           java-version: '17'
@@ -111,20 +111,20 @@ jobs:
       matrix:
         language: [go, typescript, ruby, kotlin]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6
         if: matrix.language == 'go'
         with:
           go-version: '1.26'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         if: matrix.language == 'typescript'
         with:
           node-version: '20'
-      - uses: ruby/setup-ruby@v1
+      - uses: ruby/setup-ruby@6ca151fd1bfcfd6fe0c4eb6837eb0584d0134a0c # v1
         if: matrix.language == 'ruby'
         with:
           ruby-version: '3.3'
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4
         if: matrix.language == 'kotlin'
         with:
           distribution: corretto
@@ -136,6 +136,6 @@ jobs:
     name: Rubric Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - name: Check rubric audit
         run: make audit-check
