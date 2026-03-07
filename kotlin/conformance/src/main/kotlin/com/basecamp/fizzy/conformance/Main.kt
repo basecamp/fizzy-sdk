@@ -102,7 +102,7 @@ fun main() {
 
     var passed = 0
     var failed = 0
-    val skipped = 0
+    var skipped = 0
 
     for (file in files) {
         val cases: List<TestCase> = json.decodeFromString(file.readText())
@@ -137,7 +137,6 @@ fun runTest(tc: TestCase): Pair<ExecResult, List<RequestRecord>> {
     val mockEngine = MockEngine { request ->
         val bodyBytes = request.body.toByteArray()
         val bodyText = bodyBytes.decodeToString()
-        val recordIdx = records.size
 
         if (mockIdx < tc.mockResponses.size) {
             val mock = tc.mockResponses[mockIdx++]
@@ -195,7 +194,7 @@ fun runTest(tc: TestCase): Pair<ExecResult, List<RequestRecord>> {
 
     val result = safeExecute(tc, mockEngine)
     // If no error, propagate the last success status
-    val finalResult = if (result.error == null && lastResponseStatus > 0) {
+    val finalResult = if (result.error == null) {
         result.copy(lastMockStatus = lastResponseStatus)
     } else {
         result

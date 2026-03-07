@@ -127,7 +127,7 @@ sync-status: ## Show upstream changes since last sync
 		exit 0; \
 	fi; \
 	echo "==> Checking for upstream changes since $$REV..."; \
-	gh api repos/basecamp/fizzy/compare/$$REV...main --jq '.ahead_by' 2>/dev/null | xargs -I{} echo "  {} commits ahead" || \
+	gh api "repos/basecamp/fizzy/compare/$$REV...main" --jq '.ahead_by' 2>/dev/null | xargs -I{} echo "  {} commits ahead" || \
 		echo "  Could not query upstream (check gh auth)"
 
 # ──────────────────────────────────────────────
@@ -351,7 +351,7 @@ release: ## Release: make release VERSION=x.y.z
 audit-check: ## Check rubric audit freshness and must-pass criteria
 	@echo "==> Checking rubric audit..."
 	@test -f rubric-audit.json || (echo "ERROR: rubric-audit.json not found" && exit 1)
-	@for c in 1A.6 1B.6 1C.3; do \
+	@for c in 1A.6 1B.2 1C.3; do \
 		pass=$$(jq -r --arg c "$$c" '.criteria[$$c].pass // empty' rubric-audit.json); \
 		if [ "$$pass" != "true" ]; then \
 			echo "ERROR: Must-pass criterion $$c is not passing in rubric-audit.json" && exit 1; \

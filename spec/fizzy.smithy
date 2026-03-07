@@ -653,7 +653,7 @@ structure CreateBoardOutput {
 }
 
 @readonly
-@http(method: "GET", uri: "/{accountId}/boards/{boardId}.json")
+@http(method: "GET", uri: "/{accountId}/boards/{boardId}")
 @tags(["Boards"])
 @fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation GetBoard {
@@ -677,7 +677,7 @@ structure GetBoardOutput {
     board: Board
 }
 
-@http(method: "PATCH", uri: "/{accountId}/boards/{boardId}.json")
+@http(method: "PATCH", uri: "/{accountId}/boards/{boardId}")
 @tags(["Boards"])
 @fizzyIdempotent(natural: true)
 @fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
@@ -707,7 +707,7 @@ structure UpdateBoardOutput {
 }
 
 @idempotent
-@http(method: "DELETE", uri: "/{accountId}/boards/{boardId}.json")
+@http(method: "DELETE", uri: "/{accountId}/boards/{boardId}")
 @tags(["Boards"])
 @fizzyIdempotent(natural: true)
 @fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
@@ -928,7 +928,7 @@ structure CreateCardOutput {
 }
 
 @readonly
-@http(method: "GET", uri: "/{accountId}/cards/{cardNumber}.json")
+@http(method: "GET", uri: "/{accountId}/cards/{cardNumber}")
 @tags(["Cards"])
 @fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation GetCard {
@@ -952,7 +952,7 @@ structure GetCardOutput {
     card: Card
 }
 
-@http(method: "PATCH", uri: "/{accountId}/cards/{cardNumber}.json")
+@http(method: "PATCH", uri: "/{accountId}/cards/{cardNumber}")
 @tags(["Cards"])
 @fizzyIdempotent(natural: true)
 @fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
@@ -984,7 +984,7 @@ structure UpdateCardOutput {
 }
 
 @idempotent
-@http(method: "DELETE", uri: "/{accountId}/cards/{cardNumber}.json")
+@http(method: "DELETE", uri: "/{accountId}/cards/{cardNumber}")
 @tags(["Cards"])
 @fizzyIdempotent(natural: true)
 @fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])

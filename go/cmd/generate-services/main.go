@@ -546,9 +546,14 @@ func generateMethodBody(serviceName string, op ParsedOp, fmtStr string, hasForma
 		pathExpr = fmt.Sprintf("%q", fmtStr)
 	}
 
+	ctxArg := "ctx"
+	if op.NoRetry {
+		ctxArg = "WithNoRetry(ctx)"
+	}
+
 	switch op.HTTPMethod {
 	case "GET":
-		buf.WriteString(fmt.Sprintf("\tresp, err := s.client.Get(ctx, %s)\n", pathExpr))
+		buf.WriteString(fmt.Sprintf("\tresp, err := s.client.Get(%s, %s)\n", ctxArg, pathExpr))
 		buf.WriteString("\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n")
 		buf.WriteString("\treturn resp.Data, resp, nil\n")
 
@@ -572,7 +577,7 @@ func generateMethodBody(serviceName string, op ParsedOp, fmtStr string, hasForma
 		if op.HasRequestBody {
 			bodyArg = "req"
 		}
-		buf.WriteString(fmt.Sprintf("\tresp, err := s.client.Patch(ctx, %s, %s)\n", pathExpr, bodyArg))
+		buf.WriteString(fmt.Sprintf("\tresp, err := s.client.Patch(%s, %s, %s)\n", ctxArg, pathExpr, bodyArg))
 		buf.WriteString("\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n")
 		buf.WriteString("\treturn resp.Data, resp, nil\n")
 
@@ -581,15 +586,11 @@ func generateMethodBody(serviceName string, op ParsedOp, fmtStr string, hasForma
 		if op.HasRequestBody {
 			bodyArg = "req"
 		}
-		buf.WriteString(fmt.Sprintf("\tresp, err := s.client.Put(ctx, %s, %s)\n", pathExpr, bodyArg))
+		buf.WriteString(fmt.Sprintf("\tresp, err := s.client.Put(%s, %s, %s)\n", ctxArg, pathExpr, bodyArg))
 		buf.WriteString("\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n")
 		buf.WriteString("\treturn resp.Data, resp, nil\n")
 
 	case "DELETE":
-		ctxArg := "ctx"
-		if op.NoRetry {
-			ctxArg = "WithNoRetry(ctx)"
-		}
 		buf.WriteString(fmt.Sprintf("\treturn s.client.Delete(%s, %s)\n", ctxArg, pathExpr))
 	}
 

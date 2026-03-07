@@ -492,6 +492,8 @@ func executeSingle(ctx context.Context, client *fizzy.Client, tc TestCase, path 
 		case "DELETE":
 			resp, err := account.Delete(ctx, cleanPath)
 			return &ExecResult{resp: resp, err: err}
+		default:
+			return &ExecResult{err: fmt.Errorf("unsupported method %q for account-scoped path", tc.Method)}
 		}
 	}
 

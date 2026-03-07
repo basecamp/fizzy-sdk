@@ -13,5 +13,4 @@ repos:
     rev: v2.1.0
     hooks:
       - id: golangci-lint
-        args: [--config=go/.golangci.yml]
         entry: bash -c 'cd go && golangci-lint run'

@@ -543,8 +543,7 @@ func (c *Client) singleRequest(ctx context.Context, method, url string, body any
 		if json.Unmarshal(respBody, &parsed) == nil {
 			if parsed.Error != "" {
 				msg = truncateString(parsed.Error, MaxErrorMessageBytes)
-			}
-			if parsed.Message != "" {
+			} else if parsed.Message != "" {
 				msg = truncateString(parsed.Message, MaxErrorMessageBytes)
 			}
 		}

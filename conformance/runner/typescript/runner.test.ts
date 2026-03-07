@@ -274,14 +274,6 @@ async function dispatch(
 }
 
 // ---------------------------------------------------------------------------
-// Expand path template
-// ---------------------------------------------------------------------------
-
-function expandPath(template: string, params: Record<string, unknown>): string {
-  return template.replace(/\{(\w+)\}/g, (_, key) => String(params[key] ?? key));
-}
-
-// ---------------------------------------------------------------------------
 // Test runner
 // ---------------------------------------------------------------------------
 
@@ -429,10 +421,6 @@ for (const file of testFiles) {
         const { data, error } = await dispatch(client, tc);
 
         // Check assertions
-        const lastResponse = log.lastRequest
-          ? undefined
-          : undefined;
-
         for (const assertion of tc.assertions) {
           checkAssertion(assertion, log, data, error, tc);
         }

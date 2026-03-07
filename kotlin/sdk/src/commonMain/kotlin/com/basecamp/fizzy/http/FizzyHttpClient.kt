@@ -54,9 +54,8 @@ internal class FizzyHttpClient(
 
     /**
      * Executes an HTTP request, applying retry logic for retryable errors.
-     * Safe HTTP methods (GET, PUT, DELETE, HEAD) are always retried.
-     * Non-safe methods (POST, PATCH) are retried only when per-operation
-     * metadata marks them as idempotent.
+     * Idempotent HTTP methods (GET, PUT, PATCH, DELETE, HEAD) are always retried.
+     * POST is retried only when per-operation metadata marks it as idempotent.
      */
     suspend fun requestWithRetry(
         method: HttpMethod,
