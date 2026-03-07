@@ -21,7 +21,10 @@ import (
 // ---------------------------------------------------------------------------
 
 type OpenAPISpec struct {
-	Paths map[string]PathItem `json:"paths"`
+	Paths      map[string]PathItem `json:"paths"`
+	Components struct {
+		Schemas map[string]json.RawMessage `json:"schemas"`
+	} `json:"components"`
 }
 
 type PathItem map[string]json.RawMessage // method -> Operation (or other fields)
@@ -39,8 +42,18 @@ type Operation struct {
 }
 
 type Parameter struct {
-	Name string `json:"name"`
-	In   string `json:"in"`
+	Name   string `json:"name"`
+	In     string `json:"in"`
+	Schema struct {
+		Type string `json:"type"`
+	} `json:"schema"`
+}
+
+// QueryParam represents a parsed query parameter for code generation.
+type QueryParam struct {
+	Name       string // original name from spec, e.g. "include_read"
+	GoName     string // Go parameter name, e.g. "includeRead"
+	SchemaType string // JSON schema type, e.g. "boolean", "string", "integer"
 }
 
 type ResponseDef struct {
@@ -76,11 +89,50 @@ type ParsedOp struct {
 	HTTPMethod      string // GET, POST, PATCH, DELETE
 	Path            string // raw path from spec
 	PathParams      []string
+	QueryParams     []QueryParam
 	HasRequestBody  bool
 	BodyRefName     string // e.g. "CreateBoardRequestContent"
 	HasResponseData bool
+	ResponseRefName string // e.g. "GetBoardResponseContent"
+	ResponseGoType  string // e.g. "generated.Board" (resolved at parse time)
+	ResponseIsList  bool   // true for []generated.Board
 	HasPagination   bool
 	NoRetry         bool // true for non-POST operations with retry_on: null
+}
+
+// SchemaDef is a minimal representation of a JSON Schema definition used
+// to resolve response content schemas to Go type names.
+type SchemaDef struct {
+	Ref   string     `json:"$ref"`
+	Type  string     `json:"type"`
+	Items *SchemaDef `json:"items"`
+}
+
+// resolveRef extracts the last path component from a $ref string.
+// e.g. "#/components/schemas/Board" -> "Board"
+func resolveRef(ref string) string {
+	parts := strings.Split(ref, "/")
+	return parts[len(parts)-1]
+}
+
+// responseTypeName resolves a ResponseContent schema name to a Go type.
+// Returns the Go type string (e.g. "generated.Board") and whether it's a list.
+func responseTypeName(refName string, schemas map[string]json.RawMessage) (goType string, isList bool) {
+	raw, ok := schemas[refName]
+	if !ok {
+		return "", false
+	}
+	var def SchemaDef
+	if err := json.Unmarshal(raw, &def); err != nil {
+		return "", false
+	}
+	if def.Type == "array" && def.Items != nil && def.Items.Ref != "" {
+		return "generated." + resolveRef(def.Items.Ref), true
+	}
+	if def.Ref != "" {
+		return "generated." + resolveRef(def.Ref), false
+	}
+	return "", false
 }
 
 // ---------------------------------------------------------------------------
@@ -264,6 +316,42 @@ func goFormatPath(path string, skipParams map[string]bool) (fmtStr string, param
 	return fmtStr, params
 }
 
+// snakeToCamel converts snake_case to camelCase.
+// e.g. "include_read" -> "includeRead", "board_id" -> "boardId"
+func snakeToCamel(s string) string {
+	parts := strings.Split(s, "_")
+	for i := 1; i < len(parts); i++ {
+		if len(parts[i]) > 0 {
+			parts[i] = strings.ToUpper(parts[i][:1]) + parts[i][1:]
+		}
+	}
+	return strings.Join(parts, "")
+}
+
+// queryParamGoType returns the Go pointer type for a query parameter.
+func queryParamGoType(schemaType string) string {
+	switch schemaType {
+	case "boolean":
+		return "*bool"
+	case "integer":
+		return "*int64"
+	default:
+		return "*string"
+	}
+}
+
+// queryParamFormatVerb returns the fmt verb for formatting a query param value.
+func queryParamFormatVerb(schemaType string) string {
+	switch schemaType {
+	case "boolean":
+		return "%t"
+	case "integer":
+		return "%d"
+	default:
+		return "%s"
+	}
+}
+
 // paramToGoName converts camelCase param names to Go argument names.
 // e.g. "boardId" -> "boardID", "cardNumber" -> "cardNumber"
 func paramToGoName(name string) string {
@@ -315,11 +403,12 @@ func generateServiceFile(svc ServiceDef) string {
 	needsGenerated := false
 
 	for _, op := range svc.Operations {
-		if op.HasResponseData {
-			needsJSON = true
-		}
-		if op.HasRequestBody {
+		if op.HasRequestBody || (op.HasResponseData && op.ResponseGoType != "") {
 			needsGenerated = true
+		}
+		// json.RawMessage fallback: HasResponseData but no resolved Go type
+		if op.HasResponseData && op.ResponseGoType == "" && op.HTTPMethod != "DELETE" {
+			needsJSON = true
 		}
 		// Check if we need fmt for path formatting
 		path := op.Path
@@ -327,6 +416,12 @@ func generateServiceFile(svc ServiceDef) string {
 			path = stripAccountPrefix(path)
 		}
 		if strings.Contains(path, "{") {
+			needsFmt = true
+		}
+		// Query params need fmt for Sprintf
+		isPaginatedList := op.HasPagination && strings.HasPrefix(
+			deriveMethodName(op.OperationID, svc.Name), "List")
+		if !isPaginatedList && len(op.QueryParams) > 0 {
 			needsFmt = true
 		}
 	}
@@ -420,6 +515,13 @@ func generateMethod(serviceName string, op ParsedOp) string {
 		}
 	}
 
+	// Query parameters (only for non-paginated operations; paginated use path string)
+	if !isPaginatedList && len(op.QueryParams) > 0 {
+		for _, qp := range op.QueryParams {
+			sigParams = append(sigParams, qp.GoName+" "+queryParamGoType(qp.SchemaType))
+		}
+	}
+
 	// Request body parameter
 	if op.HasRequestBody && op.BodyRefName != "" {
 		reqType := requestTypeName(op.BodyRefName)
@@ -427,7 +529,13 @@ func generateMethod(serviceName string, op ParsedOp) string {
 	}
 
 	var returnType string
-	if returnsData {
+	if returnsData && op.ResponseGoType != "" {
+		if op.ResponseIsList {
+			returnType = fmt.Sprintf("([]%s, *Response, error)", op.ResponseGoType)
+		} else {
+			returnType = fmt.Sprintf("(*%s, *Response, error)", op.ResponseGoType)
+		}
+	} else if returnsData {
 		returnType = "(json.RawMessage, *Response, error)"
 	} else {
 		returnType = "(*Response, error)"
@@ -521,17 +629,63 @@ func generatePaginatedListBody(op ParsedOp, fmtStr string, goParams []string) st
 	}
 	buf.WriteString("\tresp, err := s.client.Get(ctx, path)\n")
 	buf.WriteString("\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n")
-	buf.WriteString("\treturn resp.Data, resp, nil\n")
+	buf.WriteString(generateUnmarshalReturn(op))
 
+	return buf.String()
+}
+
+func generateUnmarshalReturn(op ParsedOp) string {
+	var buf strings.Builder
+	if op.ResponseGoType == "" {
+		// Fallback to raw return (shouldn't happen for typed ops)
+		buf.WriteString("\treturn resp.Data, resp, nil\n")
+		return buf.String()
+	}
+	if op.ResponseIsList {
+		elementType := strings.TrimPrefix(op.ResponseGoType, "generated.")
+		fmt.Fprintf(&buf, "\tvar result []generated.%s\n", elementType)
+		buf.WriteString("\tif err := resp.UnmarshalData(&result); err != nil {\n\t\treturn nil, resp, err\n\t}\n")
+		buf.WriteString("\treturn result, resp, nil\n")
+	} else {
+		fmt.Fprintf(&buf, "\tvar result %s\n", op.ResponseGoType)
+		buf.WriteString("\tif err := resp.UnmarshalData(&result); err != nil {\n\t\treturn nil, resp, err\n\t}\n")
+		buf.WriteString("\treturn &result, resp, nil\n")
+	}
+	return buf.String()
+}
+
+func generateQueryStringBlock(queryParams []QueryParam) string {
+	var buf strings.Builder
+	buf.WriteString("\tsep := \"?\"\n")
+	for _, qp := range queryParams {
+		fmt.Fprintf(&buf, "\tif %s != nil {\n", qp.GoName)
+		fmt.Fprintf(&buf, "\t\tpath += fmt.Sprintf(\"%s%s=%s\", sep, *%s)\n",
+			"%s", qp.Name, queryParamFormatVerb(qp.SchemaType), qp.GoName)
+		buf.WriteString("\t\tsep = \"&\"\n")
+		buf.WriteString("\t}\n")
+	}
 	return buf.String()
 }
 
 func generateMethodBody(op ParsedOp, fmtStr string, hasFormatParams bool, goParams []string, returnsData bool) string {
 	var buf strings.Builder
 
+	hasQueryParams := len(op.QueryParams) > 0
+
 	// Build path expression
 	var pathExpr string
-	if hasFormatParams {
+	if hasQueryParams {
+		// When query params exist, we need a mutable path variable
+		if hasFormatParams {
+			args := make([]string, len(goParams))
+			copy(args, goParams)
+			fmt.Fprintf(&buf, "\tpath := fmt.Sprintf(%q, %s)\n", fmtStr, strings.Join(args, ", "))
+		} else {
+			fmt.Fprintf(&buf, "\tpath := %q\n", fmtStr)
+		}
+		buf.WriteString(generateQueryStringBlock(op.QueryParams))
+		pathExpr = "path"
+	} else if hasFormatParams {
 		args := make([]string, len(goParams))
 		copy(args, goParams)
 		pathExpr = fmt.Sprintf("fmt.Sprintf(%q, %s)", fmtStr, strings.Join(args, ", "))
@@ -548,7 +702,7 @@ func generateMethodBody(op ParsedOp, fmtStr string, hasFormatParams bool, goPara
 	case "GET":
 		fmt.Fprintf(&buf, "\tresp, err := s.client.Get(%s, %s)\n", ctxArg, pathExpr)
 		buf.WriteString("\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n")
-		buf.WriteString("\treturn resp.Data, resp, nil\n")
+		buf.WriteString(generateUnmarshalReturn(op))
 
 	case "POST":
 		bodyArg := "nil"
@@ -559,7 +713,7 @@ func generateMethodBody(op ParsedOp, fmtStr string, hasFormatParams bool, goPara
 		if returnsData {
 			fmt.Fprintf(&buf, "\tresp, err := s.client.Post(ctx, %s, %s)\n", pathExpr, bodyArg)
 			buf.WriteString("\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n")
-			buf.WriteString("\treturn resp.Data, resp, nil\n")
+			buf.WriteString(generateUnmarshalReturn(op))
 		} else {
 			fmt.Fprintf(&buf, "\tresp, err := s.client.Post(ctx, %s, %s)\n", pathExpr, bodyArg)
 			buf.WriteString("\treturn resp, err\n")
@@ -572,7 +726,7 @@ func generateMethodBody(op ParsedOp, fmtStr string, hasFormatParams bool, goPara
 		}
 		fmt.Fprintf(&buf, "\tresp, err := s.client.Patch(%s, %s, %s)\n", ctxArg, pathExpr, bodyArg)
 		buf.WriteString("\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n")
-		buf.WriteString("\treturn resp.Data, resp, nil\n")
+		buf.WriteString(generateUnmarshalReturn(op))
 
 	case "PUT":
 		bodyArg := "nil"
@@ -581,7 +735,7 @@ func generateMethodBody(op ParsedOp, fmtStr string, hasFormatParams bool, goPara
 		}
 		fmt.Fprintf(&buf, "\tresp, err := s.client.Put(%s, %s, %s)\n", ctxArg, pathExpr, bodyArg)
 		buf.WriteString("\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n")
-		buf.WriteString("\treturn resp.Data, resp, nil\n")
+		buf.WriteString(generateUnmarshalReturn(op))
 
 	case "DELETE":
 		fmt.Fprintf(&buf, "\treturn s.client.Delete(%s, %s)\n", ctxArg, pathExpr)
@@ -603,8 +757,7 @@ func generateOperationsRegistry(services map[string]*ServiceDef) string {
 	buf.WriteString("// The drift check script (scripts/check-service-drift.sh) verifies this\n")
 	buf.WriteString("// registry stays in sync with openapi.json.\n")
 	buf.WriteString("//\n")
-	buf.WriteString("// When adding a new API operation: add the operationId here and implement\n")
-	buf.WriteString("// the corresponding service method.\n")
+	buf.WriteString("// To update: run 'go run ./cmd/generate-services/' from the go directory.\n")
 	buf.WriteString("var OperationRegistry = map[string]string{\n")
 
 	// Sort services for stable output
@@ -697,10 +850,17 @@ func main() {
 				Path:        path,
 			}
 
-			// Path params (excluding accountId for service method params)
+			// Path params and query params
 			for _, p := range op.Parameters {
-				if p.In == "path" {
+				switch p.In {
+				case "path":
 					parsed.PathParams = append(parsed.PathParams, p.Name)
+				case "query":
+					parsed.QueryParams = append(parsed.QueryParams, QueryParam{
+						Name:       p.Name,
+						GoName:     snakeToCamel(p.Name),
+						SchemaType: p.Schema.Type,
+					})
 				}
 			}
 
@@ -723,10 +883,17 @@ func main() {
 						if jsonContent, ok := resp.Content["application/json"]; ok {
 							if jsonContent.Schema.Ref != "" {
 								parsed.HasResponseData = true
+								parsed.ResponseRefName = resolveRef(jsonContent.Schema.Ref)
 							}
 						}
 					}
 				}
+			}
+
+			// Resolve response type from schema
+			if parsed.ResponseRefName != "" {
+				parsed.ResponseGoType, parsed.ResponseIsList = responseTypeName(
+					parsed.ResponseRefName, spec.Components.Schemas)
 			}
 
 			// Pagination

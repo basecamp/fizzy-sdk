@@ -3,7 +3,6 @@ package fizzy
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/basecamp/fizzy-sdk/go/pkg/generated"
@@ -16,16 +15,26 @@ func (s *NotificationsService) BulkRead(ctx context.Context, req *generated.Bulk
 }
 
 // GetTray returns a tray.
-func (s *NotificationsService) GetTray(ctx context.Context) (json.RawMessage, *Response, error) {
-	resp, err := s.client.Get(ctx, "/notifications/tray.json")
+func (s *NotificationsService) GetTray(ctx context.Context, includeRead *bool) ([]generated.Notification, *Response, error) {
+	path := "/notifications/tray.json"
+	sep := "?"
+	if includeRead != nil {
+		path += fmt.Sprintf("%sinclude_read=%t", sep, *includeRead)
+		sep = "&"
+	}
+	resp, err := s.client.Get(ctx, path)
 	if err != nil {
 		return nil, nil, err
 	}
-	return resp.Data, resp, nil
+	var result []generated.Notification
+	if err := resp.UnmarshalData(&result); err != nil {
+		return nil, resp, err
+	}
+	return result, resp, nil
 }
 
 // List returns notifications.
-func (s *NotificationsService) List(ctx context.Context, path string) (json.RawMessage, *Response, error) {
+func (s *NotificationsService) List(ctx context.Context, path string) ([]generated.Notification, *Response, error) {
 	if path == "" {
 		path = "/notifications.json"
 	}
@@ -33,7 +42,11 @@ func (s *NotificationsService) List(ctx context.Context, path string) (json.RawM
 	if err != nil {
 		return nil, nil, err
 	}
-	return resp.Data, resp, nil
+	var result []generated.Notification
+	if err := resp.UnmarshalData(&result); err != nil {
+		return nil, resp, err
+	}
+	return result, resp, nil
 }
 
 // Read performs the Read operation on a notification.

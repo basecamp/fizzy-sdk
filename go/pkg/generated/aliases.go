@@ -24,8 +24,7 @@ type RedeemMagicLinkRequest = RedeemMagicLinkRequestContent
 type RegisterDeviceRequest = RegisterDeviceRequestContent
 type TagCardRequest = TagCardRequestContent
 
-// TriageCardRequest is a stub — TriageCard has no request body in the spec.
-type TriageCardRequest struct{}
+type TriageCardRequest = TriageCardRequestContent
 type UpdateBoardRequest = UpdateBoardRequestContent
 type UpdateCardRequest = UpdateCardRequestContent
 type UpdateColumnRequest = UpdateColumnRequestContent

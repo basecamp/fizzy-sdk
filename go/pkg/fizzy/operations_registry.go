@@ -39,6 +39,7 @@ var OperationRegistry = map[string]string{
 
 	// Columns
 	"CreateColumn": "ColumnsService.Create",
+	"DeleteColumn": "ColumnsService.Delete",
 	"GetColumn": "ColumnsService.Get",
 	"ListColumns": "ColumnsService.List",
 	"UpdateColumn": "ColumnsService.Update",

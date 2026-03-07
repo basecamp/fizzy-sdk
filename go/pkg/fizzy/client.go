@@ -362,8 +362,8 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body any) (
 }
 
 func (c *Client) doRequestURL(ctx context.Context, method, url string, body any) (*Response, error) {
-	// POST requests and operations that opt out via WithNoRetry: single attempt only.
-	if method == "POST" || isNoRetry(ctx) {
+	// Mutations and operations that opt out via WithNoRetry: single attempt only.
+	if method != "GET" || isNoRetry(ctx) {
 		resp, err := c.singleRequest(ctx, method, url, body, 1)
 		if err == nil {
 			return resp, nil

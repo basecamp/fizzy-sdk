@@ -3,37 +3,44 @@ package fizzy
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/basecamp/fizzy-sdk/go/pkg/generated"
 )
 
 // Create creates a board.
-func (s *BoardsService) Create(ctx context.Context, req *generated.CreateBoardRequest) (json.RawMessage, *Response, error) {
+func (s *BoardsService) Create(ctx context.Context, req *generated.CreateBoardRequest) (*generated.Board, *Response, error) {
 	resp, err := s.client.Post(ctx, "/boards.json", req)
 	if err != nil {
 		return nil, nil, err
 	}
-	return resp.Data, resp, nil
+	var result generated.Board
+	if err := resp.UnmarshalData(&result); err != nil {
+		return nil, resp, err
+	}
+	return &result, resp, nil
 }
 
 // Delete deletes a board.
 func (s *BoardsService) Delete(ctx context.Context, boardID string) (*Response, error) {
-	return s.client.Delete(ctx, fmt.Sprintf("/boards/%s.json", boardID))
+	return s.client.Delete(ctx, fmt.Sprintf("/boards/%s", boardID))
 }
 
 // Get returns a board.
-func (s *BoardsService) Get(ctx context.Context, boardID string) (json.RawMessage, *Response, error) {
-	resp, err := s.client.Get(ctx, fmt.Sprintf("/boards/%s.json", boardID))
+func (s *BoardsService) Get(ctx context.Context, boardID string) (*generated.Board, *Response, error) {
+	resp, err := s.client.Get(ctx, fmt.Sprintf("/boards/%s", boardID))
 	if err != nil {
 		return nil, nil, err
 	}
-	return resp.Data, resp, nil
+	var result generated.Board
+	if err := resp.UnmarshalData(&result); err != nil {
+		return nil, resp, err
+	}
+	return &result, resp, nil
 }
 
 // List returns boards.
-func (s *BoardsService) List(ctx context.Context, path string) (json.RawMessage, *Response, error) {
+func (s *BoardsService) List(ctx context.Context, path string) ([]generated.Board, *Response, error) {
 	if path == "" {
 		path = "/boards.json"
 	}
@@ -41,14 +48,22 @@ func (s *BoardsService) List(ctx context.Context, path string) (json.RawMessage,
 	if err != nil {
 		return nil, nil, err
 	}
-	return resp.Data, resp, nil
+	var result []generated.Board
+	if err := resp.UnmarshalData(&result); err != nil {
+		return nil, resp, err
+	}
+	return result, resp, nil
 }
 
 // Update updates a board.
-func (s *BoardsService) Update(ctx context.Context, boardID string, req *generated.UpdateBoardRequest) (json.RawMessage, *Response, error) {
-	resp, err := s.client.Patch(ctx, fmt.Sprintf("/boards/%s.json", boardID), req)
+func (s *BoardsService) Update(ctx context.Context, boardID string, req *generated.UpdateBoardRequest) (*generated.Board, *Response, error) {
+	resp, err := s.client.Patch(ctx, fmt.Sprintf("/boards/%s", boardID), req)
 	if err != nil {
 		return nil, nil, err
 	}
-	return resp.Data, resp, nil
+	var result generated.Board
+	if err := resp.UnmarshalData(&result); err != nil {
+		return nil, resp, err
+	}
+	return &result, resp, nil
 }

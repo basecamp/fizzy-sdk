@@ -3,7 +3,6 @@ package fizzy
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/basecamp/fizzy-sdk/go/pkg/generated"
@@ -16,12 +15,16 @@ func (s *WebhooksService) Activate(ctx context.Context, boardID string, webhookI
 }
 
 // Create creates a webhook.
-func (s *WebhooksService) Create(ctx context.Context, boardID string, req *generated.CreateWebhookRequest) (json.RawMessage, *Response, error) {
+func (s *WebhooksService) Create(ctx context.Context, boardID string, req *generated.CreateWebhookRequest) (*generated.Webhook, *Response, error) {
 	resp, err := s.client.Post(ctx, fmt.Sprintf("/boards/%s/webhooks.json", boardID), req)
 	if err != nil {
 		return nil, nil, err
 	}
-	return resp.Data, resp, nil
+	var result generated.Webhook
+	if err := resp.UnmarshalData(&result); err != nil {
+		return nil, resp, err
+	}
+	return &result, resp, nil
 }
 
 // Delete deletes a webhook.
@@ -30,28 +33,40 @@ func (s *WebhooksService) Delete(ctx context.Context, boardID string, webhookID 
 }
 
 // Get returns a webhook.
-func (s *WebhooksService) Get(ctx context.Context, boardID string, webhookID string) (json.RawMessage, *Response, error) {
+func (s *WebhooksService) Get(ctx context.Context, boardID string, webhookID string) (*generated.Webhook, *Response, error) {
 	resp, err := s.client.Get(ctx, fmt.Sprintf("/boards/%s/webhooks/%s", boardID, webhookID))
 	if err != nil {
 		return nil, nil, err
 	}
-	return resp.Data, resp, nil
+	var result generated.Webhook
+	if err := resp.UnmarshalData(&result); err != nil {
+		return nil, resp, err
+	}
+	return &result, resp, nil
 }
 
 // List returns webhooks.
-func (s *WebhooksService) List(ctx context.Context, boardID string) (json.RawMessage, *Response, error) {
+func (s *WebhooksService) List(ctx context.Context, boardID string) ([]generated.Webhook, *Response, error) {
 	resp, err := s.client.Get(ctx, fmt.Sprintf("/boards/%s/webhooks.json", boardID))
 	if err != nil {
 		return nil, nil, err
 	}
-	return resp.Data, resp, nil
+	var result []generated.Webhook
+	if err := resp.UnmarshalData(&result); err != nil {
+		return nil, resp, err
+	}
+	return result, resp, nil
 }
 
 // Update updates a webhook.
-func (s *WebhooksService) Update(ctx context.Context, boardID string, webhookID string, req *generated.UpdateWebhookRequest) (json.RawMessage, *Response, error) {
+func (s *WebhooksService) Update(ctx context.Context, boardID string, webhookID string, req *generated.UpdateWebhookRequest) (*generated.Webhook, *Response, error) {
 	resp, err := s.client.Patch(ctx, fmt.Sprintf("/boards/%s/webhooks/%s", boardID, webhookID), req)
 	if err != nil {
 		return nil, nil, err
 	}
-	return resp.Data, resp, nil
+	var result generated.Webhook
+	if err := resp.UnmarshalData(&result); err != nil {
+		return nil, resp, err
+	}
+	return &result, resp, nil
 }

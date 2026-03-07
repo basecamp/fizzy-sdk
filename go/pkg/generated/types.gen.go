@@ -12,7 +12,7 @@ type Account struct {
 
 // AssignCardRequestContent defines model for AssignCardRequestContent.
 type AssignCardRequestContent struct {
-	UserId int64 `json:"user_id"`
+	AssigneeId string `json:"assignee_id"`
 }
 
 // BadRequestErrorResponseContent defines model for BadRequestErrorResponseContent.
@@ -25,21 +25,21 @@ type Board struct {
 	AllAccess bool        `json:"all_access"`
 	CreatedAt string      `json:"created_at"`
 	Creator   UserSummary `json:"creator,omitempty"`
-	Id        int64       `json:"id"`
+	Id        string      `json:"id"`
 	Name      string      `json:"name"`
 	Url       string      `json:"url"`
 }
 
 // BoardSummary defines model for BoardSummary.
 type BoardSummary struct {
-	Id   int64  `json:"id"`
+	Id   string `json:"id"`
 	Name string `json:"name"`
 	Url  string `json:"url"`
 }
 
 // BulkReadNotificationsRequestContent defines model for BulkReadNotificationsRequestContent.
 type BulkReadNotificationsRequestContent struct {
-	NotificationIds []int64 `json:"notification_ids,omitempty"`
+	NotificationIds []string `json:"notification_ids,omitempty"`
 }
 
 // Card defines model for Card.
@@ -56,7 +56,7 @@ type Card struct {
 	Golden           bool          `json:"golden"`
 	HasAttachments   bool          `json:"has_attachments"`
 	HasMoreAssignees bool          `json:"has_more_assignees,omitempty"`
-	Id               int64         `json:"id"`
+	Id               string        `json:"id"`
 	ImageUrl         string        `json:"image_url,omitempty"`
 	LastActiveAt     string        `json:"last_active_at,omitempty"`
 	Number           int32         `json:"number"`
@@ -71,7 +71,7 @@ type Card struct {
 
 // CardRef defines model for CardRef.
 type CardRef struct {
-	Id  int64  `json:"id"`
+	Id  string `json:"id"`
 	Url string `json:"url"`
 }
 
@@ -79,13 +79,13 @@ type CardRef struct {
 type Column struct {
 	Color     string `json:"color,omitempty"`
 	CreatedAt string `json:"created_at"`
-	Id        int64  `json:"id"`
+	Id        string `json:"id"`
 	Name      string `json:"name"`
 }
 
 // ColumnSummary defines model for ColumnSummary.
 type ColumnSummary struct {
-	Id   int64  `json:"id"`
+	Id   string `json:"id"`
 	Name string `json:"name"`
 }
 
@@ -95,7 +95,7 @@ type Comment struct {
 	Card         CardRef      `json:"card,omitempty"`
 	CreatedAt    string       `json:"created_at"`
 	Creator      UserSummary  `json:"creator"`
-	Id           int64        `json:"id"`
+	Id           string       `json:"id"`
 	ReactionsUrl string       `json:"reactions_url,omitempty"`
 	UpdatedAt    string       `json:"updated_at"`
 	Url          string       `json:"url"`
@@ -111,8 +111,9 @@ type CompleteSignupResponseContent = User
 
 // CreateBoardRequestContent defines model for CreateBoardRequestContent.
 type CreateBoardRequestContent struct {
-	AllAccess bool   `json:"all_access,omitempty"`
-	Name      string `json:"name"`
+	AllAccess          bool   `json:"all_access,omitempty"`
+	AutoPostponePeriod int32  `json:"auto_postpone_period,omitempty"`
+	Name               string `json:"name"`
 }
 
 // CreateBoardResponseContent defines model for CreateBoardResponseContent.
@@ -128,12 +129,15 @@ type CreateCardReactionResponseContent = Reaction
 
 // CreateCardRequestContent defines model for CreateCardRequestContent.
 type CreateCardRequestContent struct {
-	AssigneeIds []int64  `json:"assignee_ids,omitempty"`
-	BoardId     int64    `json:"board_id,omitempty"`
-	ColumnId    int64    `json:"column_id,omitempty"`
-	Description string   `json:"description,omitempty"`
-	TagNames    []string `json:"tag_names,omitempty"`
-	Title       string   `json:"title"`
+	AssigneeIds  []string `json:"assignee_ids,omitempty"`
+	BoardId      string   `json:"board_id,omitempty"`
+	ColumnId     string   `json:"column_id,omitempty"`
+	CreatedAt    string   `json:"created_at,omitempty"`
+	Description  string   `json:"description,omitempty"`
+	Image        string   `json:"image,omitempty"`
+	LastActiveAt string   `json:"last_active_at,omitempty"`
+	TagNames     []string `json:"tag_names,omitempty"`
+	Title        string   `json:"title"`
 }
 
 // CreateCardResponseContent defines model for CreateCardResponseContent.
@@ -158,7 +162,8 @@ type CreateCommentReactionResponseContent = Reaction
 
 // CreateCommentRequestContent defines model for CreateCommentRequestContent.
 type CreateCommentRequestContent struct {
-	Body string `json:"body"`
+	Body      string `json:"body"`
+	CreatedAt string `json:"created_at,omitempty"`
 }
 
 // CreateCommentResponseContent defines model for CreateCommentResponseContent.
@@ -185,7 +190,8 @@ type CreateSessionResponseContent = PendingAuthentication
 
 // CreateStepRequestContent defines model for CreateStepRequestContent.
 type CreateStepRequestContent struct {
-	Content string `json:"content"`
+	Completed bool   `json:"completed,omitempty"`
+	Content   string `json:"content"`
 }
 
 // CreateStepResponseContent defines model for CreateStepResponseContent.
@@ -208,7 +214,7 @@ type DirectUpload struct {
 	ContentType  string               `json:"content_type"`
 	DirectUpload DirectUploadMetadata `json:"direct_upload"`
 	Filename     string               `json:"filename"`
-	Id           int64                `json:"id"`
+	Id           string               `json:"id"`
 	Key          string               `json:"key"`
 }
 
@@ -245,7 +251,7 @@ type GetCommentResponseContent = Comment
 type GetMyIdentityResponseContent = Identity
 
 // GetNotificationTrayResponseContent defines model for GetNotificationTrayResponseContent.
-type GetNotificationTrayResponseContent = NotificationTray
+type GetNotificationTrayResponseContent = []Notification
 
 // GetStepResponseContent defines model for GetStepResponseContent.
 type GetStepResponseContent = Step
@@ -260,7 +266,7 @@ type GetWebhookResponseContent = Webhook
 type Identity struct {
 	Accounts     []Account `json:"accounts"`
 	EmailAddress string    `json:"email_address"`
-	Id           int64     `json:"id"`
+	Id           string    `json:"id"`
 	Name         string    `json:"name"`
 }
 
@@ -304,8 +310,8 @@ type ListWebhooksResponseContent = []Webhook
 
 // MoveCardRequestContent defines model for MoveCardRequestContent.
 type MoveCardRequestContent struct {
-	BoardId  int64 `json:"board_id"`
-	ColumnId int64 `json:"column_id,omitempty"`
+	BoardId  string `json:"board_id"`
+	ColumnId string `json:"column_id,omitempty"`
 }
 
 // MoveCardResponseContent defines model for MoveCardResponseContent.
@@ -321,7 +327,7 @@ type Notification struct {
 	Card        NotificationCard `json:"card,omitempty"`
 	CreatedAt   string           `json:"created_at"`
 	Creator     UserSummary      `json:"creator"`
-	Id          int64            `json:"id"`
+	Id          string           `json:"id"`
 	Read        bool             `json:"read"`
 	ReadAt      string           `json:"read_at,omitempty"`
 	SourceType  string           `json:"source_type"`
@@ -332,15 +338,10 @@ type Notification struct {
 // NotificationCard defines model for NotificationCard.
 type NotificationCard struct {
 	Board  BoardSummary `json:"board,omitempty"`
-	Id     int64        `json:"id"`
+	Id     string       `json:"id"`
 	Number int32        `json:"number"`
 	Title  string       `json:"title"`
 	Url    string       `json:"url"`
-}
-
-// NotificationTray defines model for NotificationTray.
-type NotificationTray struct {
-	UnreadCount int32 `json:"unread_count"`
 }
 
 // PendingAuthentication defines model for PendingAuthentication.
@@ -352,7 +353,7 @@ type PendingAuthentication struct {
 type Pin struct {
 	Card      CardRef `json:"card"`
 	CreatedAt string  `json:"created_at"`
-	Id        int64   `json:"id"`
+	Id        string  `json:"id"`
 }
 
 // RateLimitErrorResponseContent defines model for RateLimitErrorResponseContent.
@@ -363,7 +364,7 @@ type RateLimitErrorResponseContent struct {
 // Reaction defines model for Reaction.
 type Reaction struct {
 	Content string      `json:"content"`
-	Id      int64       `json:"id"`
+	Id      string      `json:"id"`
 	Reacter UserSummary `json:"reacter"`
 	Url     string      `json:"url"`
 }
@@ -399,18 +400,23 @@ type SessionAuthorization struct {
 type Step struct {
 	Completed bool   `json:"completed"`
 	Content   string `json:"content"`
-	Id        int64  `json:"id"`
+	Id        string `json:"id"`
 }
 
 // Tag defines model for Tag.
 type Tag struct {
-	Id   int64  `json:"id"`
+	Id   string `json:"id"`
 	Name string `json:"name"`
 }
 
 // TagCardRequestContent defines model for TagCardRequestContent.
 type TagCardRequestContent struct {
-	Name string `json:"name"`
+	TagTitle string `json:"tag_title"`
+}
+
+// TriageCardRequestContent defines model for TriageCardRequestContent.
+type TriageCardRequestContent struct {
+	ColumnId string `json:"column_id,omitempty"`
 }
 
 // UnauthorizedErrorResponseContent defines model for UnauthorizedErrorResponseContent.
@@ -420,8 +426,9 @@ type UnauthorizedErrorResponseContent struct {
 
 // UpdateBoardRequestContent defines model for UpdateBoardRequestContent.
 type UpdateBoardRequestContent struct {
-	AllAccess bool   `json:"all_access,omitempty"`
-	Name      string `json:"name,omitempty"`
+	AllAccess          bool   `json:"all_access,omitempty"`
+	AutoPostponePeriod int32  `json:"auto_postpone_period,omitempty"`
+	Name               string `json:"name,omitempty"`
 }
 
 // UpdateBoardResponseContent defines model for UpdateBoardResponseContent.
@@ -429,8 +436,10 @@ type UpdateBoardResponseContent = Board
 
 // UpdateCardRequestContent defines model for UpdateCardRequestContent.
 type UpdateCardRequestContent struct {
-	ColumnId    int64  `json:"column_id,omitempty"`
+	ColumnId    string `json:"column_id,omitempty"`
+	CreatedAt   string `json:"created_at,omitempty"`
 	Description string `json:"description,omitempty"`
+	Image       string `json:"image,omitempty"`
 	Title       string `json:"title,omitempty"`
 }
 
@@ -487,7 +496,7 @@ type User struct {
 	AvatarUrl    string `json:"avatar_url,omitempty"`
 	CreatedAt    string `json:"created_at"`
 	EmailAddress string `json:"email_address"`
-	Id           int64  `json:"id"`
+	Id           string `json:"id"`
 	Name         string `json:"name"`
 	Role         string `json:"role"`
 	Url          string `json:"url"`
@@ -496,7 +505,7 @@ type User struct {
 // UserSummary defines model for UserSummary.
 type UserSummary struct {
 	AvatarUrl string `json:"avatar_url,omitempty"`
-	Id        int64  `json:"id"`
+	Id        string `json:"id"`
 	Name      string `json:"name"`
 }
 
@@ -510,7 +519,7 @@ type ValidationErrorResponseContent struct {
 type Webhook struct {
 	Active            bool     `json:"active"`
 	CreatedAt         string   `json:"created_at"`
-	Id                int64    `json:"id"`
+	Id                string   `json:"id"`
 	Name              string   `json:"name"`
 	SigningSecret     string   `json:"signing_secret"`
 	SubscribedActions []string `json:"subscribed_actions"`
@@ -520,9 +529,9 @@ type Webhook struct {
 
 // ListCardsParams defines parameters for ListCards.
 type ListCardsParams struct {
-	BoardId    int64  `form:"board_id,omitempty" json:"board_id,omitempty"`
-	ColumnId   int64  `form:"column_id,omitempty" json:"column_id,omitempty"`
-	AssigneeId int64  `form:"assignee_id,omitempty" json:"assignee_id,omitempty"`
+	BoardId    string `form:"board_id,omitempty" json:"board_id,omitempty"`
+	ColumnId   string `form:"column_id,omitempty" json:"column_id,omitempty"`
+	AssigneeId string `form:"assignee_id,omitempty" json:"assignee_id,omitempty"`
 	Tag        string `form:"tag,omitempty" json:"tag,omitempty"`
 	Status     string `form:"status,omitempty" json:"status,omitempty"`
 	Q          string `form:"q,omitempty" json:"q,omitempty"`
@@ -531,6 +540,11 @@ type ListCardsParams struct {
 // ListNotificationsParams defines parameters for ListNotifications.
 type ListNotificationsParams struct {
 	Read bool `form:"read,omitempty" json:"read,omitempty"`
+}
+
+// GetNotificationTrayParams defines parameters for GetNotificationTray.
+type GetNotificationTrayParams struct {
+	IncludeRead bool `form:"include_read,omitempty" json:"include_read,omitempty"`
 }
 
 // CreateSessionJSONRequestBody defines body for CreateSession for application/json ContentType.
@@ -592,6 +606,9 @@ type UpdateStepJSONRequestBody = UpdateStepRequestContent
 
 // TagCardJSONRequestBody defines body for TagCard for application/json ContentType.
 type TagCardJSONRequestBody = TagCardRequestContent
+
+// TriageCardJSONRequestBody defines body for TriageCard for application/json ContentType.
+type TriageCardJSONRequestBody = TriageCardRequestContent
 
 // RegisterDeviceJSONRequestBody defines body for RegisterDevice for application/json ContentType.
 type RegisterDeviceJSONRequestBody = RegisterDeviceRequestContent

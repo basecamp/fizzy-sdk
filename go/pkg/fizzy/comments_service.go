@@ -3,19 +3,22 @@ package fizzy
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/basecamp/fizzy-sdk/go/pkg/generated"
 )
 
 // Create creates a comment.
-func (s *CommentsService) Create(ctx context.Context, cardNumber string, req *generated.CreateCommentRequest) (json.RawMessage, *Response, error) {
+func (s *CommentsService) Create(ctx context.Context, cardNumber string, req *generated.CreateCommentRequest) (*generated.Comment, *Response, error) {
 	resp, err := s.client.Post(ctx, fmt.Sprintf("/cards/%s/comments.json", cardNumber), req)
 	if err != nil {
 		return nil, nil, err
 	}
-	return resp.Data, resp, nil
+	var result generated.Comment
+	if err := resp.UnmarshalData(&result); err != nil {
+		return nil, resp, err
+	}
+	return &result, resp, nil
 }
 
 // Delete deletes a comment.
@@ -24,16 +27,20 @@ func (s *CommentsService) Delete(ctx context.Context, cardNumber string, comment
 }
 
 // Get returns a comment.
-func (s *CommentsService) Get(ctx context.Context, cardNumber string, commentID string) (json.RawMessage, *Response, error) {
+func (s *CommentsService) Get(ctx context.Context, cardNumber string, commentID string) (*generated.Comment, *Response, error) {
 	resp, err := s.client.Get(ctx, fmt.Sprintf("/cards/%s/comments/%s", cardNumber, commentID))
 	if err != nil {
 		return nil, nil, err
 	}
-	return resp.Data, resp, nil
+	var result generated.Comment
+	if err := resp.UnmarshalData(&result); err != nil {
+		return nil, resp, err
+	}
+	return &result, resp, nil
 }
 
 // List returns comments.
-func (s *CommentsService) List(ctx context.Context, cardNumber string, path string) (json.RawMessage, *Response, error) {
+func (s *CommentsService) List(ctx context.Context, cardNumber string, path string) ([]generated.Comment, *Response, error) {
 	if path == "" {
 		path = fmt.Sprintf("/cards/%s/comments.json", cardNumber)
 	}
@@ -41,14 +48,22 @@ func (s *CommentsService) List(ctx context.Context, cardNumber string, path stri
 	if err != nil {
 		return nil, nil, err
 	}
-	return resp.Data, resp, nil
+	var result []generated.Comment
+	if err := resp.UnmarshalData(&result); err != nil {
+		return nil, resp, err
+	}
+	return result, resp, nil
 }
 
 // Update updates a comment.
-func (s *CommentsService) Update(ctx context.Context, cardNumber string, commentID string, req *generated.UpdateCommentRequest) (json.RawMessage, *Response, error) {
+func (s *CommentsService) Update(ctx context.Context, cardNumber string, commentID string, req *generated.UpdateCommentRequest) (*generated.Comment, *Response, error) {
 	resp, err := s.client.Patch(ctx, fmt.Sprintf("/cards/%s/comments/%s", cardNumber, commentID), req)
 	if err != nil {
 		return nil, nil, err
 	}
-	return resp.Data, resp, nil
+	var result generated.Comment
+	if err := resp.UnmarshalData(&result); err != nil {
+		return nil, resp, err
+	}
+	return &result, resp, nil
 }

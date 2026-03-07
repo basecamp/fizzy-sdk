@@ -3,7 +3,6 @@ package fizzy
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/basecamp/fizzy-sdk/go/pkg/generated"
@@ -22,17 +21,21 @@ func (s *CardsService) Close(ctx context.Context, cardNumber string) (*Response,
 }
 
 // Create creates a card.
-func (s *CardsService) Create(ctx context.Context, req *generated.CreateCardRequest) (json.RawMessage, *Response, error) {
+func (s *CardsService) Create(ctx context.Context, req *generated.CreateCardRequest) (*generated.Card, *Response, error) {
 	resp, err := s.client.Post(ctx, "/cards.json", req)
 	if err != nil {
 		return nil, nil, err
 	}
-	return resp.Data, resp, nil
+	var result generated.Card
+	if err := resp.UnmarshalData(&result); err != nil {
+		return nil, resp, err
+	}
+	return &result, resp, nil
 }
 
 // Delete deletes a card.
 func (s *CardsService) Delete(ctx context.Context, cardNumber string) (*Response, error) {
-	return s.client.Delete(ctx, fmt.Sprintf("/cards/%s.json", cardNumber))
+	return s.client.Delete(ctx, fmt.Sprintf("/cards/%s", cardNumber))
 }
 
 // DeleteImage deletes an image.
@@ -41,12 +44,16 @@ func (s *CardsService) DeleteImage(ctx context.Context, cardNumber string) (*Res
 }
 
 // Get returns a card.
-func (s *CardsService) Get(ctx context.Context, cardNumber string) (json.RawMessage, *Response, error) {
-	resp, err := s.client.Get(ctx, fmt.Sprintf("/cards/%s.json", cardNumber))
+func (s *CardsService) Get(ctx context.Context, cardNumber string) (*generated.Card, *Response, error) {
+	resp, err := s.client.Get(ctx, fmt.Sprintf("/cards/%s", cardNumber))
 	if err != nil {
 		return nil, nil, err
 	}
-	return resp.Data, resp, nil
+	var result generated.Card
+	if err := resp.UnmarshalData(&result); err != nil {
+		return nil, resp, err
+	}
+	return &result, resp, nil
 }
 
 // Gold performs the Gold operation on a card.
@@ -56,7 +63,7 @@ func (s *CardsService) Gold(ctx context.Context, cardNumber string) (*Response, 
 }
 
 // List returns cards.
-func (s *CardsService) List(ctx context.Context, path string) (json.RawMessage, *Response, error) {
+func (s *CardsService) List(ctx context.Context, path string) ([]generated.Card, *Response, error) {
 	if path == "" {
 		path = "/cards.json"
 	}
@@ -64,16 +71,24 @@ func (s *CardsService) List(ctx context.Context, path string) (json.RawMessage, 
 	if err != nil {
 		return nil, nil, err
 	}
-	return resp.Data, resp, nil
+	var result []generated.Card
+	if err := resp.UnmarshalData(&result); err != nil {
+		return nil, resp, err
+	}
+	return result, resp, nil
 }
 
 // Move performs the Move operation on a card.
-func (s *CardsService) Move(ctx context.Context, cardNumber string, req *generated.MoveCardRequest) (json.RawMessage, *Response, error) {
+func (s *CardsService) Move(ctx context.Context, cardNumber string, req *generated.MoveCardRequest) (*generated.Card, *Response, error) {
 	resp, err := s.client.Patch(ctx, fmt.Sprintf("/cards/%s/board.json", cardNumber), req)
 	if err != nil {
 		return nil, nil, err
 	}
-	return resp.Data, resp, nil
+	var result generated.Card
+	if err := resp.UnmarshalData(&result); err != nil {
+		return nil, resp, err
+	}
+	return &result, resp, nil
 }
 
 // Pin performs the Pin operation on a card.
@@ -106,8 +121,8 @@ func (s *CardsService) Tag(ctx context.Context, cardNumber string, req *generate
 }
 
 // Triage performs the Triage operation on a card.
-func (s *CardsService) Triage(ctx context.Context, cardNumber string) (*Response, error) {
-	resp, err := s.client.Post(ctx, fmt.Sprintf("/cards/%s/triage.json", cardNumber), nil)
+func (s *CardsService) Triage(ctx context.Context, cardNumber string, req *generated.TriageCardRequest) (*Response, error) {
+	resp, err := s.client.Post(ctx, fmt.Sprintf("/cards/%s/triage.json", cardNumber), req)
 	return resp, err
 }
 
@@ -132,12 +147,16 @@ func (s *CardsService) Unwatch(ctx context.Context, cardNumber string) (*Respons
 }
 
 // Update updates a card.
-func (s *CardsService) Update(ctx context.Context, cardNumber string, req *generated.UpdateCardRequest) (json.RawMessage, *Response, error) {
-	resp, err := s.client.Patch(ctx, fmt.Sprintf("/cards/%s.json", cardNumber), req)
+func (s *CardsService) Update(ctx context.Context, cardNumber string, req *generated.UpdateCardRequest) (*generated.Card, *Response, error) {
+	resp, err := s.client.Patch(ctx, fmt.Sprintf("/cards/%s", cardNumber), req)
 	if err != nil {
 		return nil, nil, err
 	}
-	return resp.Data, resp, nil
+	var result generated.Card
+	if err := resp.UnmarshalData(&result); err != nil {
+		return nil, resp, err
+	}
+	return &result, resp, nil
 }
 
 // Watch performs the Watch operation on a card.

@@ -3,16 +3,19 @@ package fizzy
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/basecamp/fizzy-sdk/go/pkg/generated"
 )
 
 // CreateDirectUpload creates an upload.
-func (s *UploadsService) CreateDirectUpload(ctx context.Context, req *generated.CreateDirectUploadRequest) (json.RawMessage, *Response, error) {
+func (s *UploadsService) CreateDirectUpload(ctx context.Context, req *generated.CreateDirectUploadRequest) (*generated.DirectUpload, *Response, error) {
 	resp, err := s.client.Post(ctx, "/rails/active_storage/direct_uploads", req)
 	if err != nil {
 		return nil, nil, err
 	}
-	return resp.Data, resp, nil
+	var result generated.DirectUpload
+	if err := resp.UnmarshalData(&result); err != nil {
+		return nil, resp, err
+	}
+	return &result, resp, nil
 }
