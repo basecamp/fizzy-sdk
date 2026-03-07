@@ -512,56 +512,59 @@ function createRetryMiddleware(hooks?: FizzyHooks, authStrategy?: AuthStrategy):
       let currentResponse = response;
       let attempt = parseInt(request.headers.get("X-Retry-Attempt") || "0", 10);
 
-      while (retryConfig.retryOn.includes(currentResponse.status) &&
-             attempt < retryConfig.maxAttempts - 1) {
-        // Calculate delay (Retry-After for 429, backoff otherwise)
-        let delay: number;
-        if (currentResponse.status === 429) {
-          const ra = currentResponse.headers.get("Retry-After");
-          const sec = ra ? parseInt(ra, 10) : NaN;
-          delay = isNaN(sec) ? calculateBackoffDelay(retryConfig, attempt) : sec * 1000;
-        } else {
-          delay = calculateBackoffDelay(retryConfig, attempt);
-        }
+      try {
+        while (retryConfig.retryOn.includes(currentResponse.status) &&
+               attempt < retryConfig.maxAttempts - 1) {
+          // Calculate delay (Retry-After for 429, backoff otherwise)
+          let delay: number;
+          if (currentResponse.status === 429) {
+            const ra = currentResponse.headers.get("Retry-After");
+            const sec = ra ? parseInt(ra, 10) : NaN;
+            delay = isNaN(sec) ? calculateBackoffDelay(retryConfig, attempt) : sec * 1000;
+          } else {
+            delay = calculateBackoffDelay(retryConfig, attempt);
+          }
 
-        // Fire hook
-        if (hooks?.onRetry) {
-          const info: RequestInfo = {
+          // Fire hook
+          if (hooks?.onRetry) {
+            const info: RequestInfo = {
+              method: request.method,
+              url: request.url,
+              attempt: attempt + 1,
+            };
+            try {
+              hooks.onRetry(info, attempt + 1,
+                new Error(`HTTP ${currentResponse.status}: ${currentResponse.statusText || "Request failed"}`), delay);
+            } catch { /* hooks must not interrupt */ }
+          }
+
+          await sleep(delay);
+          attempt++;
+
+          // Build retry request
+          let body: ArrayBuffer | null = null;
+          if (requestId && bodyCache.has(requestId)) {
+            body = bodyCache.get(requestId) ?? null;
+          }
+          const retryHeaders = new Headers(request.headers);
+          retryHeaders.set("X-Retry-Attempt", String(attempt));
+
+          if (authStrategy) {
+            await authStrategy.authenticate(retryHeaders);
+          }
+
+          currentResponse = await fetch(new Request(request.url, {
             method: request.method,
-            url: request.url,
-            attempt: attempt + 1,
-          };
-          try {
-            hooks.onRetry(info, attempt + 1,
-              new Error(`HTTP ${currentResponse.status}: ${currentResponse.statusText || "Request failed"}`), delay);
-          } catch { /* hooks must not interrupt */ }
+            headers: retryHeaders,
+            body,
+            signal: request.signal,
+          }));
         }
 
-        await sleep(delay);
-        attempt++;
-
-        // Build retry request
-        let body: ArrayBuffer | null = null;
-        if (requestId && bodyCache.has(requestId)) {
-          body = bodyCache.get(requestId) ?? null;
-        }
-        const retryHeaders = new Headers(request.headers);
-        retryHeaders.set("X-Retry-Attempt", String(attempt));
-
-        if (authStrategy) {
-          await authStrategy.authenticate(retryHeaders);
-        }
-
-        currentResponse = await fetch(new Request(request.url, {
-          method: request.method,
-          headers: retryHeaders,
-          body,
-          signal: request.signal,
-        }));
+        return currentResponse;
+      } finally {
+        cleanupBody();
       }
-
-      cleanupBody();
-      return currentResponse;
     },
   };
 }

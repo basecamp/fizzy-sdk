@@ -5,8 +5,7 @@ package fizzy
 // The drift check script (scripts/check-service-drift.sh) verifies this
 // registry stays in sync with openapi.json.
 //
-// When adding a new API operation: add the operationId here and implement
-// the corresponding service method.
+// To update: run 'go run ./cmd/generate-services/' from the go directory.
 var OperationRegistry = map[string]string{
 	// Boards
 	"CreateBoard": "BoardsService.Create",

@@ -2,10 +2,11 @@ import Foundation
 
 // MARK: - String Utilities
 
-/// Converts a snake_case string to lowerCamelCase, matching Swift's
-/// `JSONDecoder.KeyDecodingStrategy.convertFromSnakeCase` algorithm:
-/// split on `_`, lowercase the first segment, capitalize only the first
-/// character of each subsequent segment and lowercase the rest.
+/// Converts a snake_case string to lowerCamelCase.
+///
+/// Splits on `_`, lowercases the first segment, capitalizes only the first
+/// character of each subsequent segment and lowercases the rest. Empty
+/// segments from consecutive or leading underscores are skipped.
 ///
 /// For strings without underscores (already camelCase), just lowercases
 /// the first character.
