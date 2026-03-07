@@ -1,0 +1,18 @@
+name: spec-impact
+description: Detect when PR changes affect the OpenAPI spec pipeline
+model: claude-sonnet-4-20250514
+---
+Analyze this PR to determine if it affects the Fizzy SDK's OpenAPI spec pipeline.
+
+Check if the PR modifies:
+1. Smithy model files (spec/*.smithy, spec/model/)
+2. OpenAPI spec (openapi.json)
+3. Code generators (*/scripts/generate-*, */cmd/generate-*)
+4. Generated code (*/generated/*, */pkg/generated/)
+5. Behavior model (behavior-model.json, scripts/generate-behavior-model)
+6. URL routes (url-routes.json, scripts/generate-url-routes)
+
+If any of these are modified, flag the PR as potentially affecting the spec pipeline and recommend:
+- Running `make smithy-check` to verify OpenAPI freshness
+- Running `make behavior-model-check` to verify behavior model
+- Checking all 5 language SDKs for drift with `make check`

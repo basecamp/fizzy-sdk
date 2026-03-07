@@ -29,7 +29,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: '20'
+          node-version: '22'
       - name: Install
         run: cd typescript && npm ci
       - name: Audit
@@ -49,3 +49,73 @@ jobs:
         run: gem install bundler-audit
       - name: Audit
         run: cd ruby && bundle-audit check --update
+
+  trivy-go:
+    name: Trivy (Go)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: ./go
+          severity: HIGH,CRITICAL
+          exit-code: 1
+          ignore-unfixed: true
+          format: sarif
+          output: trivy-go.sarif
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-go.sarif
+          category: trivy-go
+
+  trivy-typescript:
+    name: Trivy (TypeScript)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: ./typescript
+          severity: HIGH,CRITICAL
+          exit-code: 1
+          ignore-unfixed: true
+          format: sarif
+          output: trivy-typescript.sarif
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-typescript.sarif
+          category: trivy-typescript
+
+  trivy-ruby:
+    name: Trivy (Ruby)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: ./ruby
+          severity: HIGH,CRITICAL
+          exit-code: 1
+          ignore-unfixed: true
+          format: sarif
+          output: trivy-ruby.sarif
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-ruby.sarif
+          category: trivy-ruby
+
+  gosec:
+    name: Go Security Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: securego/gosec@master
+        with:
+          args: -severity high -exclude-dir=pkg/generated ./go/...
+
