@@ -53,6 +53,8 @@ package final class HTTPClient: Sendable {
             throw FizzyError.usage(message: "Invalid URL: \(url)", hint: nil)
         }
 
+        try Self.requireSecureTransport(requestURL, allowInsecure: config.allowInsecure)
+
         var request = URLRequest(url: requestURL)
         request.httpMethod = method
         request.timeoutInterval = config.timeoutInterval
@@ -182,6 +184,8 @@ package final class HTTPClient: Sendable {
             throw FizzyError.usage(message: "Invalid pagination URL: \(url)", hint: nil)
         }
 
+        try Self.requireSecureTransport(requestURL, allowInsecure: config.allowInsecure)
+
         var request = URLRequest(url: requestURL)
         request.httpMethod = "GET"
         request.timeoutInterval = config.timeoutInterval
@@ -230,6 +234,23 @@ package final class HTTPClient: Sendable {
 
     private func safeInvokeHooks(_ invoke: (any FizzyHooks) -> Void) {
         invoke(hooks)
+    }
+
+    /// Ensures the URL uses HTTPS (or localhost for development).
+    ///
+    /// - Parameters:
+    ///   - url: The URL to validate.
+    ///   - allowInsecure: When `true`, skip enforcement (for self-hosted instances).
+    static func requireSecureTransport(_ url: URL, allowInsecure: Bool = false) throws {
+        if allowInsecure { return }
+        let scheme = url.scheme?.lowercased()
+        if scheme == "https" { return }
+        if scheme == "http", let host = url.host?.lowercased(),
+           host == "localhost" || host == "127.0.0.1" || host == "::1" { return }
+        throw FizzyError.usage(
+            message: "Fizzy SDK requires HTTPS. Got: \(url.scheme ?? "nil")://\(url.host ?? "")",
+            hint: "Use https:// for the base URL. HTTP is only allowed for localhost."
+        )
     }
 }
 

@@ -95,17 +95,18 @@ public final class FizzyClient: Sendable {
             enableRetry: config.enableRetry,
             enableCache: config.enableCache,
             maxPages: config.maxPages,
-            timeoutInterval: config.timeoutInterval
+            timeoutInterval: config.timeoutInterval,
+            allowInsecure: config.allowInsecure
         )
         let effectiveHooks = hooks ?? NoopHooks()
         let effectiveTransport = transport ?? URLSessionTransport()
         let cache = config.enableCache ? ETagCache() : nil
 
-        // Validate base URL uses HTTPS (skip for localhost in tests)
+        // Validate base URL uses HTTPS (skip for localhost/loopback or explicit opt-out)
         if let url = URL(string: effectiveConfig.baseURL) {
-            let host = url.host ?? ""
-            let isLocalhost = host == "localhost" || host == "127.0.0.1" || host == "::1"
-            if url.scheme != "https" && !isLocalhost {
+            do {
+                try HTTPClient.requireSecureTransport(url, allowInsecure: effectiveConfig.allowInsecure)
+            } catch {
                 preconditionFailure("Base URL must use HTTPS: \(effectiveConfig.baseURL)")
             }
         }

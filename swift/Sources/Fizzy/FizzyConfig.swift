@@ -23,6 +23,10 @@ public struct FizzyConfig: Sendable {
     /// Request timeout interval in seconds.
     public let timeoutInterval: TimeInterval
 
+    /// Allow HTTP (non-TLS) connections. Required for self-hosted instances
+    /// accessed over private networks (e.g., Tailscale). Default: `false`.
+    public let allowInsecure: Bool
+
     /// SDK version string.
     public static let sdkVersion = "0.1.0"
 
@@ -44,13 +48,15 @@ public struct FizzyConfig: Sendable {
     ///   - enableCache: Enable ETag-based caching (default: `false`)
     ///   - maxPages: Maximum pages to follow (default: `10_000`)
     ///   - timeoutInterval: Request timeout in seconds (default: `30`)
+    ///   - allowInsecure: Allow HTTP connections for self-hosted instances (default: `false`)
     public init(
         baseURL: String = defaultBaseURL,
         userAgent: String = defaultUserAgent,
         enableRetry: Bool = true,
         enableCache: Bool = false,
         maxPages: Int = 10_000,
-        timeoutInterval: TimeInterval = 30
+        timeoutInterval: TimeInterval = 30,
+        allowInsecure: Bool = false
     ) {
         self.baseURL = baseURL.hasSuffix("/") ? String(baseURL.dropLast()) : baseURL
         self.userAgent = userAgent
@@ -58,5 +64,6 @@ public struct FizzyConfig: Sendable {
         self.enableCache = enableCache
         self.maxPages = maxPages
         self.timeoutInterval = timeoutInterval
+        self.allowInsecure = allowInsecure
     }
 }
