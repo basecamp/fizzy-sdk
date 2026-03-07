@@ -93,7 +93,7 @@ class ColumnsService(client: AccountClient) : BaseService(client) {
             resourceId = columnId,
         )
         return request(info, {
-            httpPut("/boards/${boardId}/columns/${columnId}", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
+            httpPatch("/boards/${boardId}/columns/${columnId}", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
                 body.name?.let { put("name", kotlinx.serialization.json.JsonPrimitive(it)) }
                 body.color?.let { put("color", kotlinx.serialization.json.JsonPrimitive(it)) }
             }), operationName = info.operation)

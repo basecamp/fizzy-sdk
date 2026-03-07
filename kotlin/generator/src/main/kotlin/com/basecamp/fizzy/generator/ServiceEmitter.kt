@@ -99,8 +99,9 @@ class ServiceEmitter(private val api: OpenApiParser) {
             val hasOptionalQuery = op.queryParams.any { !it.required }
             val optionsArg = if (hasOptionalQuery) "options?.toPaginationOptions()" else "options"
 
+            val paginatedSuffix = if (op.isAccountScoped) "" else "Root"
             sb.appendLine("        return requestPaginated(info, $optionsArg, {")
-            sb.appendLine("            httpGet($pathWithQuery, operationName = info.operation)")
+            sb.appendLine("            httpGet$paginatedSuffix($pathWithQuery, operationName = info.operation)")
             sb.appendLine("        }) { body ->")
             sb.appendLine("            json.decodeFromString<List<$entityType>>(body)")
             sb.appendLine("        }")
@@ -146,16 +147,17 @@ class ServiceEmitter(private val api: OpenApiParser) {
 
     private fun generateHttpCall(op: ParsedOperation, pathWithQuery: String): String {
         val sb = StringBuilder()
+        val suffix = if (op.isAccountScoped) "" else "Root"
 
         when (op.httpMethod) {
-            "GET" -> sb.appendLine("            httpGet($pathWithQuery, operationName = info.operation)")
+            "GET" -> sb.appendLine("            httpGet$suffix($pathWithQuery, operationName = info.operation)")
             "POST" -> {
                 if (op.bodyContentType == "octet-stream") {
                     sb.appendLine("            httpPostBinary($pathWithQuery, data, contentType)")
                 } else if (op.bodyContentType == "json" && op.bodyProperties.isNotEmpty()) {
-                    sb.appendLine("            httpPost($pathWithQuery, json.encodeToString(${buildBodySerializer(op)}), operationName = info.operation)")
+                    sb.appendLine("            httpPost$suffix($pathWithQuery, json.encodeToString(${buildBodySerializer(op)}), operationName = info.operation)")
                 } else {
-                    sb.appendLine("            httpPost($pathWithQuery, operationName = info.operation)")
+                    sb.appendLine("            httpPost$suffix($pathWithQuery, operationName = info.operation)")
                 }
             }
             "PUT" -> {
@@ -164,16 +166,16 @@ class ServiceEmitter(private val api: OpenApiParser) {
                 } else {
                     ""
                 }
-                sb.appendLine("            httpPut($pathWithQuery$bodyArg, operationName = info.operation)")
+                sb.appendLine("            httpPut$suffix($pathWithQuery$bodyArg, operationName = info.operation)")
             }
-            "DELETE" -> sb.appendLine("            httpDelete($pathWithQuery, operationName = info.operation)")
+            "DELETE" -> sb.appendLine("            httpDelete$suffix($pathWithQuery, operationName = info.operation)")
             "PATCH" -> {
                 val bodyArg = if (op.bodyContentType == "json" && op.bodyProperties.isNotEmpty()) {
                     ", json.encodeToString(${buildBodySerializer(op)})"
                 } else {
                     ""
                 }
-                sb.appendLine("            httpPut($pathWithQuery$bodyArg, operationName = info.operation)")
+                sb.appendLine("            httpPatch$suffix($pathWithQuery$bodyArg, operationName = info.operation)")
             }
         }
 

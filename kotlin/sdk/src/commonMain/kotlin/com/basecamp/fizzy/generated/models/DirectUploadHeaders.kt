@@ -12,6 +12,6 @@ import kotlinx.serialization.json.JsonObject
  */
 @Serializable
 data class DirectUploadHeaders(
-    val Content_Type: String,
-    val Content_MD5: String? = null
+    @SerialName("Content-Type") val contentType: String,
+    @SerialName("Content-MD5") val contentMD5: String? = null
 )

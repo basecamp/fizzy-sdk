@@ -69,7 +69,7 @@ class BoardsService(client: AccountClient) : BaseService(client) {
             resourceId = null,
         )
         return request(info, {
-            httpGet("/boards/${boardId}", operationName = info.operation)
+            httpGet("/boards/${boardId}.json", operationName = info.operation)
         }) { body ->
             json.decodeFromString<Board>(body)
         }
@@ -90,7 +90,7 @@ class BoardsService(client: AccountClient) : BaseService(client) {
             resourceId = null,
         )
         return request(info, {
-            httpPut("/boards/${boardId}", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
+            httpPatch("/boards/${boardId}.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
                 body.name?.let { put("name", kotlinx.serialization.json.JsonPrimitive(it)) }
                 body.allAccess?.let { put("all_access", kotlinx.serialization.json.JsonPrimitive(it)) }
             }), operationName = info.operation)
@@ -113,7 +113,7 @@ class BoardsService(client: AccountClient) : BaseService(client) {
             resourceId = null,
         )
         request(info, {
-            httpDelete("/boards/${boardId}", operationName = info.operation)
+            httpDelete("/boards/${boardId}.json", operationName = info.operation)
         }) { Unit }
     }
 }

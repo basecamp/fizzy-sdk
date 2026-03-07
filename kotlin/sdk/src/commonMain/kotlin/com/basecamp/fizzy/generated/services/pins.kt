@@ -25,7 +25,7 @@ class PinsService(client: AccountClient) : BaseService(client) {
             resourceId = null,
         )
         return request(info, {
-            httpGet("/my/pins.json", operationName = info.operation)
+            httpGetRoot("/my/pins.json", operationName = info.operation)
         }) { body ->
             json.decodeFromString<List<Pin>>(body)
         }

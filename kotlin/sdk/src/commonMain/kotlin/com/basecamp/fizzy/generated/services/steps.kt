@@ -72,7 +72,7 @@ class StepsService(client: AccountClient) : BaseService(client) {
             resourceId = cardNumber,
         )
         return request(info, {
-            httpPut("/cards/${cardNumber}/steps/${stepId}", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
+            httpPatch("/cards/${cardNumber}/steps/${stepId}", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
                 body.content?.let { put("content", kotlinx.serialization.json.JsonPrimitive(it)) }
                 body.completed?.let { put("completed", kotlinx.serialization.json.JsonPrimitive(it)) }
             }), operationName = info.operation)

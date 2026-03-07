@@ -51,6 +51,16 @@ abstract class BaseService(
     }
 
     /**
+     * Builds the full API URL for account-independent paths.
+     * E.g., "/session.json" -> "https://fizzy.do/session.json"
+     */
+    protected fun rootUrl(path: String): String {
+        val base = accountClient.parent.config.baseUrl.trimEnd('/')
+        val normalizedPath = if (path.startsWith("/")) path else "/$path"
+        return "$base$normalizedPath"
+    }
+
+    /**
      * Builds a query string from key-value pairs, URL-encoding values.
      * Null values are omitted. Returns "" if no params, or "?k1=v1&k2=v2".
      */
@@ -80,6 +90,12 @@ abstract class BaseService(
         http.requestWithRetry(HttpMethod.Put, accountUrl(path), body, operationName = operationName)
 
     /**
+     * Executes a PATCH request with a JSON body.
+     */
+    protected suspend fun httpPatch(path: String, body: String? = null, operationName: String? = null): HttpResponse =
+        http.requestWithRetry(HttpMethod.Patch, accountUrl(path), body, operationName = operationName)
+
+    /**
      * Executes a DELETE request.
      */
     protected suspend fun httpDelete(path: String, operationName: String? = null): HttpResponse =
@@ -90,6 +106,36 @@ abstract class BaseService(
      */
     protected suspend fun httpPostBinary(path: String, data: ByteArray, contentType: String): HttpResponse =
         http.requestBinaryWithRetry(HttpMethod.Post, accountUrl(path), data, contentType)
+
+    /**
+     * Executes a GET request for an account-independent path.
+     */
+    protected suspend fun httpGetRoot(path: String, operationName: String? = null): HttpResponse =
+        http.requestWithRetry(HttpMethod.Get, rootUrl(path), operationName = operationName)
+
+    /**
+     * Executes a POST request for an account-independent path.
+     */
+    protected suspend fun httpPostRoot(path: String, body: String? = null, operationName: String? = null): HttpResponse =
+        http.requestWithRetry(HttpMethod.Post, rootUrl(path), body, operationName = operationName)
+
+    /**
+     * Executes a PUT request for an account-independent path.
+     */
+    protected suspend fun httpPutRoot(path: String, body: String? = null, operationName: String? = null): HttpResponse =
+        http.requestWithRetry(HttpMethod.Put, rootUrl(path), body, operationName = operationName)
+
+    /**
+     * Executes a PATCH request for an account-independent path.
+     */
+    protected suspend fun httpPatchRoot(path: String, body: String? = null, operationName: String? = null): HttpResponse =
+        http.requestWithRetry(HttpMethod.Patch, rootUrl(path), body, operationName = operationName)
+
+    /**
+     * Executes a DELETE request for an account-independent path.
+     */
+    protected suspend fun httpDeleteRoot(path: String, operationName: String? = null): HttpResponse =
+        http.requestWithRetry(HttpMethod.Delete, rootUrl(path), operationName = operationName)
 
     /**
      * Executes an API request with error handling and hooks integration.
@@ -194,13 +240,7 @@ abstract class BaseService(
                 val rawNextUrl = parseNextLink(currentResponse.headers["Link"]) ?: break
                 val nextUrl = resolveUrl(currentResponse.request.url.toString(), rawNextUrl)
 
-                // Validate same-origin to prevent SSRF / token leakage
-                if (!isSameOrigin(nextUrl, initialUrl)) {
-                    throw FizzyException.Api(
-                        "Pagination Link header points to different origin: $nextUrl",
-                        httpStatus = 0,
-                    )
-                }
+                if (!isSameOrigin(nextUrl, initialUrl)) break
 
                 currentResponse = http.requestWithRetry(HttpMethod.Get, nextUrl)
 
@@ -278,12 +318,7 @@ abstract class BaseService(
                 val rawNextUrl = parseNextLink(currentResponse.headers["Link"]) ?: break
                 val nextUrl = resolveUrl(currentResponse.request.url.toString(), rawNextUrl)
 
-                if (!isSameOrigin(nextUrl, initialUrl)) {
-                    throw FizzyException.Api(
-                        "Pagination Link header points to different origin: $nextUrl",
-                        httpStatus = 0,
-                    )
-                }
+                if (!isSameOrigin(nextUrl, initialUrl)) break
 
                 currentResponse = http.requestWithRetry(HttpMethod.Get, nextUrl)
 

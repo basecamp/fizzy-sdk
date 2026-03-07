@@ -196,10 +196,10 @@ internal class FizzyHttpClient(
 
     companion object {
         /** Status codes that trigger automatic retry. */
-        val RETRYABLE_STATUS_CODES = setOf(429, 503)
+        val RETRYABLE_STATUS_CODES = setOf(429, 500, 503)
 
         /** HTTP methods that are safe to retry (idempotent). */
-        val IDEMPOTENT_METHODS = setOf(HttpMethod.Get, HttpMethod.Put, HttpMethod.Delete, HttpMethod.Head)
+        val IDEMPOTENT_METHODS = setOf(HttpMethod.Get, HttpMethod.Put, HttpMethod.Patch, HttpMethod.Delete, HttpMethod.Head)
 
         private const val MAX_JITTER_MS = 100L
 

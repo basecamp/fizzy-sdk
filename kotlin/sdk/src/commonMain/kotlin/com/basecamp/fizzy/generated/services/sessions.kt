@@ -26,7 +26,7 @@ class SessionsService(client: AccountClient) : BaseService(client) {
             resourceId = null,
         )
         return request(info, {
-            httpPost("/session.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
+            httpPostRoot("/session.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
                 put("email_address", kotlinx.serialization.json.JsonPrimitive(body.emailAddress))
             }), operationName = info.operation)
         }) { body ->
@@ -47,7 +47,7 @@ class SessionsService(client: AccountClient) : BaseService(client) {
             resourceId = null,
         )
         request(info, {
-            httpDelete("/session.json", operationName = info.operation)
+            httpDeleteRoot("/session.json", operationName = info.operation)
         }) { Unit }
     }
 
@@ -65,7 +65,7 @@ class SessionsService(client: AccountClient) : BaseService(client) {
             resourceId = null,
         )
         return request(info, {
-            httpPost("/session/magic_link.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
+            httpPostRoot("/session/magic_link.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
                 put("token", kotlinx.serialization.json.JsonPrimitive(body.token))
             }), operationName = info.operation)
         }) { body ->
@@ -87,7 +87,7 @@ class SessionsService(client: AccountClient) : BaseService(client) {
             resourceId = null,
         )
         return request(info, {
-            httpPost("/signup/completion.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
+            httpPostRoot("/signup/completion.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
                 put("name", kotlinx.serialization.json.JsonPrimitive(body.name))
             }), operationName = info.operation)
         }) { body ->

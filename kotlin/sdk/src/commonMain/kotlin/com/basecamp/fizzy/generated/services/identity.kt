@@ -25,7 +25,7 @@ class IdentityService(client: AccountClient) : BaseService(client) {
             resourceId = null,
         )
         return request(info, {
-            httpGet("/my/identity.json", operationName = info.operation)
+            httpGetRoot("/my/identity.json", operationName = info.operation)
         }) { body ->
             json.decodeFromString<Identity>(body)
         }

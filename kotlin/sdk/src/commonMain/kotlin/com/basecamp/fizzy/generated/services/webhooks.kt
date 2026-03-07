@@ -94,7 +94,7 @@ class WebhooksService(client: AccountClient) : BaseService(client) {
             resourceId = webhookId,
         )
         return request(info, {
-            httpPut("/boards/${boardId}/webhooks/${webhookId}", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
+            httpPatch("/boards/${boardId}/webhooks/${webhookId}", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
                 body.name?.let { put("name", kotlinx.serialization.json.JsonPrimitive(it)) }
                 body.url?.let { put("url", kotlinx.serialization.json.JsonPrimitive(it)) }
                 body.subscribedActions?.let { put("subscribed_actions", kotlinx.serialization.json.JsonArray(it.map { kotlinx.serialization.json.JsonPrimitive(it) })) }

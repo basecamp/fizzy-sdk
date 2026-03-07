@@ -13,7 +13,7 @@ import kotlinx.serialization.json.JsonObject
 @Serializable
 data class Card(
     val id: Long,
-    val number: Int,
+    val number: Long,
     val title: String,
     val status: String,
     @SerialName("has_attachments") val hasAttachments: Boolean,

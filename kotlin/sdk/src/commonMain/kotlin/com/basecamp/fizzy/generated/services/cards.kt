@@ -81,7 +81,7 @@ class CardsService(client: AccountClient) : BaseService(client) {
             resourceId = cardNumber,
         )
         return request(info, {
-            httpGet("/cards/${cardNumber}", operationName = info.operation)
+            httpGet("/cards/${cardNumber}.json", operationName = info.operation)
         }) { body ->
             json.decodeFromString<Card>(body)
         }
@@ -102,7 +102,7 @@ class CardsService(client: AccountClient) : BaseService(client) {
             resourceId = cardNumber,
         )
         return request(info, {
-            httpPut("/cards/${cardNumber}", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
+            httpPatch("/cards/${cardNumber}.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
                 body.title?.let { put("title", kotlinx.serialization.json.JsonPrimitive(it)) }
                 body.description?.let { put("description", kotlinx.serialization.json.JsonPrimitive(it)) }
                 body.columnId?.let { put("column_id", kotlinx.serialization.json.JsonPrimitive(it)) }
@@ -126,7 +126,7 @@ class CardsService(client: AccountClient) : BaseService(client) {
             resourceId = cardNumber,
         )
         request(info, {
-            httpDelete("/cards/${cardNumber}", operationName = info.operation)
+            httpDelete("/cards/${cardNumber}.json", operationName = info.operation)
         }) { Unit }
     }
 
@@ -166,7 +166,7 @@ class CardsService(client: AccountClient) : BaseService(client) {
             resourceId = cardNumber,
         )
         return request(info, {
-            httpPut("/cards/${cardNumber}/board.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
+            httpPatch("/cards/${cardNumber}/board.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
                 put("board_id", kotlinx.serialization.json.JsonPrimitive(body.boardId))
                 body.columnId?.let { put("column_id", kotlinx.serialization.json.JsonPrimitive(it)) }
             }), operationName = info.operation)

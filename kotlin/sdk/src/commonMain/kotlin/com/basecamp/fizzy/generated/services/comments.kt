@@ -93,7 +93,7 @@ class CommentsService(client: AccountClient) : BaseService(client) {
             resourceId = cardNumber,
         )
         return request(info, {
-            httpPut("/cards/${cardNumber}/comments/${commentId}", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
+            httpPatch("/cards/${cardNumber}/comments/${commentId}", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
                 put("body", kotlinx.serialization.json.JsonPrimitive(body.body))
             }), operationName = info.operation)
         }) { body ->

@@ -23,6 +23,7 @@ data class ParsedOperation(
     val isMutation: Boolean,
     val resourceType: String,
     val hasPagination: Boolean,
+    val isAccountScoped: Boolean,
 )
 
 data class PathParam(val name: String, val type: String, val description: String?)
@@ -163,6 +164,7 @@ class OperationParser(private val api: OpenApiParser) {
         val resourceType = extractResourceType(operationId)
         val hasPagination = operation.containsKey("x-fizzy-pagination")
 
+        val isAccountScoped = path.startsWith("/{accountId}")
         val convertedPath = path.replace(Regex("^/\\{accountId}"), "")
 
         return ParsedOperation(
@@ -183,6 +185,7 @@ class OperationParser(private val api: OpenApiParser) {
             isMutation = isMutation,
             resourceType = resourceType,
             hasPagination = hasPagination,
+            isAccountScoped = isAccountScoped,
         )
     }
 
