@@ -137,13 +137,12 @@ The SDK retries these operations on 503/5xx (naturally idempotent — calling tw
 - `MarkCardRead` (POST) / `MarkCardUnread` (DELETE) — toggle read state
 - `MoveColumnLeft` / `MoveColumnRight` (POST) — positional, already-leftmost is a no-op
 - `PublishBoard` (POST) / `UnpublishBoard` (DELETE) — toggle publish state
-- `PublishCard` (POST) — publish draft, already-published is a no-op
 - `CloseCard`, `PostponeCard`, `GoldCard`, `PinCard`, `WatchCard`, `TriageCard` (POST)
 - `ReopenCard` (DELETE) — reopen a closed card
-- `ActivateWebhook`, `DeactivateWebhook` (POST)
+- `ActivateWebhook` (POST)
 - `ReadNotification` (POST)
 
-The SDK does **not** retry: `CreateCard`, `CreateBoard`, `CreateComment`, `CreateStep`, `CreateWebhook`, `AssignCard`, `TagCard`, `CreateSession`, `CreateAccessToken`, `CreatePushSubscription`, `CreateAccountExport`.
+The SDK does **not** retry: `CreateCard`, `CreateBoard`, `CreateComment`, `CreateStep`, `CreateWebhook`, `AssignCard`, `TagCard`, `PublishCard`, `DeactivateWebhook`, `CreateSession`, `CreateAccessToken`, `CreatePushSubscription`, `CreateAccountExport`.
 
 ---
 

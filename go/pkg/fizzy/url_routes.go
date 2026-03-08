@@ -9,12 +9,22 @@ import (
 //go:embed url-routes.json
 var urlRoutesJSON []byte
 
+// URLRouteParam describes a path parameter in a route pattern.
+type URLRouteParam struct {
+	Role string `json:"role"`
+	Type string `json:"type"`
+}
+
 // URLRoute describes a single API route pattern.
 type URLRoute struct {
-	OperationID string            `json:"operationId"`
-	Method      string            `json:"method"`
-	Path        string            `json:"path"`
-	Params      map[string]string `json:"params,omitempty"`
+	Pattern    string                   `json:"pattern"`
+	Resource   string                   `json:"resource"`
+	Operations map[string]string        `json:"operations"`
+	Params     map[string]URLRouteParam `json:"params"`
+}
+
+type urlRoutesFile struct {
+	Routes []URLRoute `json:"routes"`
 }
 
 var (
@@ -26,8 +36,11 @@ var (
 // The data is parsed once from the embedded url-routes.json.
 func URLRoutes() []URLRoute {
 	urlRoutesOnce.Do(func() {
-		if err := json.Unmarshal(urlRoutesJSON, &urlRoutes); err != nil {
+		var f urlRoutesFile
+		if err := json.Unmarshal(urlRoutesJSON, &f); err != nil {
 			urlRoutes = nil
+		} else {
+			urlRoutes = f.Routes
 		}
 	})
 	return urlRoutes
@@ -36,8 +49,10 @@ func URLRoutes() []URLRoute {
 // URLRouteByOperation returns the route pattern for the given operation ID.
 func URLRouteByOperation(operationID string) (URLRoute, bool) {
 	for _, r := range URLRoutes() {
-		if r.OperationID == operationID {
-			return r, true
+		for _, opID := range r.Operations {
+			if opID == operationID {
+				return r, true
+			}
 		}
 	}
 	return URLRoute{}, false
