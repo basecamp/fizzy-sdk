@@ -1,0 +1,23 @@
+.github/workflows/smithy-verify.yml
+  a690514834a9822e 6-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "a74d118ec84c79d6ac9a77955147b8b496e9263c",
+  "prompts": {
+    "a690514834a9822e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3ce93539-6e45-4992-ad0e-965be5755afe",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Jeremy Daer <jeremy@37signals.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 6,
+      "overriden_lines": 0
+    }
+  }
+}
