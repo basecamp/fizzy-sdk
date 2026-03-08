@@ -40,10 +40,13 @@ function resolveOpenAPIPath(): string {
 function parseOpenAPI(specPath: string): PathEntry[] {
   const spec: OpenAPISpec = JSON.parse(readFileSync(specPath, "utf-8"));
 
-  // Read full spec to determine which paths are account-scoped
-  const fullSpec: OpenAPISpec = existsSync(OPENAPI_FULL)
-    ? JSON.parse(readFileSync(OPENAPI_FULL, "utf-8"))
-    : { paths: {} } as OpenAPISpec;
+  // Read full spec to determine which paths are account-scoped.
+  // Fail fast if missing — output correctness depends on it.
+  if (!existsSync(OPENAPI_FULL)) {
+    console.error("Error: openapi.json not found at", OPENAPI_FULL);
+    process.exit(1);
+  }
+  const fullSpec: OpenAPISpec = JSON.parse(readFileSync(OPENAPI_FULL, "utf-8"));
   const fullPaths = new Set(Object.keys(fullSpec.paths));
 
   const entries: PathEntry[] = [];

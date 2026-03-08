@@ -27,9 +27,9 @@ jobs:
           INPUT_TAG: ${{ inputs.tag }}
         run: |
           if [[ "$EVENT_NAME" == "push" ]]; then
-            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
           else
-            echo "tag=$INPUT_TAG" >> $GITHUB_OUTPUT
+            echo "tag=$INPUT_TAG" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Wait for release workflows

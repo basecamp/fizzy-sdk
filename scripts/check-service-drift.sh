@@ -20,7 +20,7 @@ if [ ! -f "$GEN_TYPES" ]; then
   exit 1
 fi
 
-GEN_COUNT=$(grep -c '^type ' "$GEN_TYPES" 2>/dev/null || echo "0")
+GEN_COUNT=$(grep -c '^type ' "$GEN_TYPES" 2>/dev/null || true)
 if [ "$GEN_COUNT" -eq 0 ]; then
   echo "ERROR: No types found in $GEN_TYPES"
   exit 1
