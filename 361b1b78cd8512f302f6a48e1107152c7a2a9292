@@ -1,0 +1,23 @@
+.github/workflows/smoke.yml
+  a690514834a9822e 16-18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "361b1b78cd8512f302f6a48e1107152c7a2a9292",
+  "prompts": {
+    "a690514834a9822e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3ce93539-6e45-4992-ad0e-965be5755afe",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Jeremy Daer <jeremy@37signals.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    }
+  }
+}
