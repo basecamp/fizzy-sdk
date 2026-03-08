@@ -17,7 +17,7 @@ if [ ! -d "$KT_SERVICES" ] || ! ls "$KT_SERVICES"/*.kt >/dev/null 2>&1; then
 fi
 
 # Extract operationIds from OpenAPI using HTTP method allowlist
-openapi_ops=$(jq -r '[.paths | to_entries[] | .value | to_entries[] | select(.key | test("^(get|post|put|patch|delete)$")) | .value.operationId] | .[]' "$OPENAPI" | LC_ALL=C sort -u)
+openapi_ops=$(jq -r '[.paths | to_entries[] | .value | to_entries[] | select(.key | test("^(get|post|put|patch|delete)$")) | .value.operationId | select(. != null)] | .[]' "$OPENAPI" | LC_ALL=C sort -u)
 
 # Extract operation strings from generated Kotlin service files
 kt_ops=$(grep -rohE 'operation = "[^"]*"' "$KT_SERVICES"/*.kt 2>/dev/null | sed 's/operation = "\(.*\)"/\1/' | LC_ALL=C sort -u)

@@ -124,7 +124,12 @@ module Fizzy
 
         next_url = Security.resolve_url(url, next_url)
 
-        break unless Security.same_origin?(next_url, base_url)
+        unless Security.same_origin?(next_url, base_url)
+          raise Fizzy::APIError.new(
+            "Cross-origin pagination link rejected; refusing to follow " \
+            "from #{Security.truncate(url.to_s)} to #{Security.truncate(next_url.to_s)}"
+          )
+        end
 
         url = next_url
       end

@@ -35,7 +35,7 @@ fi
 TMPSCRIPT=$(mktemp)
 trap 'rm -f "$TMPSCRIPT"' EXIT
 cat > "$TMPSCRIPT" << 'JQSCRIPT'
-jq -r '.paths | to_entries[] | .value | to_entries[] | select(.key | test("^(get|post|put|patch|delete)$")) | .value.operationId' "$1"
+jq -r '.paths | to_entries[] | .value | to_entries[] | select(.key | test("^(get|post|put|patch|delete)$")) | .value.operationId | select(. != null)' "$1"
 JQSCRIPT
 
 # Extract operationIds from OpenAPI

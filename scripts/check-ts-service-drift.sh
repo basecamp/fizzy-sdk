@@ -17,7 +17,7 @@ if [ ! -d "$TS_SERVICES" ] || ! ls "$TS_SERVICES"/*.ts >/dev/null 2>&1; then
 fi
 
 # Extract operationIds from OpenAPI using HTTP method allowlist
-openapi_ops=$(jq -r '[.paths | to_entries[] | .value | to_entries[] | select(.key | test("^(get|post|put|patch|delete)$")) | .value.operationId] | .[]' "$OPENAPI" | LC_ALL=C sort -u)
+openapi_ops=$(jq -r '[.paths | to_entries[] | .value | to_entries[] | select(.key | test("^(get|post|put|patch|delete)$")) | .value.operationId | select(. != null)] | .[]' "$OPENAPI" | LC_ALL=C sort -u)
 
 # Extract operation strings from generated TypeScript service files
 ts_ops=$(grep -rohE 'operation: "[^"]*"' "$TS_SERVICES"/*.ts 2>/dev/null | sed 's/operation: "\(.*\)"/\1/' | LC_ALL=C sort -u)
