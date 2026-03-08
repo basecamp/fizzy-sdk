@@ -1,10 +1,15 @@
 package com.basecamp.fizzy
 
+import com.basecamp.fizzy.generated.boards
+import io.ktor.client.engine.mock.*
+import io.ktor.http.*
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.test.assertFalse
+import kotlin.test.assertFailsWith
 
 class FizzyTest {
 
@@ -258,6 +263,38 @@ class FizzyTest {
     @Test
     fun testIsSameOriginDifferentScheme() {
         assertFalse(isSameOrigin("https://fizzy.do/boards", "http://fizzy.do/boards"))
+    }
+
+    @Test
+    fun testCrossOriginPaginationThrows() = runTest {
+        // MockEngine returns a valid first page with a cross-origin Link header.
+        // The real requestPaginated code in BaseService must reject it.
+        val mockEngine = MockEngine { request ->
+            respond(
+                content = """[{"id":1,"name":"Board","all_access":true,"created_at":"2026-01-01T00:00:00Z","url":"https://fizzy.do/999/boards/1"}]""",
+                status = HttpStatusCode.OK,
+                headers = headersOf(
+                    HttpHeaders.ContentType to listOf("application/json"),
+                    HttpHeaders.Link to listOf("""<https://evil.com/boards?page=2>; rel="next""""),
+                ),
+            )
+        }
+
+        val client = FizzyClient(
+            authStrategy = BearerAuth(StaticTokenProvider("test-token")),
+            config = FizzyConfig(baseUrl = "https://fizzy.do", userAgent = "test/1.0"),
+            hooks = NoopHooks,
+            engine = mockEngine,
+            externalHttpClient = null,
+        )
+
+        val account = client.forAccount("999")
+        val ex = assertFailsWith<FizzyException.Validation> {
+            account.boards.list()
+        }
+        assertTrue(ex.message!!.contains("Cross-origin"))
+        assertTrue(ex.message!!.contains("evil.com"))
+        client.close()
     }
 
     @Test

@@ -261,6 +261,36 @@ struct BearerAuthTests {
     }
 }
 
+@Suite("HTTPS Enforcement Tests")
+struct HTTPSEnforcementTests {
+    @Test("HTTPS URLs are allowed")
+    func httpsAllowed() throws {
+        try HTTPClient.requireSecureTransport(URL(string: "https://fizzy.do/boards.json")!)
+    }
+
+    @Test("HTTP localhost is allowed")
+    func httpLocalhostAllowed() throws {
+        try HTTPClient.requireSecureTransport(URL(string: "http://localhost:3000/boards.json")!)
+    }
+
+    @Test("HTTP 127.0.0.1 is allowed")
+    func httpLoopbackAllowed() throws {
+        try HTTPClient.requireSecureTransport(URL(string: "http://127.0.0.1:3000/boards.json")!)
+    }
+
+    @Test("HTTP ::1 is allowed")
+    func httpIPv6LoopbackAllowed() throws {
+        try HTTPClient.requireSecureTransport(URL(string: "http://[::1]:3000/boards.json")!)
+    }
+
+    @Test("HTTP non-localhost is rejected")
+    func httpNonLocalhostRejected() {
+        #expect(throws: FizzyError.self) {
+            try HTTPClient.requireSecureTransport(URL(string: "http://fizzy.do/boards.json")!)
+        }
+    }
+}
+
 @Suite("FizzyClient Service Bridge Tests")
 struct FizzyClientServiceBridgeTests {
     @Test("Service accessors are reachable from FizzyClient")

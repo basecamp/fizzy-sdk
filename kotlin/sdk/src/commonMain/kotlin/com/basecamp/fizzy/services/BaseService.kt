@@ -241,7 +241,7 @@ abstract class BaseService(
                 val nextUrl = resolveUrl(currentResponse.request.url.toString(), rawNextUrl)
 
                 if (!isSameOrigin(nextUrl, initialUrl)) {
-                    throw FizzyException("Cross-origin pagination link rejected: $nextUrl (initial: $initialUrl)")
+                    throw FizzyException.Validation("Cross-origin pagination link rejected: $nextUrl (initial: $initialUrl)")
                 }
 
                 currentResponse = http.requestWithRetry(HttpMethod.Get, nextUrl)
@@ -321,7 +321,7 @@ abstract class BaseService(
                 val nextUrl = resolveUrl(currentResponse.request.url.toString(), rawNextUrl)
 
                 if (!isSameOrigin(nextUrl, initialUrl)) {
-                    throw FizzyException("Cross-origin pagination link rejected: $nextUrl (initial: $initialUrl)")
+                    throw FizzyException.Validation("Cross-origin pagination link rejected: $nextUrl (initial: $initialUrl)")
                 }
 
                 currentResponse = http.requestWithRetry(HttpMethod.Get, nextUrl)

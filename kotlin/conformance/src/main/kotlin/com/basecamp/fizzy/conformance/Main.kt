@@ -129,10 +129,40 @@ fun main() {
 // Test runner
 // ---------------------------------------------------------------------------
 
+/**
+ * Rewrite Link header URLs so same-origin links point to the client's base URL
+ * while cross-origin links are left alone.
+ */
+private fun rewriteLinkHeaders(
+    headers: Map<String, String>,
+    fixtureOrigin: String,
+    clientOrigin: String,
+): Map<String, String> {
+    val linkVal = headers["Link"] ?: return headers
+    if (fixtureOrigin == clientOrigin) return headers
+
+    val newLink = linkVal.replace(fixtureOrigin, clientOrigin)
+    return headers + ("Link" to newLink)
+}
+
+private fun extractOrigin(url: String): String {
+    val schemeEnd = url.indexOf("://")
+    if (schemeEnd < 0) return url
+    val afterScheme = schemeEnd + 3
+    val pathStart = url.indexOf('/', afterScheme)
+    return if (pathStart < 0) url else url.substring(0, pathStart)
+}
+
 fun runTest(tc: TestCase): Pair<ExecResult, List<RequestRecord>> {
     val records = mutableListOf<RequestRecord>()
     var mockIdx = 0
     var lastResponseStatus = 0
+
+    // Fixture Link headers assume this origin; client uses clientBaseUrl.
+    val fixtureBaseUrl = tc.configOverrides?.baseUrl ?: "https://fizzy.do"
+    val clientBaseUrl = tc.configOverrides?.baseUrl ?: "http://localhost:9876"
+    val fixtureOrigin = extractOrigin(fixtureBaseUrl)
+    val clientOrigin = extractOrigin(clientBaseUrl)
 
     val mockEngine = MockEngine { request ->
         val bodyBytes = request.body.toByteArray()
@@ -147,8 +177,9 @@ fun runTest(tc: TestCase): Pair<ExecResult, List<RequestRecord>> {
                 mock.body == null || mock.body is JsonNull -> ""
                 else -> Json.encodeToString(JsonElement.serializer(), mock.body)
             }
+            val rewrittenHeaders = rewriteLinkHeaders(mock.headers, fixtureOrigin, clientOrigin)
             val mockHeaders = headersOf(
-                *mock.headers.map { (k, v) -> k to listOf(v) }.toTypedArray()
+                *rewrittenHeaders.map { (k, v) -> k to listOf(v) }.toTypedArray()
             )
             lastResponseStatus = mock.status
             records.add(
@@ -249,14 +280,37 @@ fun executeOperation(tc: TestCase, engine: MockEngine): ExecResult {
 // Operation dispatch
 // ---------------------------------------------------------------------------
 
+/**
+ * Determine whether the test expects actual multi-page pagination.
+ * Mirrors the Go runner's hasPagination heuristic: multiple mock responses
+ * with Link headers, or urlOrigin assertions testing cross-origin rejection.
+ */
+private fun hasPagination(tc: TestCase): Boolean {
+    if (tc.mockResponses.size > 1 && tc.mockResponses.any { "Link" in it.headers }) return true
+    if (tc.assertions.any { it.type == "urlOrigin" }) return true
+    return false
+}
+
+/**
+ * For list tests that don't expect multi-page pagination, limit to the first
+ * page's item count so the SDK doesn't follow the Link header.
+ */
+private fun singlePageOptions(tc: TestCase): PaginationOptions? {
+    if (hasPagination(tc)) return null
+    val firstBody = tc.mockResponses.firstOrNull()?.body
+    val count = (firstBody as? JsonArray)?.size ?: return null
+    return if (count > 0) PaginationOptions(maxItems = count) else null
+}
+
 suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
     val pp = tc.pathParams
     val body = tc.requestBody
     val qp = tc.queryParams
+    val pageOpts = singlePageOptions(tc)
 
     return when (tc.operation) {
         // Boards
-        "ListBoards" -> account.boards.list()
+        "ListBoards" -> account.boards.list(pageOpts)
         "CreateBoard" -> account.boards.create(
             CreateBoardBody(
                 name = body?.str("name") ?: "",

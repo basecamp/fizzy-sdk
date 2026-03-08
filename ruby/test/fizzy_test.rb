@@ -463,6 +463,33 @@ class FizzySecurityTest < Minitest::Test
   end
 end
 
+class FizzyPaginationSecurityTest < Minitest::Test
+  def test_cross_origin_pagination_raises
+    stubs = Faraday::Adapter::Test::Stubs.new
+    stubs.get("/boards.json") do
+      [
+        200,
+        { "Content-Type" => "application/json", "Link" => '<https://evil.com/boards?page=2>; rel="next"' },
+        '[{"id": 1}]'
+      ]
+    end
+
+    config = Fizzy::Config.new(base_url: "https://fizzy.do")
+    tp = Fizzy::StaticTokenProvider.new("token")
+    http = Fizzy::Http.new(config: config, token_provider: tp)
+
+    # Replace the Faraday client with our stubs
+    http.instance_variable_set(:@faraday, Faraday.new(url: "https://fizzy.do") { |f|
+      f.request :json
+      f.adapter :test, stubs
+    })
+
+    assert_raises(Fizzy::APIError) do
+      http.paginate("/boards.json") { |_item| }
+    end
+  end
+end
+
 class FizzyStaticTokenProviderTest < Minitest::Test
   def test_access_token
     tp = Fizzy::StaticTokenProvider.new("my-token")

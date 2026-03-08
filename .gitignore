@@ -22,6 +22,7 @@ Thumbs.db
 
 # Go
 go/pkg/generated/client.gen.go
+go/generate-services
 
 # TypeScript
 typescript/dist/
@@ -47,6 +48,7 @@ kotlin/conformance/build/
 build/
 
 # Conformance
+conformance/runner/go/go
 conformance/runner/go/conformance-runner
 conformance/runner/typescript/node_modules/
 
