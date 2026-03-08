@@ -35,6 +35,7 @@ interface TestCase {
   path: string;
   pathParams?: Record<string, unknown>;
   requestBody?: Record<string, unknown>;
+  queryParams?: Record<string, string>;
   configOverrides?: Record<string, unknown>;
   mockResponses: MockResponse[];
   assertions: Assertion[];

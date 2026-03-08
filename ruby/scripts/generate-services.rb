@@ -160,6 +160,7 @@ class ServiceGenerator
 
         tag = operation['tags']&.first
         parsed = parse_operation(path, method, operation)
+        next if parsed.nil?
 
         service_name = if tag && TAG_TO_SERVICE.key?(tag)
           TAG_TO_SERVICE[tag]
@@ -231,6 +232,7 @@ class ServiceGenerator
 
   def parse_operation(path, method, operation)
     operation_id = operation['operationId']
+    return nil if operation_id.nil?
     method_name = extract_method_name(operation_id)
     http_method = method.upcase
     description = operation['description']&.lines&.first&.strip || "#{method_name} operation"
