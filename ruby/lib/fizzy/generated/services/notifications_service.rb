@@ -45,7 +45,7 @@ module Fizzy
       # @return [void]
       def read(account_id:, notification_id:)
         with_operation(service: "notifications", operation: "ReadNotification", is_mutation: true, resource_id: notification_id) do
-          http_post("/#{account_id}/notifications/#{notification_id}/reading.json")
+          http_post("/#{account_id}/notifications/#{notification_id}/reading.json", retryable: true)
           nil
         end
       end

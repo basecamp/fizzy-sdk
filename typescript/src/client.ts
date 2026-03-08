@@ -31,6 +31,7 @@ import { TagsService } from "./generated/services/tags.js";
 import { UploadsService } from "./generated/services/uploads.js";
 import { UsersService } from "./generated/services/users.js";
 import { WebhooksService } from "./generated/services/webhooks.js";
+import { MiscellaneousService } from "./generated/services/miscellaneous.js";
 
 const require = createRequire(import.meta.url);
 const metadata = require("./generated/metadata.json") as OperationMetadata;
@@ -693,4 +694,5 @@ function registerServices(
   defineService("uploads", () => new UploadsService(client, hooks, fetchPage));
   defineService("users", () => new UsersService(client, hooks, fetchPage));
   defineService("webhooks", () => new WebhooksService(client, hooks, fetchPage));
+  defineService("miscellaneous", () => new MiscellaneousService(client, hooks, fetchPage));
 }

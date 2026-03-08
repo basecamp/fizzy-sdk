@@ -75,7 +75,8 @@ type BehaviorModel struct {
 }
 
 type BehaviorEntry struct {
-	Retry struct {
+	Idempotent bool `json:"idempotent"`
+	Retry      struct {
 		RetryOn json.RawMessage `json:"retry_on"`
 	} `json:"retry"`
 }
@@ -98,6 +99,7 @@ type ParsedOp struct {
 	ResponseIsList  bool   // true for []generated.Board
 	HasPagination   bool
 	NoRetry         bool // true for non-POST operations with retry_on: null
+	IdempotentPost  bool // true for POST operations marked idempotent in behavior model
 }
 
 // SchemaDef is a minimal representation of a JSON Schema definition used
@@ -149,6 +151,49 @@ var operationServiceOverrides = map[string]string{
 	"GetNotificationTray":   "Notifications",
 	"BulkReadNotifications": "Notifications",
 	"DeleteCardImage":       "Cards",
+
+	// Access tokens (no account prefix)
+	"ListAccessTokens":  "AccessTokens",
+	"CreateAccessToken": "AccessTokens",
+	"DeleteAccessToken": "AccessTokens",
+
+	// Account settings, join codes, entropy, exports
+	"GetAccountSettings":    "Account",
+	"UpdateAccountSettings": "Account",
+	"GetJoinCode":           "Account",
+	"UpdateJoinCode":        "Account",
+	"ResetJoinCode":         "Account",
+	"UpdateAccountEntropy":  "Account",
+	"CreateAccountExport":   "Account",
+	"GetAccountExport":      "Account",
+
+	// Board sub-resources
+	"UpdateBoardInvolvement": "Boards",
+	"UpdateBoardEntropy":     "Boards",
+	"ListStreamCards":        "Boards",
+	"ListPostponedCards":     "Boards",
+	"ListClosedCards":        "Boards",
+
+	// Column positioning
+	"MoveColumnLeft":  "Columns",
+	"MoveColumnRight": "Columns",
+
+	// Card reading/publish
+	"MarkCardRead":   "Cards",
+	"MarkCardUnread": "Cards",
+
+	// Search
+	"SearchCards": "Search",
+
+	// Notification settings
+	"GetNotificationSettings":    "Notifications",
+	"UpdateNotificationSettings": "Notifications",
+
+	// User sub-resources
+	"UpdateUserRole":         "Users",
+	"DeleteUserAvatar":       "Users",
+	"CreatePushSubscription": "Users",
+	"DeletePushSubscription": "Users",
 }
 
 // serviceSuffixes is checked longest-first to map operationId to a service.
@@ -222,27 +267,68 @@ var methodNameOverrides = map[string]string{
 	"ListCommentReactions":  "ListComment",
 	"CreateCommentReaction": "CreateComment",
 	"DeleteCommentReaction": "DeleteComment",
+
+	// Account service
+	"GetAccountSettings":    "GetSettings",
+	"UpdateAccountSettings": "UpdateSettings",
+	"GetJoinCode":           "GetJoinCode",
+	"UpdateJoinCode":        "UpdateJoinCode",
+	"ResetJoinCode":         "ResetJoinCode",
+	"UpdateAccountEntropy":  "UpdateEntropy",
+	"CreateAccountExport":   "CreateExport",
+	"GetAccountExport":      "GetExport",
+
+	// Board sub-resources
+	"UpdateBoardInvolvement": "UpdateInvolvement",
+	"UpdateBoardEntropy":     "UpdateEntropy",
+	"ListStreamCards":        "ListStream",
+	"ListPostponedCards":     "ListPostponed",
+	"ListClosedCards":        "ListClosed",
+
+	// Column positioning
+	"MoveColumnLeft":  "MoveLeft",
+	"MoveColumnRight": "MoveRight",
+
+	// Card reading/publish
+	"MarkCardRead":   "MarkRead",
+	"MarkCardUnread": "MarkUnread",
+
+	// Search
+	"SearchCards": "Search",
+
+	// Notification settings
+	"GetNotificationSettings":    "GetSettings",
+	"UpdateNotificationSettings": "UpdateSettings",
+
+	// User sub-resources
+	"UpdateUserRole":         "UpdateRole",
+	"DeleteUserAvatar":       "DeleteAvatar",
+	"CreatePushSubscription": "CreatePushSubscription",
+	"DeletePushSubscription": "DeletePushSubscription",
 }
 
 // serviceResourceSuffixes maps service name to the suffix that should be
 // stripped from the operationId to derive the method name. Plural form used
 // for List operations is handled separately.
 var serviceResourceSuffixes = map[string][]string{
+	"AccessTokens":  {"AccessTokens", "AccessToken"},
+	"Account":       {"Account"},
 	"Boards":        {"Boards", "Board"},
 	"Cards":         {"Cards", "Card"},
 	"Columns":       {"Columns", "Column"},
 	"Comments":      {"Comments", "Comment"},
-	"Steps":         {"Steps", "Step"},
-	"Notifications": {"Notifications", "Notification"},
-	"Tags":          {"Tags", "Tag"},
-	"Users":         {"Users", "User"},
-	"Pins":          {"Pins", "Pin"},
-	"Webhooks":      {"Webhooks", "Webhook"},
-	"Reactions":     {"Reactions", "Reaction"},
-	"Sessions":      {"Sessions", "Session"},
 	"Devices":       {"Devices", "Device"},
-	"Uploads":       {"Uploads", "Upload"},
 	"Identity":      {"Identity"},
+	"Notifications": {"Notifications", "Notification"},
+	"Pins":          {"Pins", "Pin"},
+	"Reactions":     {"Reactions", "Reaction"},
+	"Search":        {"Cards"},
+	"Sessions":      {"Sessions", "Session"},
+	"Steps":         {"Steps", "Step"},
+	"Tags":          {"Tags", "Tag"},
+	"Uploads":       {"Uploads", "Upload"},
+	"Users":         {"Users", "User"},
+	"Webhooks":      {"Webhooks", "Webhook"},
 }
 
 func deriveMethodName(opID, serviceName string) string {
@@ -274,9 +360,10 @@ func deriveMethodName(opID, serviceName string) string {
 // Exception: Devices has {accountId} in its paths but is declared on *Client
 // in client.go. It takes accountID as an explicit method parameter instead.
 var accountIndependentServices = map[string]bool{
-	"Identity": true,
-	"Sessions": true,
-	"Devices":  true,
+	"AccessTokens": true,
+	"Identity":     true,
+	"Sessions":     true,
+	"Devices":      true,
 }
 
 // isAccountScoped returns true if the service uses *AccountClient.
@@ -401,6 +488,7 @@ func generateServiceFile(svc ServiceDef) string {
 	needsFmt := false
 	needsJSON := false
 	needsGenerated := false
+	needsURL := false
 
 	for _, op := range svc.Operations {
 		if op.HasRequestBody || (op.HasResponseData && op.ResponseGoType != "") {
@@ -423,10 +511,13 @@ func generateServiceFile(svc ServiceDef) string {
 			deriveMethodName(op.OperationID, svc.Name), "List")
 		if !isPaginatedList && len(op.QueryParams) > 0 {
 			needsFmt = true
+			if queryParamsNeedURLEscape(op.QueryParams) {
+				needsURL = true
+			}
 		}
 	}
 
-	if needsFmt || needsJSON || needsGenerated {
+	if needsFmt || needsJSON || needsGenerated || needsURL {
 		buf.WriteString("import (\n")
 		buf.WriteString("\t\"context\"\n")
 		if needsJSON {
@@ -434,6 +525,9 @@ func generateServiceFile(svc ServiceDef) string {
 		}
 		if needsFmt {
 			buf.WriteString("\t\"fmt\"\n")
+		}
+		if needsURL {
+			buf.WriteString("\t\"net/url\"\n")
 		}
 		if needsGenerated {
 			buf.WriteString("\n\t\"github.com/basecamp/fizzy-sdk/go/pkg/generated\"\n")
@@ -544,7 +638,7 @@ func generateMethod(serviceName string, op ParsedOp) string {
 	receiver := "s *" + serviceName + "Service"
 
 	// Generate doc comment
-	buf.WriteString(generateDocComment(methodName, serviceName))
+	buf.WriteString(generateDocComment(methodName, serviceName, op))
 
 	// Method signature
 	fmt.Fprintf(&buf, "func (%s) %s(%s) %s {\n",
@@ -561,7 +655,7 @@ func generateMethod(serviceName string, op ParsedOp) string {
 	return buf.String()
 }
 
-func generateDocComment(methodName, serviceName string) string {
+func generateDocComment(methodName, serviceName string, op ParsedOp) string {
 	// Generate a brief doc comment based on the HTTP method and operation
 	var action string
 	var verb string
@@ -586,8 +680,7 @@ func generateDocComment(methodName, serviceName string) string {
 		verb = ""
 	}
 
-	resource := strings.ToLower(serviceName)
-	resource = strings.TrimSuffix(resource, "s")
+	resource := camelToWords(strings.TrimSuffix(serviceName, "s"))
 
 	// If the method name has a suffix beyond the verb (e.g. DeleteImage, GetTray),
 	// use that suffix as the resource name for a more specific doc comment.
@@ -600,7 +693,7 @@ func generateDocComment(methodName, serviceName string) string {
 		svcSingular := strings.TrimSuffix(serviceName, "s")
 		if remainder != "" && !isSimplePlural(remainder, serviceName) &&
 			!strings.Contains(remainder, svcSingular) && !isTopLevelResource(remainder) {
-			resource = strings.ToLower(remainder[:1]) + remainder[1:]
+			resource = camelToWords(remainder)
 		}
 	}
 
@@ -609,9 +702,14 @@ func generateDocComment(methodName, serviceName string) string {
 	var comment string
 	switch {
 	case strings.HasPrefix(methodName, "List"):
-		comment = fmt.Sprintf("// %s %s %ss.", methodName, action, resource)
+		comment = fmt.Sprintf("// %s %s %s.", methodName, action, smartPlural(resource, serviceName, op))
 	default:
-		comment = fmt.Sprintf("// %s %s %s %s.", methodName, action, article, resource)
+		// For uncountable nouns (like "settings"), skip the article
+		if isUncountable(resource, serviceName) {
+			comment = fmt.Sprintf("// %s %s %s.", methodName, action, resource)
+		} else {
+			comment = fmt.Sprintf("// %s %s %s %s.", methodName, action, article, resource)
+		}
 	}
 
 	return comment + "\n"
@@ -659,12 +757,28 @@ func generateQueryStringBlock(queryParams []QueryParam) string {
 	buf.WriteString("\tsep := \"?\"\n")
 	for _, qp := range queryParams {
 		fmt.Fprintf(&buf, "\tif %s != nil {\n", qp.GoName)
-		fmt.Fprintf(&buf, "\t\tpath += fmt.Sprintf(\"%s%s=%s\", sep, *%s)\n",
-			"%s", qp.Name, queryParamFormatVerb(qp.SchemaType), qp.GoName)
+		if qp.SchemaType == "string" || (qp.SchemaType != "boolean" && qp.SchemaType != "integer") {
+			// String params need URL encoding
+			fmt.Fprintf(&buf, "\t\tpath += fmt.Sprintf(\"%s%s=%s\", sep, url.QueryEscape(*%s))\n",
+				"%s", qp.Name, "%s", qp.GoName)
+		} else {
+			fmt.Fprintf(&buf, "\t\tpath += fmt.Sprintf(\"%s%s=%s\", sep, *%s)\n",
+				"%s", qp.Name, queryParamFormatVerb(qp.SchemaType), qp.GoName)
+		}
 		buf.WriteString("\t\tsep = \"&\"\n")
 		buf.WriteString("\t}\n")
 	}
 	return buf.String()
+}
+
+// queryParamsNeedURLEscape returns true if any query param requires url.QueryEscape.
+func queryParamsNeedURLEscape(queryParams []QueryParam) bool {
+	for _, qp := range queryParams {
+		if qp.SchemaType == "string" || (qp.SchemaType != "boolean" && qp.SchemaType != "integer") {
+			return true
+		}
+	}
+	return false
 }
 
 func generateMethodBody(op ParsedOp, fmtStr string, hasFormatParams bool, goParams []string, returnsData bool) string {
@@ -709,13 +823,17 @@ func generateMethodBody(op ParsedOp, fmtStr string, hasFormatParams bool, goPara
 		if op.HasRequestBody {
 			bodyArg = "req"
 		}
+		postCtx := "ctx"
+		if op.IdempotentPost {
+			postCtx = "WithIdempotent(ctx)"
+		}
 
 		if returnsData {
-			fmt.Fprintf(&buf, "\tresp, err := s.client.Post(ctx, %s, %s)\n", pathExpr, bodyArg)
+			fmt.Fprintf(&buf, "\tresp, err := s.client.Post(%s, %s, %s)\n", postCtx, pathExpr, bodyArg)
 			buf.WriteString("\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n")
 			buf.WriteString(generateUnmarshalReturn(op))
 		} else {
-			fmt.Fprintf(&buf, "\tresp, err := s.client.Post(ctx, %s, %s)\n", pathExpr, bodyArg)
+			fmt.Fprintf(&buf, "\tresp, err := s.client.Post(%s, %s, %s)\n", postCtx, pathExpr, bodyArg)
 			buf.WriteString("\treturn resp, err\n")
 		}
 
@@ -724,9 +842,14 @@ func generateMethodBody(op ParsedOp, fmtStr string, hasFormatParams bool, goPara
 		if op.HasRequestBody {
 			bodyArg = "req"
 		}
-		fmt.Fprintf(&buf, "\tresp, err := s.client.Patch(%s, %s, %s)\n", ctxArg, pathExpr, bodyArg)
-		buf.WriteString("\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n")
-		buf.WriteString(generateUnmarshalReturn(op))
+		if returnsData {
+			fmt.Fprintf(&buf, "\tresp, err := s.client.Patch(%s, %s, %s)\n", ctxArg, pathExpr, bodyArg)
+			buf.WriteString("\tif err != nil {\n\t\treturn nil, nil, err\n\t}\n")
+			buf.WriteString(generateUnmarshalReturn(op))
+		} else {
+			fmt.Fprintf(&buf, "\tresp, err := s.client.Patch(%s, %s, %s)\n", ctxArg, pathExpr, bodyArg)
+			buf.WriteString("\treturn resp, err\n")
+		}
 
 	case "PUT":
 		bodyArg := "nil"
@@ -908,6 +1031,13 @@ func main() {
 				}
 			}
 
+			// IdempotentPost: POST operations marked idempotent in behavior model
+			if parsed.HTTPMethod == "POST" {
+				if entry, ok := behaviorModel.Operations[op.OperationID]; ok && entry.Idempotent {
+					parsed.IdempotentPost = true
+				}
+			}
+
 			// Group into service
 			svcName := deriveServiceName(op.OperationID)
 			if services[svcName] == nil {
@@ -956,10 +1086,11 @@ func isSimplePlural(remainder, serviceName string) bool {
 // ReactionsService.CreateCard (which creates a reaction, not a card).
 func isTopLevelResource(name string) bool {
 	resources := map[string]bool{
-		"Board": true, "Card": true, "Column": true, "Comment": true,
-		"Step": true, "Reaction": true, "Notification": true, "Tag": true,
-		"User": true, "Pin": true, "Webhook": true, "Session": true,
-		"Device": true, "Upload": true, "Identity": true,
+		"AccessToken": true, "Account": true, "Board": true, "Card": true,
+		"Column": true, "Comment": true, "Device": true, "Identity": true,
+		"Notification": true, "Pin": true, "Reaction": true, "Search": true,
+		"Session": true, "Step": true, "Tag": true, "Upload": true,
+		"User": true, "Webhook": true,
 	}
 	return resources[name]
 }
@@ -991,4 +1122,65 @@ func toSnakeCase(s string) string {
 		result.WriteRune(r)
 	}
 	return strings.ToLower(result.String())
+}
+
+// camelToWords splits a PascalCase or camelCase string into lowercase
+// space-separated words. e.g. "AccessToken" -> "access token",
+// "Closed" -> "closed", "Settings" -> "settings".
+func camelToWords(s string) string {
+	var words []string
+	start := 0
+	for i := 1; i < len(s); i++ {
+		if s[i] >= 'A' && s[i] <= 'Z' {
+			words = append(words, strings.ToLower(s[start:i]))
+			start = i
+		}
+	}
+	words = append(words, strings.ToLower(s[start:]))
+	return strings.Join(words, " ")
+}
+
+// smartPlural pluralizes a resource name for List doc comments.
+// It handles:
+//   - Words already ending in "s" (e.g. "settings") -> returned as-is
+//   - Adjectives that modify a noun (e.g. "closed" for Card response -> "closed cards")
+//   - Multi-word phrases -> pluralize the last word only
+//   - Normal nouns -> append "s"
+func smartPlural(resource, serviceName string, op ParsedOp) string {
+	words := strings.Fields(resource)
+	last := words[len(words)-1]
+
+	// If the last word looks like an adjective (ends in "ed") and doesn't
+	// match the service resource, qualify it with the response type noun
+	// (e.g. ListClosed on BoardsService returns []Card -> "closed cards").
+	// Fall back to service resource if no response type is available.
+	svcResource := strings.ToLower(serviceName)
+	svcSingular := strings.TrimSuffix(svcResource, "s")
+	if strings.HasSuffix(last, "ed") && last != svcSingular {
+		noun := svcResource
+		if op.ResponseGoType != "" {
+			typeName := strings.TrimPrefix(op.ResponseGoType, "generated.")
+			noun = strings.ToLower(typeName) + "s"
+		}
+		return resource + " " + noun
+	}
+
+	// Already ends in "s" -> return as-is
+	if strings.HasSuffix(last, "s") {
+		return resource
+	}
+
+	// Pluralize the last word
+	words[len(words)-1] = last + "s"
+	return strings.Join(words, " ")
+}
+
+// isUncountable returns true if the resource is an uncountable noun that
+// should not be preceded by an article. A resource is uncountable when it
+// ends in "s" and matches the singular service resource (e.g. "settings"
+// in NotificationsService where the service singular is "notification",
+// but the method resource is "settings").
+func isUncountable(resource, serviceName string) bool {
+	svcSingular := strings.TrimSuffix(strings.ToLower(serviceName), "s")
+	return strings.HasSuffix(resource, "s") && resource != svcSingular
 }

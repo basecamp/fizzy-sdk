@@ -62,7 +62,65 @@ export interface TriageCardRequest {
   columnId?: string;
 }
 
+export interface SearchCardsSearchcardsOptions extends PaginationOptions {
+  q: string;
+}
+
 export class CardsService extends BaseService {
+
+  /**
+   * ListClosedCards
+   */
+  async listClosedCards(boardId: string, options?: PaginationOptions): Promise<ListResult<Card>> {
+    return this.requestPaginated(
+      {
+        service: "Closed cards",
+        operation: "ListClosedCards",
+        resourceType: "closed_cards",
+        isMutation: false,
+      },
+      () => this.client.GET("/boards/{boardId}/columns/closed.json" as never, {
+        params: { path: { boardId } },
+      } as never),
+      options,
+    );
+  }
+
+  /**
+   * ListPostponedCards
+   */
+  async listPostponedCards(boardId: string, options?: PaginationOptions): Promise<ListResult<Card>> {
+    return this.requestPaginated(
+      {
+        service: "Postponed cards",
+        operation: "ListPostponedCards",
+        resourceType: "postponed_cards",
+        isMutation: false,
+      },
+      () => this.client.GET("/boards/{boardId}/columns/not_now.json" as never, {
+        params: { path: { boardId } },
+      } as never),
+      options,
+    );
+  }
+
+  /**
+   * ListStreamCards
+   */
+  async listStreamCards(boardId: string, options?: PaginationOptions): Promise<ListResult<Card>> {
+    return this.requestPaginated(
+      {
+        service: "Stream cards",
+        operation: "ListStreamCards",
+        resourceType: "stream_cards",
+        isMutation: false,
+      },
+      () => this.client.GET("/boards/{boardId}/columns/stream.json" as never, {
+        params: { path: { boardId } },
+      } as never),
+      options,
+    );
+  }
 
   /**
    * ListCards
@@ -324,6 +382,23 @@ export class CardsService extends BaseService {
   }
 
   /**
+   * PublishCard
+   */
+  async publishCard(cardNumber: number): Promise<void> {
+    return this.request(
+      {
+        service: "Publishcard",
+        operation: "PublishCard",
+        resourceType: "publishcard",
+        isMutation: true,
+      },
+      () => this.client.POST("/cards/{cardNumber}/publish.json" as never, {
+        params: { path: { cardNumber } },
+      } as never),
+    );
+  }
+
+  /**
    * SelfAssignCard
    */
   async selfAssign(cardNumber: number): Promise<void> {
@@ -424,6 +499,24 @@ export class CardsService extends BaseService {
       () => this.client.POST("/cards/{cardNumber}/watch.json" as never, {
         params: { path: { cardNumber } },
       } as never),
+    );
+  }
+
+  /**
+   * SearchCards
+   */
+  async searchCards(options?: SearchCardsSearchcardsOptions): Promise<ListResult<Card>> {
+    return this.requestPaginated(
+      {
+        service: "Searchcards",
+        operation: "SearchCards",
+        resourceType: "searchcards",
+        isMutation: false,
+      },
+      () => this.client.GET("/search.json" as never, {
+        params: { query: { q: options?.q } },
+      } as never),
+      options,
     );
   }
 }

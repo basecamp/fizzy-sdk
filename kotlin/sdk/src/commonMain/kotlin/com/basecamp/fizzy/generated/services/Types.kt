@@ -14,14 +14,17 @@ import kotlinx.serialization.json.JsonObject
 data class CreateBoardBody(
     val name: String,
     val allAccess: Boolean? = null,
-    val autoPostponePeriod: Int? = null
+    val autoPostponePeriod: Int? = null,
+    val publicDescription: String? = null
 )
 
 /** Request body for UpdateBoard. */
 data class UpdateBoardBody(
     val name: String? = null,
     val allAccess: Boolean? = null,
-    val autoPostponePeriod: Int? = null
+    val autoPostponePeriod: Int? = null,
+    val publicDescription: String? = null,
+    val userIds: List<String>? = null
 )
 
 /** Options for ListCards. */
@@ -108,6 +111,54 @@ data class RegisterDeviceBody(
     val token: String,
     val platform: String,
     val name: String? = null
+)
+
+/** Request body for CreateAccessToken. */
+data class CreateAccessTokenBody(
+    val description: String,
+    val permission: String
+)
+
+/** Request body for UpdateAccountEntropy. */
+data class UpdateAccountEntropyBody(
+    val autoPostponePeriod: Int? = null
+)
+
+/** Request body for UpdateJoinCode. */
+data class UpdateJoinCodeBody(
+    val usageLimit: Int? = null
+)
+
+/** Request body for UpdateAccountSettings. */
+data class UpdateAccountSettingsBody(
+    val name: String? = null
+)
+
+/** Request body for UpdateBoardEntropy. */
+data class UpdateBoardEntropyBody(
+    val autoPostponePeriod: Int? = null
+)
+
+/** Request body for UpdateBoardInvolvement. */
+data class UpdateBoardInvolvementBody(
+    val involvement: String? = null
+)
+
+/** Request body for UpdateNotificationSettings. */
+data class UpdateNotificationSettingsBody(
+    val bundleEmailFrequency: String? = null
+)
+
+/** Request body for CreatePushSubscription. */
+data class CreatePushSubscriptionBody(
+    val endpoint: String,
+    val p256dhKey: String,
+    val authKey: String
+)
+
+/** Request body for UpdateUserRole. */
+data class UpdateUserRoleBody(
+    val role: String
 )
 
 /** Options for ListNotifications. */

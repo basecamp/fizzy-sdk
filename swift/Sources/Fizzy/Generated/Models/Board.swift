@@ -7,7 +7,7 @@ public struct Board: Codable, Sendable {
     public let id: String
     public let name: String
     public let url: String
-    public var creator: UserSummary?
+    public var creator: User?
 
     public init(
         allAccess: Bool,
@@ -15,7 +15,7 @@ public struct Board: Codable, Sendable {
         id: String,
         name: String,
         url: String,
-        creator: UserSummary? = nil
+        creator: User? = nil
     ) {
         self.allAccess = allAccess
         self.createdAt = createdAt

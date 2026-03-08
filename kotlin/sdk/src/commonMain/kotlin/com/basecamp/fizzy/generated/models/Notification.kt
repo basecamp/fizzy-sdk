@@ -17,8 +17,10 @@ data class Notification(
     val read: Boolean,
     @SerialName("created_at") val createdAt: String,
     @SerialName("source_type") val sourceType: String,
-    val creator: UserSummary,
+    val creator: User,
     val url: String,
     @SerialName("read_at") val readAt: String? = null,
+    val title: String? = null,
+    val body: String? = null,
     val card: NotificationCard? = null
 )

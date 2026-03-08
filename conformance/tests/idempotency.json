@@ -89,5 +89,80 @@
       { "type": "statusCode", "expected": 503 }
     ],
     "tags": ["idempotency", "sessions"]
+  },
+  {
+    "name": "MarkCardRead POST retries on 503 (naturally idempotent)",
+    "description": "MarkCardRead is a naturally idempotent POST and should be retried",
+    "operation": "MarkCardRead",
+    "method": "POST",
+    "path": "/{accountId}/cards/{cardNumber}/reading.json",
+    "pathParams": { "accountId": "999", "cardNumber": 123 },
+    "mockResponses": [
+      {
+        "status": 503,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Service unavailable" }
+      },
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestCount", "expected": 2 },
+      { "type": "noError" }
+    ],
+    "tags": ["idempotency"]
+  },
+  {
+    "name": "MoveColumnLeft POST retries on 503 (naturally idempotent)",
+    "description": "MoveColumnLeft is a naturally idempotent POST and should be retried",
+    "operation": "MoveColumnLeft",
+    "method": "POST",
+    "path": "/{accountId}/columns/{columnId}/left_position.json",
+    "pathParams": { "accountId": "999", "columnId": 10 },
+    "mockResponses": [
+      {
+        "status": 503,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Service unavailable" }
+      },
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestCount", "expected": 2 },
+      { "type": "noError" }
+    ],
+    "tags": ["idempotency"]
+  },
+  {
+    "name": "PublishBoard POST retries on 503 (naturally idempotent)",
+    "description": "PublishBoard is a naturally idempotent POST and should be retried",
+    "operation": "PublishBoard",
+    "method": "POST",
+    "path": "/{accountId}/boards/{boardId}/publication.json",
+    "pathParams": { "accountId": "999", "boardId": 42 },
+    "mockResponses": [
+      {
+        "status": 503,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Service unavailable" }
+      },
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestCount", "expected": 2 },
+      { "type": "noError" }
+    ],
+    "tags": ["idempotency"]
   }
 ]

@@ -14,3 +14,4 @@ repos:
     hooks:
       - id: golangci-lint
         entry: bash -c 'cd go && golangci-lint run'
+        pass_filenames: false

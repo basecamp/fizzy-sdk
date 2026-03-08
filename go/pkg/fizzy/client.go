@@ -35,12 +35,14 @@ type Client struct {
 	hooks         Hooks
 
 	// Account-independent services
-	sessionsMu sync.Mutex
-	sessions   *SessionsService
-	devicesMu  sync.Mutex
-	devices    *DevicesService
-	identityMu sync.Mutex
-	identity   *IdentityService
+	accessTokensMu sync.Mutex
+	accessTokens   *AccessTokensService
+	sessionsMu     sync.Mutex
+	sessions       *SessionsService
+	devicesMu      sync.Mutex
+	devices        *DevicesService
+	identityMu     sync.Mutex
+	identity       *IdentityService
 }
 
 // AccountClient is an HTTP client bound to a specific Fizzy account.
@@ -56,6 +58,7 @@ type AccountClient struct {
 	mu        sync.Mutex // protects lazy service initialization
 
 	// Services (lazy-initialized, protected by mu)
+	account       *AccountService
 	boards        *BoardsService
 	columns       *ColumnsService
 	cards         *CardsService
@@ -63,6 +66,7 @@ type AccountClient struct {
 	steps         *StepsService
 	reactions     *ReactionsService
 	notifications *NotificationsService
+	search        *SearchService
 	tags          *TagsService
 	users         *UsersService
 	pins          *PinsService
@@ -363,7 +367,8 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body any) (
 
 func (c *Client) doRequestURL(ctx context.Context, method, url string, body any) (*Response, error) {
 	// POST and operations that opt out via WithNoRetry: single attempt only.
-	if method == "POST" || isNoRetry(ctx) {
+	// Exception: POST requests marked as idempotent via WithIdempotent get full retry.
+	if (method == "POST" && !isIdempotent(ctx)) || isNoRetry(ctx) {
 		resp, err := c.singleRequest(ctx, method, url, body, 1)
 		if err == nil {
 			return resp, nil
@@ -624,6 +629,16 @@ func (c *Client) Config() Config {
 
 // --- Account-independent services (on Client) ---
 
+// AccessTokens returns the AccessTokensService for access token operations.
+func (c *Client) AccessTokens() *AccessTokensService {
+	c.accessTokensMu.Lock()
+	defer c.accessTokensMu.Unlock()
+	if c.accessTokens == nil {
+		c.accessTokens = NewAccessTokensService(c)
+	}
+	return c.accessTokens
+}
+
 // Sessions returns the SessionsService for session operations.
 func (c *Client) Sessions() *SessionsService {
 	c.sessionsMu.Lock()
@@ -655,6 +670,16 @@ func (c *Client) Identity() *IdentityService {
 }
 
 // --- Account-scoped services (on AccountClient) ---
+
+// Account returns the AccountService for account settings and management.
+func (ac *AccountClient) Account() *AccountService {
+	ac.mu.Lock()
+	defer ac.mu.Unlock()
+	if ac.account == nil {
+		ac.account = NewAccountService(ac)
+	}
+	return ac.account
+}
 
 // Boards returns the BoardsService for board operations.
 func (ac *AccountClient) Boards() *BoardsService {
@@ -726,6 +751,16 @@ func (ac *AccountClient) Notifications() *NotificationsService {
 	return ac.notifications
 }
 
+// Search returns the SearchService for search operations.
+func (ac *AccountClient) Search() *SearchService {
+	ac.mu.Lock()
+	defer ac.mu.Unlock()
+	if ac.search == nil {
+		ac.search = NewSearchService(ac)
+	}
+	return ac.search
+}
+
 // Tags returns the TagsService for tag operations.
 func (ac *AccountClient) Tags() *TagsService {
 	ac.mu.Lock()
@@ -780,6 +815,14 @@ func (ac *AccountClient) Webhooks() *WebhooksService {
 // These are placeholder types for the generated service layer.
 // The actual methods are generated from the OpenAPI spec.
 
+// AccessTokensService handles access token operations (account-independent).
+type AccessTokensService struct{ client *Client }
+
+// NewAccessTokensService creates a new AccessTokensService.
+func NewAccessTokensService(client *Client) *AccessTokensService {
+	return &AccessTokensService{client: client}
+}
+
 // SessionsService handles session operations (account-independent).
 type SessionsService struct{ client *Client }
 
@@ -802,6 +845,14 @@ type IdentityService struct{ client *Client }
 // NewIdentityService creates a new IdentityService.
 func NewIdentityService(client *Client) *IdentityService {
 	return &IdentityService{client: client}
+}
+
+// AccountService handles account settings and management operations.
+type AccountService struct{ client *AccountClient }
+
+// NewAccountService creates a new AccountService.
+func NewAccountService(client *AccountClient) *AccountService {
+	return &AccountService{client: client}
 }
 
 // BoardsService handles board operations.
@@ -858,6 +909,14 @@ type NotificationsService struct{ client *AccountClient }
 // NewNotificationsService creates a new NotificationsService.
 func NewNotificationsService(client *AccountClient) *NotificationsService {
 	return &NotificationsService{client: client}
+}
+
+// SearchService handles search operations.
+type SearchService struct{ client *AccountClient }
+
+// NewSearchService creates a new SearchService.
+func NewSearchService(client *AccountClient) *SearchService {
+	return &SearchService{client: client}
 }
 
 // TagsService handles tag operations.

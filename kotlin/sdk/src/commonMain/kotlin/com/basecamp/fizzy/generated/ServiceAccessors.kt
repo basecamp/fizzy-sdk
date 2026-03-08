@@ -35,6 +35,10 @@ val AccountClient.devices: DevicesService
 val AccountClient.identity: IdentityService
     get() = service("Identity") { IdentityService(this) }
 
+/** Miscellaneous operations. */
+val AccountClient.miscellaneous: MiscellaneousService
+    get() = service("Miscellaneous") { MiscellaneousService(this) }
+
 /** Notifications operations. */
 val AccountClient.notifications: NotificationsService
     get() = service("Notifications") { NotificationsService(this) }

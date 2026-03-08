@@ -7,12 +7,34 @@ package fizzy
 //
 // To update: run 'go run ./cmd/generate-services/' from the go directory.
 var OperationRegistry = map[string]string{
+	// AccessTokens
+	"CreateAccessToken": "AccessTokensService.Create",
+	"DeleteAccessToken": "AccessTokensService.Delete",
+	"ListAccessTokens": "AccessTokensService.List",
+
+	// Account
+	"CreateAccountExport": "AccountService.CreateExport",
+	"GetAccountExport": "AccountService.GetExport",
+	"GetAccountSettings": "AccountService.GetSettings",
+	"GetJoinCode": "AccountService.GetJoinCode",
+	"ResetJoinCode": "AccountService.ResetJoinCode",
+	"UpdateAccountEntropy": "AccountService.UpdateEntropy",
+	"UpdateAccountSettings": "AccountService.UpdateSettings",
+	"UpdateJoinCode": "AccountService.UpdateJoinCode",
+
 	// Boards
 	"CreateBoard": "BoardsService.Create",
 	"DeleteBoard": "BoardsService.Delete",
 	"GetBoard": "BoardsService.Get",
 	"ListBoards": "BoardsService.List",
+	"ListClosedCards": "BoardsService.ListClosed",
+	"ListPostponedCards": "BoardsService.ListPostponed",
+	"ListStreamCards": "BoardsService.ListStream",
+	"PublishBoard": "BoardsService.Publish",
+	"UnpublishBoard": "BoardsService.Unpublish",
 	"UpdateBoard": "BoardsService.Update",
+	"UpdateBoardEntropy": "BoardsService.UpdateEntropy",
+	"UpdateBoardInvolvement": "BoardsService.UpdateInvolvement",
 
 	// Cards
 	"AssignCard": "CardsService.Assign",
@@ -23,9 +45,12 @@ var OperationRegistry = map[string]string{
 	"GetCard": "CardsService.Get",
 	"GoldCard": "CardsService.Gold",
 	"ListCards": "CardsService.List",
+	"MarkCardRead": "CardsService.MarkRead",
+	"MarkCardUnread": "CardsService.MarkUnread",
 	"MoveCard": "CardsService.Move",
 	"PinCard": "CardsService.Pin",
 	"PostponeCard": "CardsService.Postpone",
+	"PublishCard": "CardsService.Publish",
 	"ReopenCard": "CardsService.Reopen",
 	"SelfAssignCard": "CardsService.SelfAssign",
 	"TagCard": "CardsService.Tag",
@@ -42,6 +67,8 @@ var OperationRegistry = map[string]string{
 	"DeleteColumn": "ColumnsService.Delete",
 	"GetColumn": "ColumnsService.Get",
 	"ListColumns": "ColumnsService.List",
+	"MoveColumnLeft": "ColumnsService.MoveLeft",
+	"MoveColumnRight": "ColumnsService.MoveRight",
 	"UpdateColumn": "ColumnsService.Update",
 
 	// Comments
@@ -60,10 +87,12 @@ var OperationRegistry = map[string]string{
 
 	// Notifications
 	"BulkReadNotifications": "NotificationsService.BulkRead",
+	"GetNotificationSettings": "NotificationsService.GetSettings",
 	"GetNotificationTray": "NotificationsService.GetTray",
 	"ListNotifications": "NotificationsService.List",
 	"ReadNotification": "NotificationsService.Read",
 	"UnreadNotification": "NotificationsService.Unread",
+	"UpdateNotificationSettings": "NotificationsService.UpdateSettings",
 
 	// Pins
 	"ListPins": "PinsService.List",
@@ -76,6 +105,9 @@ var OperationRegistry = map[string]string{
 	"ListCardReactions": "ReactionsService.ListCard",
 	"ListCommentReactions": "ReactionsService.ListComment",
 
+	// Search
+	"SearchCards": "SearchService.Search",
+
 	// Sessions
 	"CompleteSignup": "SessionsService.CompleteSignup",
 	"CreateSession": "SessionsService.Create",
@@ -86,6 +118,7 @@ var OperationRegistry = map[string]string{
 	"CreateStep": "StepsService.Create",
 	"DeleteStep": "StepsService.Delete",
 	"GetStep": "StepsService.Get",
+	"ListSteps": "StepsService.List",
 	"UpdateStep": "StepsService.Update",
 
 	// Tags
@@ -95,10 +128,14 @@ var OperationRegistry = map[string]string{
 	"CreateDirectUpload": "UploadsService.CreateDirectUpload",
 
 	// Users
+	"CreatePushSubscription": "UsersService.CreatePushSubscription",
 	"DeactivateUser": "UsersService.Deactivate",
+	"DeletePushSubscription": "UsersService.DeletePushSubscription",
+	"DeleteUserAvatar": "UsersService.DeleteAvatar",
 	"GetUser": "UsersService.Get",
 	"ListUsers": "UsersService.List",
 	"UpdateUser": "UsersService.Update",
+	"UpdateUserRole": "UsersService.UpdateRole",
 
 	// Webhooks
 	"ActivateWebhook": "WebhooksService.Activate",

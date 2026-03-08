@@ -50,6 +50,7 @@ class BoardsService(client: AccountClient) : BaseService(client) {
                 put("name", kotlinx.serialization.json.JsonPrimitive(body.name))
                 body.allAccess?.let { put("all_access", kotlinx.serialization.json.JsonPrimitive(it)) }
                 body.autoPostponePeriod?.let { put("auto_postpone_period", kotlinx.serialization.json.JsonPrimitive(it)) }
+                body.publicDescription?.let { put("public_description", kotlinx.serialization.json.JsonPrimitive(it)) }
             }), operationName = info.operation)
         }) { body ->
             json.decodeFromString<Board>(body)
@@ -95,6 +96,8 @@ class BoardsService(client: AccountClient) : BaseService(client) {
                 body.name?.let { put("name", kotlinx.serialization.json.JsonPrimitive(it)) }
                 body.allAccess?.let { put("all_access", kotlinx.serialization.json.JsonPrimitive(it)) }
                 body.autoPostponePeriod?.let { put("auto_postpone_period", kotlinx.serialization.json.JsonPrimitive(it)) }
+                body.publicDescription?.let { put("public_description", kotlinx.serialization.json.JsonPrimitive(it)) }
+                body.userIds?.let { put("user_ids", kotlinx.serialization.json.JsonArray(it.map { kotlinx.serialization.json.JsonPrimitive(it) })) }
             }), operationName = info.operation)
         }) { body ->
             json.decodeFromString<Board>(body)
@@ -116,6 +119,42 @@ class BoardsService(client: AccountClient) : BaseService(client) {
         )
         request(info, {
             httpDelete("/boards/${boardId}", operationName = info.operation)
+        }) { Unit }
+    }
+
+    /**
+     * publishBoard operation
+     * @param boardId The board ID
+     */
+    suspend fun publishBoard(boardId: String): Unit {
+        val info = OperationInfo(
+            service = "Boards",
+            operation = "PublishBoard",
+            resourceType = "resource",
+            isMutation = true,
+            boardId = boardId,
+            resourceId = null,
+        )
+        request(info, {
+            httpPost("/boards/${boardId}/publication.json", operationName = info.operation)
+        }) { Unit }
+    }
+
+    /**
+     * unpublishBoard operation
+     * @param boardId The board ID
+     */
+    suspend fun unpublishBoard(boardId: String): Unit {
+        val info = OperationInfo(
+            service = "Boards",
+            operation = "UnpublishBoard",
+            resourceType = "resource",
+            isMutation = true,
+            boardId = boardId,
+            resourceId = null,
+        )
+        request(info, {
+            httpDelete("/boards/${boardId}/publication.json", operationName = info.operation)
         }) { Unit }
     }
 }

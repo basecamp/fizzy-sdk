@@ -13,6 +13,26 @@ import kotlinx.serialization.json.JsonElement
 class StepsService(client: AccountClient) : BaseService(client) {
 
     /**
+     * list operation
+     * @param cardNumber The card number
+     */
+    suspend fun list(cardNumber: Long): List<Step> {
+        val info = OperationInfo(
+            service = "Steps",
+            operation = "ListSteps",
+            resourceType = "step",
+            isMutation = false,
+            boardId = null,
+            resourceId = cardNumber,
+        )
+        return request(info, {
+            httpGet("/cards/${cardNumber}/steps.json", operationName = info.operation)
+        }) { body ->
+            json.decodeFromString<List<Step>>(body)
+        }
+    }
+
+    /**
      * create operation
      * @param cardNumber The card number
      * @param body Request body

@@ -6,6 +6,7 @@
  */
 
 import { BaseService, type FetchResponse } from "../../services/base.js";
+import { ListResult, type PaginationOptions } from "../../pagination.js";
 import type { components } from "../schema.js";
 
 export type Step = components["schemas"]["Step"];
@@ -23,6 +24,23 @@ export interface UpdateStepRequest {
 }
 
 export class StepsService extends BaseService {
+
+  /**
+   * ListSteps
+   */
+  async list(cardNumber: number): Promise<ListResult<Step>> {
+    return this.request(
+      {
+        service: "Steps",
+        operation: "ListSteps",
+        resourceType: "steps",
+        isMutation: false,
+      },
+      () => this.client.GET("/cards/{cardNumber}/steps.json" as never, {
+        params: { path: { cardNumber } },
+      } as never),
+    );
+  }
 
   /**
    * CreateStep

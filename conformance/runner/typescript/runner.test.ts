@@ -118,6 +118,12 @@ async function dispatch(
       case "DeleteBoard":
         data = await (client as any).boards.delete(p.boardId as number);
         break;
+      case "PublishBoard":
+        data = await (client as any).boards.publishBoard(p.boardId as number);
+        break;
+      case "UnpublishBoard":
+        data = await (client as any).boards.unpublishBoard(p.boardId as number);
+        break;
 
       // Cards
       case "ListCards": {
@@ -159,6 +165,23 @@ async function dispatch(
       case "TagCard":
         data = await (client as any).cards.tag(p.cardNumber as number, { tagTitle: body.tag_title });
         break;
+      case "ListStreamCards":
+        data = await (client as any).cards.listStreamCards(p.boardId as number);
+        break;
+      case "ListPostponedCards":
+        data = await (client as any).cards.listPostponedCards(p.boardId as number);
+        break;
+      case "ListClosedCards":
+        data = await (client as any).cards.listClosedCards(p.boardId as number);
+        break;
+      case "PublishCard":
+        data = await (client as any).cards.publishCard(p.cardNumber as number);
+        break;
+      case "SearchCards": {
+        const qs = tc.queryParams ?? {};
+        data = await (client as any).cards.searchCards({ q: qs.q });
+        break;
+      }
 
       // Comments
       case "ListComments":
@@ -198,6 +221,9 @@ async function dispatch(
         break;
 
       // Steps
+      case "ListSteps":
+        data = await (client as any).steps.list(p.cardNumber as number);
+        break;
       case "CreateStep":
         data = await (client as any).steps.create(p.cardNumber as number, { content: body.content });
         break;
@@ -293,6 +319,89 @@ async function dispatch(
           byteSize: body.byte_size as number,
           checksum: body.checksum as string,
         });
+        break;
+
+      // Miscellaneous — Access Tokens
+      case "ListAccessTokens":
+        data = await (client as any).miscellaneous.listAccessTokens();
+        break;
+      case "CreateAccessToken":
+        data = await (client as any).miscellaneous.createAccessToken({ description: body.description, permission: body.permission });
+        break;
+      case "DeleteAccessToken":
+        data = await (client as any).miscellaneous.deleteAccessToken(p.accessTokenId as string);
+        break;
+
+      // Miscellaneous — Account
+      case "UpdateAccountEntropy":
+        data = await (client as any).miscellaneous.updateAccountEntropy({ autoPostponePeriod: body.auto_postpone_period });
+        break;
+      case "CreateAccountExport":
+        data = await (client as any).miscellaneous.createAccountExport();
+        break;
+      case "GetAccountExport":
+        data = await (client as any).miscellaneous.accountExport(p.exportId as string);
+        break;
+      case "GetJoinCode":
+        data = await (client as any).miscellaneous.joinCode();
+        break;
+      case "UpdateJoinCode":
+        data = await (client as any).miscellaneous.updateJoinCode({ usageLimit: body.usage_limit });
+        break;
+      case "ResetJoinCode":
+        data = await (client as any).miscellaneous.resetJoinCode();
+        break;
+      case "GetAccountSettings":
+        data = await (client as any).miscellaneous.accountSettings();
+        break;
+      case "UpdateAccountSettings":
+        data = await (client as any).miscellaneous.updateAccountSettings({ name: body.name });
+        break;
+
+      // Miscellaneous — Board extras
+      case "UpdateBoardEntropy":
+        data = await (client as any).miscellaneous.updateBoardEntropy(p.boardId as number, { autoPostponePeriod: body.auto_postpone_period });
+        break;
+      case "UpdateBoardInvolvement":
+        data = await (client as any).miscellaneous.updateBoardInvolvement(p.boardId as number, { involvement: body.involvement });
+        break;
+
+      // Miscellaneous — Card read/unread
+      case "MarkCardRead":
+        data = await (client as any).miscellaneous.markCardRead(p.cardNumber as number);
+        break;
+      case "MarkCardUnread":
+        data = await (client as any).miscellaneous.markCardUnread(p.cardNumber as number);
+        break;
+
+      // Miscellaneous — Column movement
+      case "MoveColumnLeft":
+        data = await (client as any).miscellaneous.moveColumnLeft(p.columnId as number);
+        break;
+      case "MoveColumnRight":
+        data = await (client as any).miscellaneous.moveColumnRight(p.columnId as number);
+        break;
+
+      // Miscellaneous — Notification settings
+      case "GetNotificationSettings":
+        data = await (client as any).miscellaneous.notificationSettings();
+        break;
+      case "UpdateNotificationSettings":
+        data = await (client as any).miscellaneous.updateNotificationSettings({ bundleEmailFrequency: body.bundle_email_frequency });
+        break;
+
+      // Miscellaneous — User extras
+      case "DeleteUserAvatar":
+        data = await (client as any).miscellaneous.deleteUserAvatar(p.userId as string);
+        break;
+      case "CreatePushSubscription":
+        data = await (client as any).miscellaneous.createPushSubscription(p.userId as string, { endpoint: body.endpoint, p256dhKey: body.p256dh_key, authKey: body.auth_key });
+        break;
+      case "DeletePushSubscription":
+        data = await (client as any).miscellaneous.deletePushSubscription(p.userId as string, p.pushSubscriptionId as string);
+        break;
+      case "UpdateUserRole":
+        data = await (client as any).miscellaneous.updateUserRole(p.userId as string, { role: body.role });
         break;
 
       default:

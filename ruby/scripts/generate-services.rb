@@ -267,11 +267,18 @@ class ServiceGenerator
     returns_void = response_schema.nil?
     returns_array = response_schema&.dig('type') == 'array'
 
-    # Check behavior model: if retry_on is null and method is not POST, emit retryable: false
+    # Check behavior model for retry overrides
     no_retry = false
+    idempotent_post = false
     behavior = @behavior_model.dig('operations', operation_id)
-    if behavior && behavior.dig('retry', 'retry_on').nil? && http_method != 'POST'
-      no_retry = true
+    if behavior
+      if behavior.dig('retry', 'retry_on').nil? && http_method != 'POST'
+        no_retry = true
+      end
+      # POST operations marked idempotent in the behavior model should be retried
+      if http_method == 'POST' && behavior['idempotent']
+        idempotent_post = true
+      end
     end
 
     {
@@ -289,7 +296,8 @@ class ServiceGenerator
       returns_array: returns_array,
       is_mutation: http_method != 'GET',
       has_pagination: !!operation['x-fizzy-pagination'],
-      no_retry: no_retry
+      no_retry: no_retry,
+      idempotent_post: idempotent_post
     }
   end
 
@@ -570,10 +578,20 @@ class ServiceGenerator
     "\"#{op[:path]}\""
   end
 
+  def retryable_kwarg_for(op)
+    if op[:no_retry]
+      ', retryable: false'
+    elsif op[:idempotent_post]
+      ', retryable: true'
+    else
+      ''
+    end
+  end
+
   def generate_void_method_body(op, path_expr)
     lines = []
     http_method = op[:http_method].downcase
-    retryable_kwarg = op[:no_retry] ? ', retryable: false' : ''
+    retryable_kwarg = retryable_kwarg_for(op)
 
     if op[:has_body]
       body_expr = build_body_expression(op)
@@ -602,7 +620,7 @@ class ServiceGenerator
   def generate_get_method_body(op, path_expr)
     lines = []
     http_method = op[:http_method].downcase
-    retryable_kwarg = op[:no_retry] ? ', retryable: false' : ''
+    retryable_kwarg = retryable_kwarg_for(op)
 
     if op[:has_binary_body]
       if op[:query_params].any?

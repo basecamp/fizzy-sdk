@@ -9,14 +9,12 @@ import { BaseService, type FetchResponse } from "../../services/base.js";
 import { ListResult, type PaginationOptions } from "../../pagination.js";
 import type { components } from "../schema.js";
 
-export type Pin = components["schemas"]["Pin"];
-
 export class PinsService extends BaseService {
 
   /**
    * ListPins
    */
-  async list(): Promise<ListResult<Pin>> {
+  async list(): Promise<ListResult<components["schemas"]["Card"]>> {
     return this.request(
       {
         service: "Pins",

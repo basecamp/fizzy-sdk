@@ -10,7 +10,6 @@ import { ListResult, type PaginationOptions } from "../../pagination.js";
 import type { components } from "../schema.js";
 
 export type Notification = components["schemas"]["Notification"];
-export type NotificationTray = components["schemas"]["NotificationTray"];
 
 export interface ListNotificationsOptions extends PaginationOptions {
   read?: boolean;
@@ -64,7 +63,7 @@ export class NotificationsService extends BaseService {
   /**
    * GetNotificationTray
    */
-  async tray(options?: TrayNotificationtrayOptions): Promise<NotificationTray> {
+  async tray(options?: TrayNotificationtrayOptions): Promise<ListResult<Notification>> {
     return this.request(
       {
         service: "Notification tray",

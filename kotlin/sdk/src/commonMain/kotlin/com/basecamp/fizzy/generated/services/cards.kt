@@ -13,6 +13,69 @@ import kotlinx.serialization.json.JsonElement
 class CardsService(client: AccountClient) : BaseService(client) {
 
     /**
+     * listClosedCards operation
+     * @param boardId The board ID
+     * @param options Optional query parameters and pagination control
+     */
+    suspend fun listClosedCards(boardId: String, options: PaginationOptions? = null): ListResult<Card> {
+        val info = OperationInfo(
+            service = "Cards",
+            operation = "ListClosedCards",
+            resourceType = "closed_card",
+            isMutation = false,
+            boardId = boardId,
+            resourceId = null,
+        )
+        return requestPaginated(info, options, {
+            httpGet("/boards/${boardId}/columns/closed.json", operationName = info.operation)
+        }) { body ->
+            json.decodeFromString<List<Card>>(body)
+        }
+    }
+
+    /**
+     * listPostponedCards operation
+     * @param boardId The board ID
+     * @param options Optional query parameters and pagination control
+     */
+    suspend fun listPostponedCards(boardId: String, options: PaginationOptions? = null): ListResult<Card> {
+        val info = OperationInfo(
+            service = "Cards",
+            operation = "ListPostponedCards",
+            resourceType = "postponed_card",
+            isMutation = false,
+            boardId = boardId,
+            resourceId = null,
+        )
+        return requestPaginated(info, options, {
+            httpGet("/boards/${boardId}/columns/not_now.json", operationName = info.operation)
+        }) { body ->
+            json.decodeFromString<List<Card>>(body)
+        }
+    }
+
+    /**
+     * listStreamCards operation
+     * @param boardId The board ID
+     * @param options Optional query parameters and pagination control
+     */
+    suspend fun listStreamCards(boardId: String, options: PaginationOptions? = null): ListResult<Card> {
+        val info = OperationInfo(
+            service = "Cards",
+            operation = "ListStreamCards",
+            resourceType = "stream_card",
+            isMutation = false,
+            boardId = boardId,
+            resourceId = null,
+        )
+        return requestPaginated(info, options, {
+            httpGet("/boards/${boardId}/columns/stream.json", operationName = info.operation)
+        }) { body ->
+            json.decodeFromString<List<Card>>(body)
+        }
+    }
+
+    /**
      * list operation
      * @param options Optional query parameters and pagination control
      */
@@ -325,6 +388,24 @@ class CardsService(client: AccountClient) : BaseService(client) {
     }
 
     /**
+     * publishCard operation
+     * @param cardNumber The card number
+     */
+    suspend fun publishCard(cardNumber: Long): Unit {
+        val info = OperationInfo(
+            service = "Cards",
+            operation = "PublishCard",
+            resourceType = "resource",
+            isMutation = true,
+            boardId = null,
+            resourceId = cardNumber,
+        )
+        request(info, {
+            httpPost("/cards/${cardNumber}/publish.json", operationName = info.operation)
+        }) { Unit }
+    }
+
+    /**
      * selfAssign operation
      * @param cardNumber The card number
      */
@@ -436,5 +517,29 @@ class CardsService(client: AccountClient) : BaseService(client) {
         request(info, {
             httpDelete("/cards/${cardNumber}/watch.json", operationName = info.operation)
         }) { Unit }
+    }
+
+    /**
+     * search operation
+     * @param q q
+     * @param options Optional query parameters and pagination control
+     */
+    suspend fun search(q: String, options: PaginationOptions? = null): ListResult<Card> {
+        val info = OperationInfo(
+            service = "Cards",
+            operation = "SearchCards",
+            resourceType = "card",
+            isMutation = false,
+            boardId = null,
+            resourceId = null,
+        )
+        val qs = buildQueryString(
+            "q" to q,
+        )
+        return requestPaginated(info, options, {
+            httpGet("/search.json" + qs, operationName = info.operation)
+        }) { body ->
+            json.decodeFromString<List<Card>>(body)
+        }
     }
 }

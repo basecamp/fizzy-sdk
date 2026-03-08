@@ -2,11 +2,20 @@
 import Foundation
 
 public struct Tag: Codable, Sendable {
+    public let createdAt: String
     public let id: String
-    public let name: String
+    public let title: String
+    public var url: String?
 
-    public init(id: String, name: String) {
+    public init(
+        createdAt: String,
+        id: String,
+        title: String,
+        url: String? = nil
+    ) {
+        self.createdAt = createdAt
         self.id = id
-        self.name = name
+        self.title = title
+        self.url = url
     }
 }

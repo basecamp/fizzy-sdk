@@ -29,6 +29,38 @@ public struct ListCardOptions: Sendable {
     }
 }
 
+public struct ListClosedCardsCardOptions: Sendable {
+    public var maxItems: Int?
+
+    public init(maxItems: Int? = nil) {
+        self.maxItems = maxItems
+    }
+}
+
+public struct ListPostponedCardsCardOptions: Sendable {
+    public var maxItems: Int?
+
+    public init(maxItems: Int? = nil) {
+        self.maxItems = maxItems
+    }
+}
+
+public struct ListStreamCardsCardOptions: Sendable {
+    public var maxItems: Int?
+
+    public init(maxItems: Int? = nil) {
+        self.maxItems = maxItems
+    }
+}
+
+public struct SearchCardOptions: Sendable {
+    public var maxItems: Int?
+
+    public init(maxItems: Int? = nil) {
+        self.maxItems = maxItems
+    }
+}
+
 
 public final class CardsService: BaseService, @unchecked Sendable {
     public func assign(accountId: String, cardNumber: Int, req: AssignCardRequest) async throws {
@@ -125,6 +157,33 @@ public final class CardsService: BaseService, @unchecked Sendable {
         )
     }
 
+    public func listClosedCards(accountId: String, boardId: String, options: ListClosedCardsCardOptions? = nil) async throws -> ListResult<Card> {
+        return try await requestPaginated(
+            OperationInfo(service: "Cards", operation: "ListClosedCards", resourceType: "closed_card", isMutation: false),
+            path: "/\(accountId)/boards/\(boardId)/columns/closed.json",
+            paginationOpts: options.flatMap { PaginationOptions(maxItems: $0.maxItems) },
+            retryConfig: Metadata.retryConfig(for: "ListClosedCards")
+        )
+    }
+
+    public func listPostponedCards(accountId: String, boardId: String, options: ListPostponedCardsCardOptions? = nil) async throws -> ListResult<Card> {
+        return try await requestPaginated(
+            OperationInfo(service: "Cards", operation: "ListPostponedCards", resourceType: "postponed_card", isMutation: false),
+            path: "/\(accountId)/boards/\(boardId)/columns/not_now.json",
+            paginationOpts: options.flatMap { PaginationOptions(maxItems: $0.maxItems) },
+            retryConfig: Metadata.retryConfig(for: "ListPostponedCards")
+        )
+    }
+
+    public func listStreamCards(accountId: String, boardId: String, options: ListStreamCardsCardOptions? = nil) async throws -> ListResult<Card> {
+        return try await requestPaginated(
+            OperationInfo(service: "Cards", operation: "ListStreamCards", resourceType: "stream_card", isMutation: false),
+            path: "/\(accountId)/boards/\(boardId)/columns/stream.json",
+            paginationOpts: options.flatMap { PaginationOptions(maxItems: $0.maxItems) },
+            retryConfig: Metadata.retryConfig(for: "ListStreamCards")
+        )
+    }
+
     public func move(accountId: String, cardNumber: Int, req: MoveCardRequest) async throws -> Card {
         return try await request(
             OperationInfo(service: "Cards", operation: "MoveCard", resourceType: "card", isMutation: true),
@@ -153,12 +212,33 @@ public final class CardsService: BaseService, @unchecked Sendable {
         )
     }
 
+    public func publishCard(accountId: String, cardNumber: Int) async throws {
+        try await requestVoid(
+            OperationInfo(service: "Cards", operation: "PublishCard", resourceType: "resource", isMutation: true),
+            method: "POST",
+            path: "/\(accountId)/cards/\(cardNumber)/publish.json",
+            retryConfig: Metadata.retryConfig(for: "PublishCard")
+        )
+    }
+
     public func reopen(accountId: String, cardNumber: Int) async throws {
         try await requestVoid(
             OperationInfo(service: "Cards", operation: "ReopenCard", resourceType: "card", isMutation: true),
             method: "DELETE",
             path: "/\(accountId)/cards/\(cardNumber)/closure.json",
             retryConfig: Metadata.retryConfig(for: "ReopenCard")
+        )
+    }
+
+    public func search(accountId: String, q: String, options: SearchCardOptions? = nil) async throws -> ListResult<Card> {
+        var queryItems: [URLQueryItem] = []
+        queryItems.append(URLQueryItem(name: "q", value: q))
+        return try await requestPaginated(
+            OperationInfo(service: "Cards", operation: "SearchCards", resourceType: "card", isMutation: false),
+            path: "/\(accountId)/search.json",
+            queryItems: queryItems.isEmpty ? nil : queryItems,
+            paginationOpts: options.flatMap { PaginationOptions(maxItems: $0.maxItems) },
+            retryConfig: Metadata.retryConfig(for: "SearchCards")
         )
     }
 

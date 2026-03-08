@@ -289,5 +289,101 @@
       { "type": "errorCode", "expected": "validation" }
     ],
     "tags": ["status-codes"]
+  },
+  {
+    "name": "GET 200 account settings",
+    "operation": "GetAccountSettings",
+    "method": "GET",
+    "path": "/{accountId}/account/settings.json",
+    "pathParams": { "accountId": "999" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "name": "My Account" }
+      }
+    ],
+    "assertions": [
+      { "type": "statusCode", "expected": 200 },
+      { "type": "noError" }
+    ],
+    "tags": ["status-codes"]
+  },
+  {
+    "name": "POST 201 access token",
+    "operation": "CreateAccessToken",
+    "method": "POST",
+    "path": "/my/access_tokens.json",
+    "requestBody": { "description": "CI", "permission": "read" },
+    "mockResponses": [
+      {
+        "status": 201,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "id": 1, "description": "CI", "permission": "read", "token": "tok_x", "created_at": "2026-01-01T00:00:00Z" }
+      }
+    ],
+    "assertions": [
+      { "type": "statusCode", "expected": 201 },
+      { "type": "noError" }
+    ],
+    "tags": ["status-codes"]
+  },
+  {
+    "name": "PATCH 200 notification settings",
+    "operation": "UpdateNotificationSettings",
+    "method": "PATCH",
+    "path": "/{accountId}/notifications/settings.json",
+    "pathParams": { "accountId": "999" },
+    "requestBody": { "bundle_email_frequency": "daily" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "statusCode", "expected": 200 },
+      { "type": "noError" }
+    ],
+    "tags": ["status-codes"]
+  },
+  {
+    "name": "DELETE 204 access token",
+    "operation": "DeleteAccessToken",
+    "method": "DELETE",
+    "path": "/my/access_tokens/{accessTokenId}",
+    "pathParams": { "accessTokenId": "42" },
+    "mockResponses": [
+      {
+        "status": 204,
+        "headers": {},
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "statusCode", "expected": 204 },
+      { "type": "noError" }
+    ],
+    "tags": ["status-codes"]
+  },
+  {
+    "name": "POST 200 publish board void",
+    "operation": "PublishBoard",
+    "method": "POST",
+    "path": "/{accountId}/boards/{boardId}/publication.json",
+    "pathParams": { "accountId": "999", "boardId": 42 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "statusCode", "expected": 200 },
+      { "type": "noError" }
+    ],
+    "tags": ["status-codes"]
   }
 ]

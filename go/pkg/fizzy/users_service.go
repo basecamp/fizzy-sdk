@@ -8,9 +8,25 @@ import (
 	"github.com/basecamp/fizzy-sdk/go/pkg/generated"
 )
 
+// CreatePushSubscription creates a push subscription.
+func (s *UsersService) CreatePushSubscription(ctx context.Context, userID string, req *generated.CreatePushSubscriptionRequest) (*Response, error) {
+	resp, err := s.client.Post(ctx, fmt.Sprintf("/users/%s/push_subscriptions.json", userID), req)
+	return resp, err
+}
+
 // Deactivate performs the Deactivate operation on a user.
 func (s *UsersService) Deactivate(ctx context.Context, userID string) (*Response, error) {
 	return s.client.Delete(ctx, fmt.Sprintf("/users/%s", userID))
+}
+
+// DeletePushSubscription deletes a push subscription.
+func (s *UsersService) DeletePushSubscription(ctx context.Context, userID string, pushSubscriptionID string) (*Response, error) {
+	return s.client.Delete(ctx, fmt.Sprintf("/users/%s/push_subscriptions/%s", userID, pushSubscriptionID))
+}
+
+// DeleteAvatar deletes an avatar.
+func (s *UsersService) DeleteAvatar(ctx context.Context, userID string) (*Response, error) {
+	return s.client.Delete(ctx, fmt.Sprintf("/users/%s/avatar", userID))
 }
 
 // Get returns a user.
@@ -53,4 +69,10 @@ func (s *UsersService) Update(ctx context.Context, userID string, req *generated
 		return nil, resp, err
 	}
 	return &result, resp, nil
+}
+
+// UpdateRole updates a role.
+func (s *UsersService) UpdateRole(ctx context.Context, userID string, req *generated.UpdateUserRoleRequest) (*Response, error) {
+	resp, err := s.client.Patch(ctx, fmt.Sprintf("/users/%s/role.json", userID), req)
+	return resp, err
 }

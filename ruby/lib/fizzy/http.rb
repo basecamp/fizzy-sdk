@@ -49,9 +49,10 @@ module Fizzy
     # Performs a POST request.
     # @param path [String] URL path
     # @param body [Hash, nil] request body
+    # @param retryable [Boolean, nil] override retry behavior (true for idempotent POSTs)
     # @return [Response]
-    def post(path, body: nil)
-      request(:post, path, body: body)
+    def post(path, body: nil, retryable: nil)
+      request(:post, path, body: body, retryable: retryable)
     end
 
     # Performs a PUT request.

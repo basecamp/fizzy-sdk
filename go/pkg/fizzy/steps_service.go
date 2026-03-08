@@ -39,6 +39,19 @@ func (s *StepsService) Get(ctx context.Context, cardNumber string, stepID string
 	return &result, resp, nil
 }
 
+// List returns steps.
+func (s *StepsService) List(ctx context.Context, cardNumber string) ([]generated.Step, *Response, error) {
+	resp, err := s.client.Get(ctx, fmt.Sprintf("/cards/%s/steps.json", cardNumber))
+	if err != nil {
+		return nil, nil, err
+	}
+	var result []generated.Step
+	if err := resp.UnmarshalData(&result); err != nil {
+		return nil, resp, err
+	}
+	return result, resp, nil
+}
+
 // Update updates a step.
 func (s *StepsService) Update(ctx context.Context, cardNumber string, stepID string, req *generated.UpdateStepRequest) (*generated.Step, *Response, error) {
 	resp, err := s.client.Patch(ctx, fmt.Sprintf("/cards/%s/steps/%s", cardNumber, stepID), req)

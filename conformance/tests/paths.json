@@ -341,5 +341,603 @@
       { "type": "noError" }
     ],
     "tags": ["paths", "devices"]
+  },
+  {
+    "name": "ListAccessTokens has /my/ prefix",
+    "operation": "ListAccessTokens",
+    "method": "GET",
+    "path": "/my/access_tokens.json",
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": []
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/my/access_tokens.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "CreateAccessToken path",
+    "operation": "CreateAccessToken",
+    "method": "POST",
+    "path": "/my/access_tokens.json",
+    "requestBody": { "description": "CI token", "permission": "read" },
+    "mockResponses": [
+      {
+        "status": 201,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "id": 1, "description": "CI token", "permission": "read", "token": "tok_abc123", "created_at": "2026-01-01T00:00:00Z" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/my/access_tokens.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "DeleteAccessToken path",
+    "operation": "DeleteAccessToken",
+    "method": "DELETE",
+    "path": "/my/access_tokens/{accessTokenId}",
+    "pathParams": { "accessTokenId": "42" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/my/access_tokens/42" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "GetAccountSettings path",
+    "operation": "GetAccountSettings",
+    "method": "GET",
+    "path": "/{accountId}/account/settings.json",
+    "pathParams": { "accountId": "999" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "name": "My Account" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/account/settings.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "UpdateAccountSettings path",
+    "operation": "UpdateAccountSettings",
+    "method": "PATCH",
+    "path": "/{accountId}/account/settings.json",
+    "pathParams": { "accountId": "999" },
+    "requestBody": { "name": "Renamed" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/account/settings.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "GetJoinCode path",
+    "operation": "GetJoinCode",
+    "method": "GET",
+    "path": "/{accountId}/account/join_code.json",
+    "pathParams": { "accountId": "999" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "code": "abc123", "usage_limit": 10 }
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/account/join_code.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "UpdateJoinCode path",
+    "operation": "UpdateJoinCode",
+    "method": "PATCH",
+    "path": "/{accountId}/account/join_code.json",
+    "pathParams": { "accountId": "999" },
+    "requestBody": { "usage_limit": 50 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/account/join_code.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "ResetJoinCode path",
+    "operation": "ResetJoinCode",
+    "method": "DELETE",
+    "path": "/{accountId}/account/join_code.json",
+    "pathParams": { "accountId": "999" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/account/join_code.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "UpdateAccountEntropy path",
+    "operation": "UpdateAccountEntropy",
+    "method": "PATCH",
+    "path": "/{accountId}/account/entropy.json",
+    "pathParams": { "accountId": "999" },
+    "requestBody": { "auto_postpone_period": 7 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/account/entropy.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "CreateAccountExport path",
+    "operation": "CreateAccountExport",
+    "method": "POST",
+    "path": "/{accountId}/account/exports.json",
+    "pathParams": { "accountId": "999" },
+    "mockResponses": [
+      {
+        "status": 201,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "id": 1, "status": "pending", "created_at": "2026-01-01T00:00:00Z" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/account/exports.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "GetAccountExport path",
+    "operation": "GetAccountExport",
+    "method": "GET",
+    "path": "/{accountId}/account/exports/{exportId}",
+    "pathParams": { "accountId": "999", "exportId": "77" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "id": 77, "status": "completed", "created_at": "2026-01-01T00:00:00Z" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/account/exports/77" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "PublishBoard path",
+    "operation": "PublishBoard",
+    "method": "POST",
+    "path": "/{accountId}/boards/{boardId}/publication.json",
+    "pathParams": { "accountId": "999", "boardId": 42 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/boards/42/publication.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "UnpublishBoard path",
+    "operation": "UnpublishBoard",
+    "method": "DELETE",
+    "path": "/{accountId}/boards/{boardId}/publication.json",
+    "pathParams": { "accountId": "999", "boardId": 42 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/boards/42/publication.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "UpdateBoardInvolvement path",
+    "operation": "UpdateBoardInvolvement",
+    "method": "PATCH",
+    "path": "/{accountId}/boards/{boardId}/involvement.json",
+    "pathParams": { "accountId": "999", "boardId": 42 },
+    "requestBody": { "involvement": "involved" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/boards/42/involvement.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "UpdateBoardEntropy path",
+    "operation": "UpdateBoardEntropy",
+    "method": "PATCH",
+    "path": "/{accountId}/boards/{boardId}/entropy.json",
+    "pathParams": { "accountId": "999", "boardId": 42 },
+    "requestBody": { "auto_postpone_period": 14 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/boards/42/entropy.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "ListStreamCards path",
+    "operation": "ListStreamCards",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}/columns/stream.json",
+    "pathParams": { "accountId": "999", "boardId": 42 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": []
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/boards/42/columns/stream.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "ListPostponedCards path",
+    "operation": "ListPostponedCards",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}/columns/not_now.json",
+    "pathParams": { "accountId": "999", "boardId": 42 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": []
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/boards/42/columns/not_now.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "ListClosedCards path",
+    "operation": "ListClosedCards",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}/columns/closed.json",
+    "pathParams": { "accountId": "999", "boardId": 42 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": []
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/boards/42/columns/closed.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "MoveColumnLeft path",
+    "operation": "MoveColumnLeft",
+    "method": "POST",
+    "path": "/{accountId}/columns/{columnId}/left_position.json",
+    "pathParams": { "accountId": "999", "columnId": 10 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/columns/10/left_position.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "MoveColumnRight path",
+    "operation": "MoveColumnRight",
+    "method": "POST",
+    "path": "/{accountId}/columns/{columnId}/right_position.json",
+    "pathParams": { "accountId": "999", "columnId": 10 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/columns/10/right_position.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "MarkCardRead path",
+    "operation": "MarkCardRead",
+    "method": "POST",
+    "path": "/{accountId}/cards/{cardNumber}/reading.json",
+    "pathParams": { "accountId": "999", "cardNumber": 123 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/cards/123/reading.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "MarkCardUnread path",
+    "operation": "MarkCardUnread",
+    "method": "DELETE",
+    "path": "/{accountId}/cards/{cardNumber}/reading.json",
+    "pathParams": { "accountId": "999", "cardNumber": 123 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/cards/123/reading.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "PublishCard path",
+    "operation": "PublishCard",
+    "method": "POST",
+    "path": "/{accountId}/cards/{cardNumber}/publish.json",
+    "pathParams": { "accountId": "999", "cardNumber": 123 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/cards/123/publish.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "ListSteps path",
+    "operation": "ListSteps",
+    "method": "GET",
+    "path": "/{accountId}/cards/{cardNumber}/steps.json",
+    "pathParams": { "accountId": "999", "cardNumber": 123 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": []
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/cards/123/steps.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "GetNotificationSettings path",
+    "operation": "GetNotificationSettings",
+    "method": "GET",
+    "path": "/{accountId}/notifications/settings.json",
+    "pathParams": { "accountId": "999" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "bundle_email_frequency": "daily" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/notifications/settings.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "UpdateNotificationSettings path",
+    "operation": "UpdateNotificationSettings",
+    "method": "PATCH",
+    "path": "/{accountId}/notifications/settings.json",
+    "pathParams": { "accountId": "999" },
+    "requestBody": { "bundle_email_frequency": "weekly" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/notifications/settings.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "SearchCards path with query param",
+    "operation": "SearchCards",
+    "method": "GET",
+    "path": "/{accountId}/search.json",
+    "pathParams": { "accountId": "999" },
+    "queryParams": { "q": "test" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": []
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/search.json" },
+      { "type": "requestQueryParam", "path": "q", "expected": "test" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "UpdateUserRole path",
+    "operation": "UpdateUserRole",
+    "method": "PATCH",
+    "path": "/{accountId}/users/{userId}/role.json",
+    "pathParams": { "accountId": "999", "userId": 5 },
+    "requestBody": { "role": "admin" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/users/5/role.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "DeleteUserAvatar path has no .json suffix",
+    "operation": "DeleteUserAvatar",
+    "method": "DELETE",
+    "path": "/{accountId}/users/{userId}/avatar",
+    "pathParams": { "accountId": "999", "userId": 5 },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/users/5/avatar" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "CreatePushSubscription path",
+    "operation": "CreatePushSubscription",
+    "method": "POST",
+    "path": "/{accountId}/users/{userId}/push_subscriptions.json",
+    "pathParams": { "accountId": "999", "userId": 5 },
+    "requestBody": { "endpoint": "https://push.example.com", "p256dh_key": "key123", "auth_key": "auth456" },
+    "mockResponses": [
+      {
+        "status": 201,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/users/5/push_subscriptions.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "DeletePushSubscription path",
+    "operation": "DeletePushSubscription",
+    "method": "DELETE",
+    "path": "/{accountId}/users/{userId}/push_subscriptions/{pushSubscriptionId}",
+    "pathParams": { "accountId": "999", "userId": 5, "pushSubscriptionId": "88" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/users/5/push_subscriptions/88" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
   }
 ]

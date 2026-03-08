@@ -12,11 +12,11 @@ public struct Card: Codable, Sendable {
     public let status: String
     public let title: String
     public let url: String
-    public var assignees: [UserSummary]?
-    public var board: BoardSummary?
-    public var column: ColumnSummary?
+    public var assignees: [User]?
+    public var board: Board?
+    public var column: Column?
     public var commentsUrl: String?
-    public var creator: UserSummary?
+    public var creator: User?
     public var description: String?
     public var descriptionHtml: String?
     public var hasMoreAssignees: Bool?
@@ -37,11 +37,11 @@ public struct Card: Codable, Sendable {
         status: String,
         title: String,
         url: String,
-        assignees: [UserSummary]? = nil,
-        board: BoardSummary? = nil,
-        column: ColumnSummary? = nil,
+        assignees: [User]? = nil,
+        board: Board? = nil,
+        column: Column? = nil,
         commentsUrl: String? = nil,
-        creator: UserSummary? = nil,
+        creator: User? = nil,
         description: String? = nil,
         descriptionHtml: String? = nil,
         hasMoreAssignees: Bool? = nil,
