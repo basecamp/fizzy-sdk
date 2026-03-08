@@ -13,6 +13,9 @@ on:
           - cookie
           - both
 
+permissions:
+  contents: read
+
 jobs:
   smoke:
     name: Live API Smoke Tests
