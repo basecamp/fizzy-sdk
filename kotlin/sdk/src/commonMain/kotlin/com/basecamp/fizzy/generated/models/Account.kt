@@ -14,5 +14,8 @@ import kotlinx.serialization.json.JsonObject
 data class Account(
     val id: String,
     val name: String,
-    val url: String
+    val slug: String,
+    @SerialName("created_at") val createdAt: String,
+    val url: String,
+    val user: User? = null
 )

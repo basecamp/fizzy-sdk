@@ -10,7 +10,7 @@ import (
 
 // Activate performs the Activate operation on a webhook.
 func (s *WebhooksService) Activate(ctx context.Context, boardID string, webhookID string) (*Response, error) {
-	resp, err := s.client.Post(ctx, fmt.Sprintf("/boards/%s/webhooks/%s/activation.json", boardID, webhookID), nil)
+	resp, err := s.client.Post(WithIdempotent(ctx), fmt.Sprintf("/boards/%s/webhooks/%s/activation.json", boardID, webhookID), nil)
 	return resp, err
 }
 

@@ -13,5 +13,7 @@ import kotlinx.serialization.json.JsonObject
 @Serializable
 data class Tag(
     val id: String,
-    val name: String
+    val title: String,
+    @SerialName("created_at") val createdAt: String,
+    val url: String? = null
 )

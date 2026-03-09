@@ -74,7 +74,7 @@ module Fizzy
       # @return [void]
       def activate(account_id:, board_id:, webhook_id:)
         with_operation(service: "webhooks", operation: "ActivateWebhook", is_mutation: true, resource_id: webhook_id) do
-          http_post("/#{account_id}/boards/#{board_id}/webhooks/#{webhook_id}/activation.json")
+          http_post("/#{account_id}/boards/#{board_id}/webhooks/#{webhook_id}/activation.json", retryable: true)
           nil
         end
       end

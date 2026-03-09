@@ -21,8 +21,9 @@ type HTTPOptions struct {
 	// Timeout is the request timeout (default: 30s).
 	Timeout time.Duration
 
-	// MaxRetries is the maximum retry attempts for idempotent requests (default: 3).
-	// POST requests only get 1 retry after successful token refresh.
+	// MaxRetries is the maximum retry attempts for retryable requests (default: 3).
+	// GET, PUT, PATCH, DELETE, and HEAD are always retryable. POST is retryable
+	// only when marked idempotent via WithIdempotent(ctx).
 	MaxRetries int
 
 	// BaseDelay is the initial backoff delay (default: 1s).
@@ -57,7 +58,7 @@ func WithTimeout(d time.Duration) ClientOption {
 	}
 }
 
-// WithMaxRetries sets the maximum number of retry attempts for idempotent requests.
+// WithMaxRetries sets the maximum number of retry attempts for retryable requests.
 func WithMaxRetries(n int) ClientOption {
 	return func(c *Client) {
 		c.httpOpts.MaxRetries = n
@@ -127,6 +128,20 @@ func WithNoRetry(ctx context.Context) context.Context {
 
 func isNoRetry(ctx context.Context) bool {
 	v, _ := ctx.Value(noRetryKey{}).(bool)
+	return v
+}
+
+// idempotentKey is the context key for marking a POST request as idempotent.
+type idempotentKey struct{}
+
+// WithIdempotent returns a context that marks the request as idempotent,
+// enabling retry for POST requests that are naturally idempotent (e.g. toggle operations).
+func WithIdempotent(ctx context.Context) context.Context {
+	return context.WithValue(ctx, idempotentKey{}, true)
+}
+
+func isIdempotent(ctx context.Context) bool {
+	v, _ := ctx.Value(idempotentKey{}).(bool)
 	return v
 }
 

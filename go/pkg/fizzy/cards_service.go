@@ -16,7 +16,7 @@ func (s *CardsService) Assign(ctx context.Context, cardNumber string, req *gener
 
 // Close performs the Close operation on a card.
 func (s *CardsService) Close(ctx context.Context, cardNumber string) (*Response, error) {
-	resp, err := s.client.Post(ctx, fmt.Sprintf("/cards/%s/closure.json", cardNumber), nil)
+	resp, err := s.client.Post(WithIdempotent(ctx), fmt.Sprintf("/cards/%s/closure.json", cardNumber), nil)
 	return resp, err
 }
 
@@ -58,7 +58,7 @@ func (s *CardsService) Get(ctx context.Context, cardNumber string) (*generated.C
 
 // Gold performs the Gold operation on a card.
 func (s *CardsService) Gold(ctx context.Context, cardNumber string) (*Response, error) {
-	resp, err := s.client.Post(ctx, fmt.Sprintf("/cards/%s/goldness.json", cardNumber), nil)
+	resp, err := s.client.Post(WithIdempotent(ctx), fmt.Sprintf("/cards/%s/goldness.json", cardNumber), nil)
 	return resp, err
 }
 
@@ -78,6 +78,17 @@ func (s *CardsService) List(ctx context.Context, path string) ([]generated.Card,
 	return result, resp, nil
 }
 
+// MarkRead performs the MarkRead operation on a card.
+func (s *CardsService) MarkRead(ctx context.Context, cardNumber string) (*Response, error) {
+	resp, err := s.client.Post(WithIdempotent(ctx), fmt.Sprintf("/cards/%s/reading.json", cardNumber), nil)
+	return resp, err
+}
+
+// MarkUnread performs the MarkUnread operation on a card.
+func (s *CardsService) MarkUnread(ctx context.Context, cardNumber string) (*Response, error) {
+	return s.client.Delete(ctx, fmt.Sprintf("/cards/%s/reading.json", cardNumber))
+}
+
 // Move performs the Move operation on a card.
 func (s *CardsService) Move(ctx context.Context, cardNumber string, req *generated.MoveCardRequest) (*generated.Card, *Response, error) {
 	resp, err := s.client.Patch(ctx, fmt.Sprintf("/cards/%s/board.json", cardNumber), req)
@@ -93,13 +104,19 @@ func (s *CardsService) Move(ctx context.Context, cardNumber string, req *generat
 
 // Pin performs the Pin operation on a card.
 func (s *CardsService) Pin(ctx context.Context, cardNumber string) (*Response, error) {
-	resp, err := s.client.Post(ctx, fmt.Sprintf("/cards/%s/pin.json", cardNumber), nil)
+	resp, err := s.client.Post(WithIdempotent(ctx), fmt.Sprintf("/cards/%s/pin.json", cardNumber), nil)
 	return resp, err
 }
 
 // Postpone performs the Postpone operation on a card.
 func (s *CardsService) Postpone(ctx context.Context, cardNumber string) (*Response, error) {
-	resp, err := s.client.Post(ctx, fmt.Sprintf("/cards/%s/not_now.json", cardNumber), nil)
+	resp, err := s.client.Post(WithIdempotent(ctx), fmt.Sprintf("/cards/%s/not_now.json", cardNumber), nil)
+	return resp, err
+}
+
+// Publish performs the Publish operation on a card.
+func (s *CardsService) Publish(ctx context.Context, cardNumber string) (*Response, error) {
+	resp, err := s.client.Post(ctx, fmt.Sprintf("/cards/%s/publish.json", cardNumber), nil)
 	return resp, err
 }
 
@@ -122,7 +139,7 @@ func (s *CardsService) Tag(ctx context.Context, cardNumber string, req *generate
 
 // Triage performs the Triage operation on a card.
 func (s *CardsService) Triage(ctx context.Context, cardNumber string, req *generated.TriageCardRequest) (*Response, error) {
-	resp, err := s.client.Post(ctx, fmt.Sprintf("/cards/%s/triage.json", cardNumber), req)
+	resp, err := s.client.Post(WithIdempotent(ctx), fmt.Sprintf("/cards/%s/triage.json", cardNumber), req)
 	return resp, err
 }
 
@@ -161,6 +178,6 @@ func (s *CardsService) Update(ctx context.Context, cardNumber string, req *gener
 
 // Watch performs the Watch operation on a card.
 func (s *CardsService) Watch(ctx context.Context, cardNumber string) (*Response, error) {
-	resp, err := s.client.Post(ctx, fmt.Sprintf("/cards/%s/watch.json", cardNumber), nil)
+	resp, err := s.client.Post(WithIdempotent(ctx), fmt.Sprintf("/cards/%s/watch.json", cardNumber), nil)
 	return resp, err
 }

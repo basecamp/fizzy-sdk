@@ -8,6 +8,7 @@ extension AccountClient {
     public var comments: CommentsService { service("comments") { CommentsService(accountClient: self) } }
     public var devices: DevicesService { service("devices") { DevicesService(accountClient: self) } }
     public var identity: IdentityService { service("identity") { IdentityService(accountClient: self) } }
+    public var miscellaneous: MiscellaneousService { service("miscellaneous") { MiscellaneousService(accountClient: self) } }
     public var notifications: NotificationsService { service("notifications") { NotificationsService(accountClient: self) } }
     public var pins: PinsService { service("pins") { PinsService(accountClient: self) } }
     public var reactions: ReactionsService { service("reactions") { ReactionsService(accountClient: self) } }

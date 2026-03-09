@@ -16,6 +16,7 @@ export interface CreateBoardRequest {
   name: string;
   allAccess?: boolean;
   autoPostponePeriod?: number;
+  publicDescription?: string;
 }
 
 export interface UpdateBoardRequest {
@@ -23,6 +24,8 @@ export interface UpdateBoardRequest {
   name?: string;
   allAccess?: boolean;
   autoPostponePeriod?: number;
+  publicDescription?: string;
+  userIds?: string[];
 }
 
 export class BoardsService extends BaseService {
@@ -56,7 +59,7 @@ export class BoardsService extends BaseService {
         isMutation: true,
       },
       () => this.client.POST("/boards.json" as never, {
-        body: { name: body.name, all_access: body.allAccess, auto_postpone_period: body.autoPostponePeriod } as never,
+        body: { name: body.name, all_access: body.allAccess, auto_postpone_period: body.autoPostponePeriod, public_description: body.publicDescription } as never,
       } as never),
     );
   }
@@ -108,7 +111,41 @@ export class BoardsService extends BaseService {
       },
       () => this.client.PATCH("/boards/{boardId}" as never, {
         params: { path: { boardId } },
-        body: { name: body?.name, all_access: body?.allAccess, auto_postpone_period: body?.autoPostponePeriod } as never,
+        body: { name: body?.name, all_access: body?.allAccess, auto_postpone_period: body?.autoPostponePeriod, public_description: body?.publicDescription, user_ids: body?.userIds } as never,
+      } as never),
+    );
+  }
+
+  /**
+   * UnpublishBoard
+   */
+  async unpublishBoard(boardId: string): Promise<void> {
+    return this.request(
+      {
+        service: "Unpublishboard",
+        operation: "UnpublishBoard",
+        resourceType: "unpublishboard",
+        isMutation: true,
+      },
+      () => this.client.DELETE("/boards/{boardId}/publication.json" as never, {
+        params: { path: { boardId } },
+      } as never),
+    );
+  }
+
+  /**
+   * PublishBoard
+   */
+  async publishBoard(boardId: string): Promise<void> {
+    return this.request(
+      {
+        service: "Publishboard",
+        operation: "PublishBoard",
+        resourceType: "publishboard",
+        isMutation: true,
+      },
+      () => this.client.POST("/boards/{boardId}/publication.json" as never, {
+        params: { path: { boardId } },
       } as never),
     );
   }

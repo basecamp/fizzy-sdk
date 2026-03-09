@@ -12,6 +12,7 @@ extension FizzyClient {
     public var comments: CommentsService { account.comments }
     public var devices: DevicesService { account.devices }
     public var identity: IdentityService { account.identity }
+    public var miscellaneous: MiscellaneousService { account.miscellaneous }
     public var notifications: NotificationsService { account.notifications }
     public var pins: PinsService { account.pins }
     public var reactions: ReactionsService { account.reactions }

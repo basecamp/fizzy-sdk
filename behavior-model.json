@@ -53,6 +53,22 @@
         "retry_on": null
       }
     },
+    "CreateAccessToken": {
+      "retry": {
+        "max": 1,
+        "base_delay_ms": null,
+        "backoff": null,
+        "retry_on": null
+      }
+    },
+    "CreateAccountExport": {
+      "retry": {
+        "max": 1,
+        "base_delay_ms": null,
+        "backoff": null,
+        "retry_on": null
+      }
+    },
     "CreateBoard": {
       "retry": {
         "max": 1,
@@ -109,6 +125,14 @@
         "retry_on": null
       }
     },
+    "CreatePushSubscription": {
+      "retry": {
+        "max": 1,
+        "base_delay_ms": null,
+        "backoff": null,
+        "retry_on": null
+      }
+    },
     "CreateSession": {
       "retry": {
         "max": 1,
@@ -134,6 +158,19 @@
       }
     },
     "DeactivateUser": {
+      "idempotent": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
+    "DeleteAccessToken": {
       "idempotent": true,
       "retry": {
         "max": 3,
@@ -237,7 +274,33 @@
         ]
       }
     },
+    "DeletePushSubscription": {
+      "idempotent": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
     "DeleteStep": {
+      "idempotent": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
+    "DeleteUserAvatar": {
       "idempotent": true,
       "retry": {
         "max": 3,
@@ -270,6 +333,32 @@
         "base_delay_ms": null,
         "backoff": null,
         "retry_on": null
+      }
+    },
+    "GetAccountExport": {
+      "readonly": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
+    "GetAccountSettings": {
+      "readonly": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
       }
     },
     "GetBoard": {
@@ -324,7 +413,33 @@
         ]
       }
     },
+    "GetJoinCode": {
+      "readonly": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
     "GetMyIdentity": {
+      "readonly": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
+    "GetNotificationSettings": {
       "readonly": true,
       "retry": {
         "max": 3,
@@ -402,6 +517,19 @@
         ]
       }
     },
+    "ListAccessTokens": {
+      "readonly": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
     "ListBoards": {
       "readonly": true,
       "pagination": {
@@ -434,6 +562,24 @@
       }
     },
     "ListCards": {
+      "readonly": true,
+      "pagination": {
+        "style": "link",
+        "page_param": "page",
+        "max_page_size": null
+      },
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
+    "ListClosedCards": {
       "readonly": true,
       "pagination": {
         "style": "link",
@@ -526,6 +672,55 @@
         ]
       }
     },
+    "ListPostponedCards": {
+      "readonly": true,
+      "pagination": {
+        "style": "link",
+        "page_param": "page",
+        "max_page_size": null
+      },
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
+    "ListSteps": {
+      "readonly": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
+    "ListStreamCards": {
+      "readonly": true,
+      "pagination": {
+        "style": "link",
+        "page_param": "page",
+        "max_page_size": null
+      },
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
     "ListTags": {
       "readonly": true,
       "pagination": {
@@ -575,7 +770,59 @@
         ]
       }
     },
+    "MarkCardRead": {
+      "idempotent": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
+    "MarkCardUnread": {
+      "idempotent": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
     "MoveCard": {
+      "idempotent": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
+    "MoveColumnLeft": {
+      "idempotent": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
+    "MoveColumnRight": {
       "idempotent": true,
       "retry": {
         "max": 3,
@@ -614,6 +861,27 @@
         ]
       }
     },
+    "PublishBoard": {
+      "idempotent": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
+    "PublishCard": {
+      "retry": {
+        "max": 1,
+        "base_delay_ms": null,
+        "backoff": null,
+        "retry_on": null
+      }
+    },
     "ReadNotification": {
       "idempotent": true,
       "retry": {
@@ -645,6 +913,37 @@
     },
     "ReopenCard": {
       "idempotent": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
+    "ResetJoinCode": {
+      "idempotent": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
+    "SearchCards": {
+      "readonly": true,
+      "pagination": {
+        "style": "link",
+        "page_param": "page",
+        "max_page_size": null
+      },
       "retry": {
         "max": 3,
         "base_delay_ms": 1000,
@@ -724,6 +1023,19 @@
         ]
       }
     },
+    "UnpublishBoard": {
+      "idempotent": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
     "UnreadNotification": {
       "idempotent": true,
       "retry": {
@@ -763,7 +1075,59 @@
         ]
       }
     },
+    "UpdateAccountEntropy": {
+      "idempotent": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
+    "UpdateAccountSettings": {
+      "idempotent": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
     "UpdateBoard": {
+      "idempotent": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
+    "UpdateBoardEntropy": {
+      "idempotent": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
+    "UpdateBoardInvolvement": {
       "idempotent": true,
       "retry": {
         "max": 3,
@@ -815,6 +1179,32 @@
         ]
       }
     },
+    "UpdateJoinCode": {
+      "idempotent": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
+    "UpdateNotificationSettings": {
+      "idempotent": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
     "UpdateStep": {
       "idempotent": true,
       "retry": {
@@ -829,6 +1219,19 @@
       }
     },
     "UpdateUser": {
+      "idempotent": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
+    "UpdateUserRole": {
       "idempotent": true,
       "retry": {
         "max": 3,

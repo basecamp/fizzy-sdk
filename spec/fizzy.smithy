@@ -31,12 +31,34 @@ service Fizzy {
         // Identity
         GetMyIdentity
 
+        // Access Tokens
+        ListAccessTokens
+        CreateAccessToken
+        DeleteAccessToken
+
+        // Account
+        GetAccountSettings
+        UpdateAccountSettings
+        GetJoinCode
+        UpdateJoinCode
+        ResetJoinCode
+        UpdateAccountEntropy
+        CreateAccountExport
+        GetAccountExport
+
         // Boards
         ListBoards
         CreateBoard
         GetBoard
         UpdateBoard
         DeleteBoard
+        PublishBoard
+        UnpublishBoard
+        UpdateBoardInvolvement
+        UpdateBoardEntropy
+        ListStreamCards
+        ListPostponedCards
+        ListClosedCards
 
         // Columns
         ListColumns
@@ -44,6 +66,8 @@ service Fizzy {
         GetColumn
         UpdateColumn
         DeleteColumn
+        MoveColumnLeft
+        MoveColumnRight
 
         // Cards
         ListCards
@@ -67,6 +91,9 @@ service Fizzy {
         UnpinCard
         MoveCard
         DeleteCardImage
+        MarkCardRead
+        MarkCardUnread
+        PublishCard
 
         // Comments
         ListComments
@@ -76,6 +103,7 @@ service Fizzy {
         DeleteComment
 
         // Steps
+        ListSteps
         CreateStep
         GetStep
         UpdateStep
@@ -95,6 +123,11 @@ service Fizzy {
         UnreadNotification
         BulkReadNotifications
         GetNotificationTray
+        GetNotificationSettings
+        UpdateNotificationSettings
+
+        // Search
+        SearchCards
 
         // Tags
         ListTags
@@ -104,6 +137,10 @@ service Fizzy {
         GetUser
         UpdateUser
         DeactivateUser
+        UpdateUserRole
+        DeleteUserAvatar
+        CreatePushSubscription
+        DeletePushSubscription
 
         // Pins
         ListPins
@@ -255,7 +292,14 @@ structure Board {
     created_at: ISO8601Timestamp
     @required
     url: URL
-    creator: UserSummary
+    creator: User
+}
+
+structure Color {
+    @required
+    name: String
+    @required
+    value: String
 }
 
 structure Column {
@@ -263,7 +307,7 @@ structure Column {
     id: ColumnId
     @required
     name: String
-    color: String
+    color: Color
     @required
     created_at: ISO8601Timestamp
 }
@@ -294,10 +338,10 @@ structure Card {
     created_at: ISO8601Timestamp
     @required
     url: URL
-    board: BoardSummary
-    column: ColumnSummary
-    creator: UserSummary
-    assignees: UserSummaryList
+    board: Board
+    column: Column
+    creator: User
+    assignees: UserList
     has_more_assignees: Boolean
     comments_url: URL
     reactions_url: URL
@@ -310,34 +354,6 @@ list TagNames {
 
 list StepList {
     member: Step
-}
-
-structure BoardSummary {
-    @required
-    id: BoardId
-    @required
-    name: String
-    @required
-    url: URL
-}
-
-structure ColumnSummary {
-    @required
-    id: ColumnId
-    @required
-    name: String
-}
-
-structure UserSummary {
-    @required
-    id: UserId
-    @required
-    name: PersonName
-    avatar_url: URL
-}
-
-list UserSummaryList {
-    member: UserSummary
 }
 
 structure User {
@@ -369,7 +385,7 @@ structure Comment {
     @required
     body: RichTextBody
     @required
-    creator: UserSummary
+    creator: User
     card: CardRef
     reactions_url: URL
     @required
@@ -405,7 +421,7 @@ structure Reaction {
     @required
     content: String
     @required
-    reacter: UserSummary
+    reacter: User
     @required
     url: URL
 }
@@ -422,8 +438,10 @@ structure Notification {
     created_at: ISO8601Timestamp
     @required
     source_type: String
+    title: String
+    body: String
     @required
-    creator: UserSummary
+    creator: User
     card: NotificationCard
     @required
     url: URL
@@ -437,15 +455,25 @@ structure NotificationCard {
     @required
     title: String
     @required
+    status: String
+    board_name: String
+    @required
+    closed: Boolean
+    @required
+    postponed: Boolean
+    @required
     url: URL
-    board: BoardSummary
+    column: Column
 }
 
 structure Tag {
     @required
     id: TagId
     @required
-    name: String
+    title: String
+    @required
+    created_at: ISO8601Timestamp
+    url: URL
 }
 
 structure Webhook {
@@ -469,15 +497,6 @@ structure Webhook {
 
 list WebhookActions {
     member: String
-}
-
-structure Pin {
-    @required
-    id: String
-    @required
-    card: CardRef
-    @required
-    created_at: ISO8601Timestamp
 }
 
 structure PendingAuthentication {
@@ -518,7 +537,12 @@ structure Account {
     @required
     name: String
     @required
+    slug: String
+    @required
+    created_at: ISO8601Timestamp
+    @required
     url: URL
+    user: User
 }
 
 list AccountList {
@@ -555,6 +579,52 @@ structure DirectUploadHeaders {
     Content_MD5: String
 }
 
+structure AccessToken {
+    @required
+    id: String
+    @required
+    description: String
+    @required
+    permission: String
+    @required
+    created_at: ISO8601Timestamp
+    token: String
+}
+
+structure NotificationSettings {
+    @required
+    bundle_email_frequency: String
+}
+
+structure AccountSettings {
+    @required
+    name: String
+}
+
+structure JoinCode {
+    @required
+    code: String
+    @required
+    url: URL
+    usage_limit: Integer
+}
+
+structure AccountExport {
+    @required
+    id: String
+    @required
+    status: String
+    @required
+    created_at: ISO8601Timestamp
+    download_url: URL
+}
+
+string AccessTokenId
+
+string PushSubscriptionId
+
+string ExportId
+
 // ═══════════════════════════════════════════════════════════════════════════
 // List wrappers (bare-array plugin unwraps these in OpenAPI output)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -567,8 +637,8 @@ list ReactionList { member: Reaction }
 list NotificationList { member: Notification }
 list TagList { member: Tag }
 list UserList { member: User }
-list PinList { member: Pin }
 list WebhookList { member: Webhook }
+list AccessTokenList { member: AccessToken }
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Default retry configs (reused across operations)
@@ -595,6 +665,203 @@ operation GetMyIdentity {
 structure GetMyIdentityOutput {
     @required
     identity: Identity
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Access Tokens (no account prefix — uses /my/)
+// ═══════════════════════════════════════════════════════════════════════════
+
+@readonly
+@http(method: "GET", uri: "/my/access_tokens.json")
+@tags(["AccessTokens"])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation ListAccessTokens {
+    output: ListAccessTokensOutput
+    errors: [UnauthorizedError]
+}
+
+structure ListAccessTokensOutput {
+    @required
+    access_tokens: AccessTokenList
+}
+
+@http(method: "POST", uri: "/my/access_tokens.json")
+@tags(["AccessTokens"])
+@fizzyRetry(maxAttempts: 1)
+operation CreateAccessToken {
+    input: CreateAccessTokenInput
+    output: CreateAccessTokenOutput
+    errors: [UnauthorizedError, ValidationError]
+}
+
+structure CreateAccessTokenInput {
+    @required
+    description: String
+
+    @required
+    permission: String
+}
+
+structure CreateAccessTokenOutput {
+    @required
+    access_token: AccessToken
+}
+
+@idempotent
+@http(method: "DELETE", uri: "/my/access_tokens/{accessTokenId}")
+@tags(["AccessTokens"])
+@fizzyIdempotent(natural: true)
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation DeleteAccessToken {
+    input: DeleteAccessTokenInput
+    errors: [UnauthorizedError, NotFoundError]
+}
+
+structure DeleteAccessTokenInput {
+    @required
+    @httpLabel
+    accessTokenId: AccessTokenId
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Account
+// ═══════════════════════════════════════════════════════════════════════════
+
+@readonly
+@http(method: "GET", uri: "/{accountId}/account/settings.json")
+@tags(["Account"])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation GetAccountSettings {
+    input: AccountIdInput
+    output: GetAccountSettingsOutput
+    errors: [UnauthorizedError, ForbiddenError]
+}
+
+structure GetAccountSettingsOutput {
+    @required
+    settings: AccountSettings
+}
+
+@http(method: "PATCH", uri: "/{accountId}/account/settings.json")
+@tags(["Account"])
+@fizzyIdempotent(natural: true)
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation UpdateAccountSettings {
+    input: UpdateAccountSettingsInput
+    errors: [UnauthorizedError, ForbiddenError, ValidationError]
+}
+
+structure UpdateAccountSettingsInput {
+    @required
+    @httpLabel
+    accountId: AccountId
+
+    name: String
+}
+
+@readonly
+@http(method: "GET", uri: "/{accountId}/account/join_code.json")
+@tags(["Account"])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation GetJoinCode {
+    input: AccountIdInput
+    output: GetJoinCodeOutput
+    errors: [UnauthorizedError, ForbiddenError]
+}
+
+structure GetJoinCodeOutput {
+    @required
+    join_code: JoinCode
+}
+
+@http(method: "PATCH", uri: "/{accountId}/account/join_code.json")
+@tags(["Account"])
+@fizzyIdempotent(natural: true)
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation UpdateJoinCode {
+    input: UpdateJoinCodeInput
+    errors: [UnauthorizedError, ForbiddenError, ValidationError]
+}
+
+structure UpdateJoinCodeInput {
+    @required
+    @httpLabel
+    accountId: AccountId
+
+    usage_limit: Integer
+}
+
+@idempotent
+@http(method: "DELETE", uri: "/{accountId}/account/join_code.json")
+@tags(["Account"])
+@fizzyIdempotent(natural: true)
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation ResetJoinCode {
+    input: AccountIdInput
+    errors: [UnauthorizedError, ForbiddenError]
+}
+
+@http(method: "PATCH", uri: "/{accountId}/account/entropy.json")
+@tags(["Account"])
+@fizzyIdempotent(natural: true)
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation UpdateAccountEntropy {
+    input: UpdateAccountEntropyInput
+    errors: [UnauthorizedError, ForbiddenError, ValidationError]
+}
+
+structure UpdateAccountEntropyInput {
+    @required
+    @httpLabel
+    accountId: AccountId
+
+    auto_postpone_period: Integer
+}
+
+@http(method: "POST", uri: "/{accountId}/account/exports.json")
+@tags(["Account"])
+@fizzyRetry(maxAttempts: 1)
+operation CreateAccountExport {
+    input: AccountIdInput
+    output: CreateAccountExportOutput
+    errors: [UnauthorizedError, ForbiddenError]
+}
+
+structure CreateAccountExportOutput {
+    @required
+    export: AccountExport
+}
+
+@readonly
+@http(method: "GET", uri: "/{accountId}/account/exports/{exportId}")
+@tags(["Account"])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation GetAccountExport {
+    input: GetAccountExportInput
+    output: GetAccountExportOutput
+    errors: [UnauthorizedError, ForbiddenError, NotFoundError]
+}
+
+structure GetAccountExportInput {
+    @required
+    @httpLabel
+    accountId: AccountId
+
+    @required
+    @httpLabel
+    exportId: ExportId
+}
+
+structure GetAccountExportOutput {
+    @required
+    export: AccountExport
+}
+
+// Shared input for account-only operations
+structure AccountIdInput {
+    @required
+    @httpLabel
+    accountId: AccountId
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -643,6 +910,8 @@ structure CreateBoardInput {
     all_access: Boolean
 
     auto_postpone_period: Integer
+
+    public_description: String
 }
 
 structure CreateBoardOutput {
@@ -699,6 +968,10 @@ structure UpdateBoardInput {
     all_access: Boolean
 
     auto_postpone_period: Integer
+
+    public_description: String
+
+    user_ids: StringList
 }
 
 structure UpdateBoardOutput {
@@ -717,6 +990,126 @@ operation DeleteBoard {
 }
 
 structure DeleteBoardInput {
+    @required
+    @httpLabel
+    accountId: AccountId
+
+    @required
+    @httpLabel
+    boardId: BoardId
+}
+
+@http(method: "POST", uri: "/{accountId}/boards/{boardId}/publication.json")
+@tags(["Boards"])
+@fizzyIdempotent(natural: true)
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation PublishBoard {
+    input: BoardIdInput
+    errors: [UnauthorizedError, ForbiddenError, NotFoundError]
+}
+
+@idempotent
+@http(method: "DELETE", uri: "/{accountId}/boards/{boardId}/publication.json")
+@tags(["Boards"])
+@fizzyIdempotent(natural: true)
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation UnpublishBoard {
+    input: BoardIdInput
+    errors: [UnauthorizedError, ForbiddenError, NotFoundError]
+}
+
+@http(method: "PATCH", uri: "/{accountId}/boards/{boardId}/involvement.json")
+@tags(["Boards"])
+@fizzyIdempotent(natural: true)
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation UpdateBoardInvolvement {
+    input: UpdateBoardInvolvementInput
+    errors: [UnauthorizedError, ForbiddenError, NotFoundError, ValidationError]
+}
+
+structure UpdateBoardInvolvementInput {
+    @required
+    @httpLabel
+    accountId: AccountId
+
+    @required
+    @httpLabel
+    boardId: BoardId
+
+    involvement: String
+}
+
+@http(method: "PATCH", uri: "/{accountId}/boards/{boardId}/entropy.json")
+@tags(["Boards"])
+@fizzyIdempotent(natural: true)
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation UpdateBoardEntropy {
+    input: UpdateBoardEntropyInput
+    errors: [UnauthorizedError, ForbiddenError, NotFoundError, ValidationError]
+}
+
+structure UpdateBoardEntropyInput {
+    @required
+    @httpLabel
+    accountId: AccountId
+
+    @required
+    @httpLabel
+    boardId: BoardId
+
+    auto_postpone_period: Integer
+}
+
+@readonly
+@http(method: "GET", uri: "/{accountId}/boards/{boardId}/columns/stream.json")
+@tags(["Boards"])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+@fizzyPagination(style: "link", pageParam: "page")
+operation ListStreamCards {
+    input: BoardIdInput
+    output: ListStreamCardsOutput
+    errors: [UnauthorizedError, ForbiddenError, NotFoundError]
+}
+
+structure ListStreamCardsOutput {
+    @required
+    cards: CardList
+}
+
+@readonly
+@http(method: "GET", uri: "/{accountId}/boards/{boardId}/columns/not_now.json")
+@tags(["Boards"])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+@fizzyPagination(style: "link", pageParam: "page")
+operation ListPostponedCards {
+    input: BoardIdInput
+    output: ListPostponedCardsOutput
+    errors: [UnauthorizedError, ForbiddenError, NotFoundError]
+}
+
+structure ListPostponedCardsOutput {
+    @required
+    cards: CardList
+}
+
+@readonly
+@http(method: "GET", uri: "/{accountId}/boards/{boardId}/columns/closed.json")
+@tags(["Boards"])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+@fizzyPagination(style: "link", pageParam: "page")
+operation ListClosedCards {
+    input: BoardIdInput
+    output: ListClosedCardsOutput
+    errors: [UnauthorizedError, ForbiddenError, NotFoundError]
+}
+
+structure ListClosedCardsOutput {
+    @required
+    cards: CardList
+}
+
+// Shared input for board-only operations
+structure BoardIdInput {
     @required
     @httpLabel
     accountId: AccountId
@@ -864,6 +1257,34 @@ structure DeleteColumnInput {
     @required
     @httpLabel
     boardId: BoardId
+
+    @required
+    @httpLabel
+    columnId: ColumnId
+}
+
+@http(method: "POST", uri: "/{accountId}/columns/{columnId}/left_position.json")
+@tags(["Columns"])
+@fizzyIdempotent(natural: true)
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation MoveColumnLeft {
+    input: ColumnPositionInput
+    errors: [UnauthorizedError, ForbiddenError, NotFoundError]
+}
+
+@http(method: "POST", uri: "/{accountId}/columns/{columnId}/right_position.json")
+@tags(["Columns"])
+@fizzyIdempotent(natural: true)
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation MoveColumnRight {
+    input: ColumnPositionInput
+    errors: [UnauthorizedError, ForbiddenError, NotFoundError]
+}
+
+structure ColumnPositionInput {
+    @required
+    @httpLabel
+    accountId: AccountId
 
     @required
     @httpLabel
@@ -1245,6 +1666,33 @@ operation DeleteCardImage {
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
 }
 
+@http(method: "POST", uri: "/{accountId}/cards/{cardNumber}/reading.json")
+@tags(["Cards"])
+@fizzyIdempotent(natural: true)
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation MarkCardRead {
+    input: CardNumberInput
+    errors: [UnauthorizedError, ForbiddenError, NotFoundError]
+}
+
+@idempotent
+@http(method: "DELETE", uri: "/{accountId}/cards/{cardNumber}/reading.json")
+@tags(["Cards"])
+@fizzyIdempotent(natural: true)
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation MarkCardUnread {
+    input: CardNumberInput
+    errors: [UnauthorizedError, ForbiddenError, NotFoundError]
+}
+
+@http(method: "POST", uri: "/{accountId}/cards/{cardNumber}/publish.json")
+@tags(["Cards"])
+@fizzyRetry(maxAttempts: 1)
+operation PublishCard {
+    input: CardNumberInput
+    errors: [UnauthorizedError, ForbiddenError, NotFoundError]
+}
+
 // Shared input for card operations that only need accountId + cardNumber
 structure CardNumberInput {
     @required
@@ -1403,6 +1851,21 @@ structure DeleteCommentInput {
 // ═══════════════════════════════════════════════════════════════════════════
 // Steps
 // ═══════════════════════════════════════════════════════════════════════════
+
+@readonly
+@http(method: "GET", uri: "/{accountId}/cards/{cardNumber}/steps.json")
+@tags(["Steps"])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation ListSteps {
+    input: CardNumberInput
+    output: ListStepsOutput
+    errors: [UnauthorizedError, ForbiddenError, NotFoundError]
+}
+
+structure ListStepsOutput {
+    @required
+    steps: StepList
+}
 
 @http(method: "POST", uri: "/{accountId}/cards/{cardNumber}/steps.json")
 @tags(["Steps"])
@@ -1793,6 +2256,74 @@ structure GetNotificationTrayOutput {
     notifications: NotificationList
 }
 
+@readonly
+@http(method: "GET", uri: "/{accountId}/notifications/settings.json")
+@tags(["Notifications"])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation GetNotificationSettings {
+    input: GetNotificationSettingsInput
+    output: GetNotificationSettingsOutput
+    errors: [UnauthorizedError, ForbiddenError]
+}
+
+structure GetNotificationSettingsInput {
+    @required
+    @httpLabel
+    accountId: AccountId
+}
+
+structure GetNotificationSettingsOutput {
+    @required
+    settings: NotificationSettings
+}
+
+@http(method: "PATCH", uri: "/{accountId}/notifications/settings.json")
+@tags(["Notifications"])
+@fizzyIdempotent(natural: true)
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation UpdateNotificationSettings {
+    input: UpdateNotificationSettingsInput
+    errors: [UnauthorizedError, ForbiddenError, ValidationError]
+}
+
+structure UpdateNotificationSettingsInput {
+    @required
+    @httpLabel
+    accountId: AccountId
+
+    bundle_email_frequency: String
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Search
+// ═══════════════════════════════════════════════════════════════════════════
+
+@readonly
+@http(method: "GET", uri: "/{accountId}/search.json")
+@tags(["Search"])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+@fizzyPagination(style: "link", pageParam: "page")
+operation SearchCards {
+    input: SearchCardsInput
+    output: SearchCardsOutput
+    errors: [UnauthorizedError, ForbiddenError]
+}
+
+structure SearchCardsInput {
+    @required
+    @httpLabel
+    accountId: AccountId
+
+    @httpQuery("q")
+    @required
+    q: String
+}
+
+structure SearchCardsOutput {
+    @required
+    cards: CardList
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Tags
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1917,6 +2448,99 @@ structure DeactivateUserInput {
     userId: UserId
 }
 
+@http(method: "PATCH", uri: "/{accountId}/users/{userId}/role.json")
+@tags(["Users"])
+@fizzyIdempotent(natural: true)
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation UpdateUserRole {
+    input: UpdateUserRoleInput
+    errors: [UnauthorizedError, ForbiddenError, NotFoundError, ValidationError]
+}
+
+structure UpdateUserRoleInput {
+    @required
+    @httpLabel
+    accountId: AccountId
+
+    @required
+    @httpLabel
+    userId: UserId
+
+    @required
+    role: String
+}
+
+@idempotent
+@http(method: "DELETE", uri: "/{accountId}/users/{userId}/avatar")
+@tags(["Users"])
+@fizzyIdempotent(natural: true)
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation DeleteUserAvatar {
+    input: DeleteUserAvatarInput
+    errors: [UnauthorizedError, ForbiddenError, NotFoundError]
+}
+
+structure DeleteUserAvatarInput {
+    @required
+    @httpLabel
+    accountId: AccountId
+
+    @required
+    @httpLabel
+    userId: UserId
+}
+
+@http(method: "POST", uri: "/{accountId}/users/{userId}/push_subscriptions.json")
+@tags(["Users"])
+@fizzyRetry(maxAttempts: 1)
+operation CreatePushSubscription {
+    input: CreatePushSubscriptionInput
+    errors: [UnauthorizedError, ForbiddenError, NotFoundError, ValidationError]
+}
+
+structure CreatePushSubscriptionInput {
+    @required
+    @httpLabel
+    accountId: AccountId
+
+    @required
+    @httpLabel
+    userId: UserId
+
+    @required
+    endpoint: String
+
+    @required
+    p256dh_key: String
+
+    @required
+    auth_key: String
+}
+
+@idempotent
+@http(method: "DELETE", uri: "/{accountId}/users/{userId}/push_subscriptions/{pushSubscriptionId}")
+@tags(["Users"])
+@fizzyIdempotent(natural: true)
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation DeletePushSubscription {
+    input: DeletePushSubscriptionInput
+    errors: [UnauthorizedError, ForbiddenError, NotFoundError]
+}
+
+structure DeletePushSubscriptionInput {
+    @required
+    @httpLabel
+    accountId: AccountId
+
+    @required
+    @httpLabel
+    userId: UserId
+
+    @required
+    @httpLabel
+    pushSubscriptionId: PushSubscriptionId
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Pins (no account prefix — uses /my/)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1932,7 +2556,7 @@ operation ListPins {
 
 structure ListPinsOutput {
     @required
-    pins: PinList
+    cards: CardList
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

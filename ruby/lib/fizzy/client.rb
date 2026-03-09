@@ -68,9 +68,10 @@ module Fizzy
     # Performs a POST request.
     # @param path [String] URL path
     # @param body [Hash, nil] request body
+    # @param retryable [Boolean, nil] override retry behavior (true for idempotent POSTs)
     # @return [Response]
-    def post(path, body: nil)
-      @http.post(path, body: body)
+    def post(path, body: nil, retryable: nil)
+      @http.post(path, body: body, retryable: retryable)
     end
 
     # Performs a PUT request.
@@ -191,6 +192,11 @@ module Fizzy
     # @return [Services::DevicesService]
     def devices
       service(:devices) { Services::DevicesService.new(self) }
+    end
+
+    # @return [Services::MiscellaneousService]
+    def miscellaneous
+      service(:miscellaneous) { Services::MiscellaneousService.new(self) }
     end
 
     # @!endgroup

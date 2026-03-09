@@ -110,13 +110,19 @@ fun main() {
 
         for (tc in cases) {
             val (result, records) = runTest(tc)
-            val ok = checkAssertions(tc, result, records)
-            if (ok) {
-                println("  PASS  ${tc.name}")
-                passed++
-            } else {
-                println("  FAIL  ${tc.name}")
-                failed++
+            when (checkAssertions(tc, result, records)) {
+                AssertResult.PASS -> {
+                    println("  PASS  ${tc.name}")
+                    passed++
+                }
+                AssertResult.SKIP -> {
+                    println("  SKIP  ${tc.name}")
+                    skipped++
+                }
+                AssertResult.FAIL -> {
+                    println("  FAIL  ${tc.name}")
+                    failed++
+                }
             }
         }
     }
@@ -326,6 +332,8 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
             ),
         )
         "DeleteBoard" -> account.boards.delete(pp.string("boardId"))
+        "PublishBoard" -> account.boards.publishBoard(pp.string("boardId"))
+        "UnpublishBoard" -> account.boards.unpublishBoard(pp.string("boardId"))
 
         // Cards
         "ListCards" -> account.cards.list(ListCardsOptions(
@@ -377,6 +385,11 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
         "UnTriageCard" -> account.cards.untriage(pp.long("cardNumber"))
         "WatchCard" -> account.cards.watch(pp.long("cardNumber"))
         "UnwatchCard" -> account.cards.unwatch(pp.long("cardNumber"))
+        "ListStreamCards" -> account.cards.listStreamCards(pp.string("boardId"))
+        "ListPostponedCards" -> account.cards.listPostponedCards(pp.string("boardId"))
+        "ListClosedCards" -> account.cards.listClosedCards(pp.string("boardId"))
+        "PublishCard" -> account.cards.publishCard(pp.long("cardNumber"))
+        "SearchCards" -> account.cards.search(qp.strOrNull("q") ?: "")
 
         // Columns
         "ListColumns" -> account.columns.list(pp.string("boardId"))
@@ -475,6 +488,7 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
         )
 
         // Steps
+        "ListSteps" -> account.steps.list(pp.long("cardNumber"))
         "CreateStep" -> account.steps.create(
             pp.long("cardNumber"),
             CreateStepBody(content = body?.str("content") ?: ""),
@@ -535,6 +549,86 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
         "DeleteWebhook" -> account.webhooks.delete(pp.string("boardId"), pp.string("webhookId"))
         "ActivateWebhook" -> account.webhooks.activate(pp.string("boardId"), pp.string("webhookId"))
 
+        // Miscellaneous — Access Tokens
+        "ListAccessTokens" -> account.miscellaneous.listAccessTokens()
+        "CreateAccessToken" -> account.miscellaneous.createAccessToken(
+            CreateAccessTokenBody(
+                description = body?.str("description") ?: "",
+                permission = body?.str("permission") ?: "",
+            )
+        )
+        "DeleteAccessToken" -> account.miscellaneous.deleteAccessToken(pp.string("accessTokenId"))
+
+        // Miscellaneous — Account
+        "UpdateAccountEntropy" -> account.miscellaneous.updateAccountEntropy(
+            UpdateAccountEntropyBody(
+                autoPostponePeriod = body?.longOrNull("auto_postpone_period")?.toInt(),
+            )
+        )
+        "CreateAccountExport" -> account.miscellaneous.createAccountExport()
+        "GetAccountExport" -> account.miscellaneous.accountExport(pp.string("exportId"))
+        "GetJoinCode" -> account.miscellaneous.joinCode()
+        "UpdateJoinCode" -> account.miscellaneous.updateJoinCode(
+            UpdateJoinCodeBody(
+                usageLimit = body?.longOrNull("usage_limit")?.toInt(),
+            )
+        )
+        "ResetJoinCode" -> account.miscellaneous.resetJoinCode()
+        "GetAccountSettings" -> account.miscellaneous.accountSettings()
+        "UpdateAccountSettings" -> account.miscellaneous.updateAccountSettings(
+            UpdateAccountSettingsBody(
+                name = body?.strOrNull("name"),
+            )
+        )
+
+        // Miscellaneous — Board extras
+        "UpdateBoardEntropy" -> account.miscellaneous.updateBoardEntropy(
+            pp.string("boardId"),
+            UpdateBoardEntropyBody(
+                autoPostponePeriod = body?.longOrNull("auto_postpone_period")?.toInt(),
+            ),
+        )
+        "UpdateBoardInvolvement" -> account.miscellaneous.updateBoardInvolvement(
+            pp.string("boardId"),
+            UpdateBoardInvolvementBody(
+                involvement = body?.strOrNull("involvement"),
+            ),
+        )
+
+        // Miscellaneous — Card read/unread
+        "MarkCardRead" -> account.miscellaneous.markCardRead(pp.long("cardNumber"))
+        "MarkCardUnread" -> account.miscellaneous.markCardUnread(pp.long("cardNumber"))
+
+        // Miscellaneous — Column movement
+        "MoveColumnLeft" -> account.miscellaneous.moveColumnLeft(pp.string("columnId"))
+        "MoveColumnRight" -> account.miscellaneous.moveColumnRight(pp.string("columnId"))
+
+        // Miscellaneous — Notification settings
+        "GetNotificationSettings" -> account.miscellaneous.notificationSettings()
+        "UpdateNotificationSettings" -> account.miscellaneous.updateNotificationSettings(
+            UpdateNotificationSettingsBody(
+                bundleEmailFrequency = body?.strOrNull("bundle_email_frequency"),
+            )
+        )
+
+        // Miscellaneous — User extras
+        "DeleteUserAvatar" -> account.miscellaneous.deleteUserAvatar(pp.string("userId"))
+        "CreatePushSubscription" -> account.miscellaneous.createPushSubscription(
+            pp.string("userId"),
+            CreatePushSubscriptionBody(
+                endpoint = body?.str("endpoint") ?: "",
+                p256dhKey = body?.str("p256dh_key") ?: "",
+                authKey = body?.str("auth_key") ?: "",
+            ),
+        )
+        "DeletePushSubscription" -> account.miscellaneous.deletePushSubscription(
+            pp.string("userId"), pp.string("pushSubscriptionId"),
+        )
+        "UpdateUserRole" -> account.miscellaneous.updateUserRole(
+            pp.string("userId"),
+            UpdateUserRoleBody(role = body?.str("role") ?: ""),
+        )
+
         else -> throw FizzyException.Usage("Unknown operation: ${tc.operation}")
     }
 }
@@ -543,14 +637,23 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
 // Assertion checking
 // ---------------------------------------------------------------------------
 
-fun checkAssertions(tc: TestCase, result: ExecResult, records: List<RequestRecord>): Boolean {
-    var allPassed = true
+enum class AssertResult { PASS, FAIL, SKIP }
+
+fun checkAssertions(tc: TestCase, result: ExecResult, records: List<RequestRecord>): AssertResult {
+    var anyFailed = false
+    var anyEvaluated = false
     for (a in tc.assertions) {
-        if (!checkAssertion(tc, a, result, records)) {
-            allPassed = false
+        when (checkAssertion(tc, a, result, records)) {
+            AssertResult.FAIL -> { anyFailed = true; anyEvaluated = true }
+            AssertResult.PASS -> { anyEvaluated = true }
+            AssertResult.SKIP -> {}
         }
     }
-    return allPassed
+    return when {
+        anyFailed -> AssertResult.FAIL
+        !anyEvaluated -> AssertResult.SKIP
+        else -> AssertResult.PASS
+    }
 }
 
 fun checkAssertion(
@@ -558,32 +661,32 @@ fun checkAssertion(
     a: Assertion,
     result: ExecResult,
     records: List<RequestRecord>,
-): Boolean {
+): AssertResult {
     when (a.type) {
         "requestCount" -> {
             val expected = a.expected.asInt()
             val actual = records.size
             if (actual != expected) {
                 println("    ASSERT FAIL [requestCount]: expected $expected, got $actual")
-                return false
+                return AssertResult.FAIL
             }
-            return true
+            return AssertResult.PASS
         }
 
         "delayBetweenRequests" -> {
             val minMs = a.min ?: a.expected.asInt()
             if (records.size < 2) {
                 println("    ASSERT FAIL [delayBetweenRequests]: need at least 2 requests, got ${records.size}")
-                return false
+                return AssertResult.FAIL
             }
             for (i in 1 until records.size) {
                 val delay = records[i].timeMs - records[i - 1].timeMs
                 if (delay < minMs) {
                     println("    ASSERT FAIL [delayBetweenRequests]: delay between request ${i} and ${i + 1} was ${delay}ms, expected >= ${minMs}ms")
-                    return false
+                    return AssertResult.FAIL
                 }
             }
-            return true
+            return AssertResult.PASS
         }
 
         "statusCode" -> {
@@ -596,90 +699,90 @@ fun checkAssertion(
             }
             if (actual != expected) {
                 println("    ASSERT FAIL [statusCode]: expected $expected, got $actual")
-                return false
+                return AssertResult.FAIL
             }
-            return true
+            return AssertResult.PASS
         }
 
         "noError" -> {
             if (result.error != null) {
                 println("    ASSERT FAIL [noError]: got error: ${result.error.message}")
-                return false
+                return AssertResult.FAIL
             }
-            return true
+            return AssertResult.PASS
         }
 
         "errorCode" -> {
             val expected = a.expected.asString()
             if (result.error == null) {
                 println("    ASSERT FAIL [errorCode]: expected error with code \"$expected\", got no error")
-                return false
+                return AssertResult.FAIL
             }
             val err = result.error
             if (err !is FizzyException) {
                 println("    ASSERT FAIL [errorCode]: error is not FizzyException: ${err::class.simpleName}: ${err.message}")
-                return false
+                return AssertResult.FAIL
             }
             if (err.code != expected) {
                 println("    ASSERT FAIL [errorCode]: expected \"$expected\", got \"${err.code}\"")
-                return false
+                return AssertResult.FAIL
             }
-            return true
+            return AssertResult.PASS
         }
 
         "errorField" -> {
             if (result.error == null) {
                 println("    ASSERT FAIL [errorField]: expected error, got null")
-                return false
+                return AssertResult.FAIL
             }
             val err = result.error
             if (err !is FizzyException) {
                 println("    ASSERT FAIL [errorField]: error is not FizzyException")
-                return false
+                return AssertResult.FAIL
             }
             val expected = a.expected.asString()
             when (a.path) {
                 "requestId" -> {
                     if (err.requestId != expected) {
                         println("    ASSERT FAIL [errorField.requestId]: expected \"$expected\", got \"${err.requestId}\"")
-                        return false
+                        return AssertResult.FAIL
                     }
                 }
                 else -> {
                     println("    ASSERT FAIL [errorField]: unknown field path \"${a.path}\"")
-                    return false
+                    return AssertResult.FAIL
                 }
             }
-            return true
+            return AssertResult.PASS
         }
 
         "headerPresent" -> {
-            val headerName = a.path ?: return true
+            val headerName = a.path ?: return AssertResult.PASS
             if (records.isEmpty()) {
                 println("    ASSERT FAIL [headerPresent]: no requests recorded")
-                return false
+                return AssertResult.FAIL
             }
             val last = records.last()
             if (last.headers[headerName] == null) {
                 println("    ASSERT FAIL [headerPresent]: header \"$headerName\" not present")
-                return false
+                return AssertResult.FAIL
             }
-            return true
+            return AssertResult.PASS
         }
 
         "requestPath" -> {
             val expected = a.expected.asString()
             if (records.isEmpty()) {
                 println("    ASSERT FAIL [requestPath]: no requests recorded")
-                return false
+                return AssertResult.FAIL
             }
             val last = records.last()
             val actualPath = Url(last.url).encodedPath
             if (actualPath != expected) {
                 println("    ASSERT FAIL [requestPath]: expected \"$expected\", got \"$actualPath\"")
-                return false
+                return AssertResult.FAIL
             }
-            return true
+            return AssertResult.PASS
         }
 
         "urlOrigin" -> {
@@ -688,29 +791,29 @@ fun checkAssertion(
                 // Cross-origin/protocol-downgrade Link rejected: either error or silent stop
                 if (result.error == null && records.size > 1) {
                     println("    ASSERT FAIL [urlOrigin]: expected cross-origin Link to not be followed, got ${records.size} requests")
-                    return false
+                    return AssertResult.FAIL
                 }
             }
-            return true
+            return AssertResult.PASS
         }
 
         "requestBodyField" -> {
             val expected = a.expected.asString()
             if (records.isEmpty()) {
                 println("    ASSERT FAIL [requestBodyField]: no requests recorded")
-                return false
+                return AssertResult.FAIL
             }
             val last = records.last()
             if (last.body.isNullOrBlank()) {
                 println("    ASSERT FAIL [requestBodyField]: request body is empty")
-                return false
+                return AssertResult.FAIL
             }
             val bodyObj = json.parseToJsonElement(last.body).jsonObject
             if (expected !in bodyObj) {
                 println("    ASSERT FAIL [requestBodyField]: field \"$expected\" not found in request body (keys: ${bodyObj.keys})")
-                return false
+                return AssertResult.FAIL
             }
-            return true
+            return AssertResult.PASS
         }
 
         "requestQueryParam" -> {
@@ -718,21 +821,21 @@ fun checkAssertion(
             val expected = a.expected.asString()
             if (records.isEmpty()) {
                 println("    ASSERT FAIL [requestQueryParam]: no requests recorded")
-                return false
+                return AssertResult.FAIL
             }
             val last = records.last()
             val parsedUrl = Url(last.url)
             val actual = parsedUrl.parameters[paramName]
             if (actual != expected) {
                 println("    ASSERT FAIL [requestQueryParam]: param \"$paramName\" expected \"$expected\", got \"$actual\"")
-                return false
+                return AssertResult.FAIL
             }
-            return true
+            return AssertResult.PASS
         }
 
         else -> {
             println("    ASSERT SKIP [${ a.type }]: unsupported assertion type")
-            return true
+            return AssertResult.SKIP
         }
     }
 }

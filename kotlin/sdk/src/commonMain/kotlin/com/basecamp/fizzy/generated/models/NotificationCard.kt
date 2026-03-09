@@ -15,6 +15,10 @@ data class NotificationCard(
     val id: String,
     val number: Int,
     val title: String,
+    val status: String,
+    val closed: Boolean,
+    val postponed: Boolean,
     val url: String,
-    val board: BoardSummary? = null
+    @SerialName("board_name") val boardName: String? = null,
+    val column: Column? = null
 )

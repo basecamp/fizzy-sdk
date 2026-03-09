@@ -30,6 +30,15 @@ public final class StepsService: BaseService, @unchecked Sendable {
         )
     }
 
+    public func list(accountId: String, cardNumber: Int) async throws -> [Step] {
+        return try await request(
+            OperationInfo(service: "Steps", operation: "ListSteps", resourceType: "step", isMutation: false),
+            method: "GET",
+            path: "/\(accountId)/cards/\(cardNumber)/steps.json",
+            retryConfig: Metadata.retryConfig(for: "ListSteps")
+        )
+    }
+
     public func update(accountId: String, cardNumber: Int, stepId: String, req: UpdateStepRequest) async throws -> Step {
         return try await request(
             OperationInfo(service: "Steps", operation: "UpdateStep", resourceType: "step", isMutation: true),

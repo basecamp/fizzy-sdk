@@ -48,6 +48,24 @@ public final class BoardsService: BaseService, @unchecked Sendable {
         )
     }
 
+    public func publishBoard(accountId: String, boardId: String) async throws {
+        try await requestVoid(
+            OperationInfo(service: "Boards", operation: "PublishBoard", resourceType: "resource", isMutation: true),
+            method: "POST",
+            path: "/\(accountId)/boards/\(boardId)/publication.json",
+            retryConfig: Metadata.retryConfig(for: "PublishBoard")
+        )
+    }
+
+    public func unpublishBoard(accountId: String, boardId: String) async throws {
+        try await requestVoid(
+            OperationInfo(service: "Boards", operation: "UnpublishBoard", resourceType: "resource", isMutation: true),
+            method: "DELETE",
+            path: "/\(accountId)/boards/\(boardId)/publication.json",
+            retryConfig: Metadata.retryConfig(for: "UnpublishBoard")
+        )
+    }
+
     public func update(accountId: String, boardId: String, req: UpdateBoardRequest) async throws -> Board {
         return try await request(
             OperationInfo(service: "Boards", operation: "UpdateBoard", resourceType: "board", isMutation: true),

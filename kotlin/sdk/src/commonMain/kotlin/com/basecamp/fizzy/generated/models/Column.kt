@@ -15,5 +15,5 @@ data class Column(
     val id: String,
     val name: String,
     @SerialName("created_at") val createdAt: String,
-    val color: String? = null
+    val color: Color? = null
 )

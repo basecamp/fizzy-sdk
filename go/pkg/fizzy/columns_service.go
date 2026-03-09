@@ -52,6 +52,18 @@ func (s *ColumnsService) List(ctx context.Context, boardID string) ([]generated.
 	return result, resp, nil
 }
 
+// MoveLeft performs the MoveLeft operation on a column.
+func (s *ColumnsService) MoveLeft(ctx context.Context, columnID string) (*Response, error) {
+	resp, err := s.client.Post(WithIdempotent(ctx), fmt.Sprintf("/columns/%s/left_position.json", columnID), nil)
+	return resp, err
+}
+
+// MoveRight performs the MoveRight operation on a column.
+func (s *ColumnsService) MoveRight(ctx context.Context, columnID string) (*Response, error) {
+	resp, err := s.client.Post(WithIdempotent(ctx), fmt.Sprintf("/columns/%s/right_position.json", columnID), nil)
+	return resp, err
+}
+
 // Update updates a column.
 func (s *ColumnsService) Update(ctx context.Context, boardID string, columnID string, req *generated.UpdateColumnRequest) (*generated.Column, *Response, error) {
 	resp, err := s.client.Patch(ctx, fmt.Sprintf("/boards/%s/columns/%s", boardID, columnID), req)

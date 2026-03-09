@@ -4,7 +4,7 @@ import Foundation
 public struct Comment: Codable, Sendable {
     public let body: RichTextBody
     public let createdAt: String
-    public let creator: UserSummary
+    public let creator: User
     public let id: String
     public let updatedAt: String
     public let url: String
@@ -14,7 +14,7 @@ public struct Comment: Codable, Sendable {
     public init(
         body: RichTextBody,
         createdAt: String,
-        creator: UserSummary,
+        creator: User,
         id: String,
         updatedAt: String,
         url: String,

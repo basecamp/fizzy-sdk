@@ -80,9 +80,14 @@ type RequestRecord struct {
 // These operations should use fizzy.WithNoRetry(ctx) to disable retry.
 var noRetryOps map[string]bool
 
+// idempotentPostOps holds POST operation names marked idempotent in the behavior model.
+// These operations should use fizzy.WithIdempotent(ctx) to enable retry.
+var idempotentPostOps map[string]bool
+
 type behaviorModel struct {
 	Operations map[string]struct {
-		Retry struct {
+		Idempotent bool `json:"idempotent"`
+		Retry      struct {
 			RetryOn json.RawMessage `json:"retry_on"`
 		} `json:"retry"`
 	} `json:"operations"`
@@ -137,16 +142,65 @@ func loadNoRetryOps(behaviorPath, openapiPath string) map[string]bool {
 	return result
 }
 
+func loadIdempotentPostOps(behaviorPath, openapiPath string) map[string]bool {
+	result := map[string]bool{}
+
+	bData, err := os.ReadFile(behaviorPath)
+	if err != nil {
+		return result
+	}
+	var bm behaviorModel
+	if err := json.Unmarshal(bData, &bm); err != nil {
+		return result
+	}
+
+	oData, err := os.ReadFile(openapiPath)
+	if err != nil {
+		return result
+	}
+	var spec struct {
+		Paths map[string]map[string]struct {
+			OperationID string `json:"operationId"`
+		} `json:"paths"`
+	}
+	if err := json.Unmarshal(oData, &spec); err != nil {
+		return result
+	}
+
+	opMethods := map[string]string{}
+	for _, methods := range spec.Paths {
+		for method, op := range methods {
+			if op.OperationID != "" {
+				opMethods[op.OperationID] = strings.ToUpper(method)
+			}
+		}
+	}
+
+	for opID, entry := range bm.Operations {
+		if entry.Idempotent {
+			if m, ok := opMethods[opID]; ok && m == "POST" {
+				result[opID] = true
+			}
+		}
+	}
+
+	return result
+}
+
 func main() {
 	testsDir := "../../tests/"
 	if len(os.Args) > 1 {
 		testsDir = os.Args[1]
 	}
 
-	// Load behavior model to determine which operations need WithNoRetry.
+	// Load behavior model to determine which operations need WithNoRetry or WithIdempotent.
 	// behavior-model.json and openapi.json are at the repo root (3 levels up from runner dir).
 	repoRoot := filepath.Join(testsDir, "..", "..")
 	noRetryOps = loadNoRetryOps(
+		filepath.Join(repoRoot, "behavior-model.json"),
+		filepath.Join(repoRoot, "openapi.json"),
+	)
+	idempotentPostOps = loadIdempotentPostOps(
 		filepath.Join(repoRoot, "behavior-model.json"),
 		filepath.Join(repoRoot, "openapi.json"),
 	)
@@ -187,18 +241,20 @@ func main() {
 
 		for _, tc := range cases {
 			result, records := runTest(tc)
-			ok := checkAssertions(tc, result, records)
-			if ok {
+			switch checkAssertions(tc, result, records) {
+			case assertPass:
 				fmt.Printf("  PASS  %s\n", tc.Name)
 				passed++
-			} else {
+			case assertSkip:
+				fmt.Printf("  SKIP  %s\n", tc.Name)
+				skipped++
+			case assertFail:
 				fmt.Printf("  FAIL  %s\n", tc.Name)
 				failed++
 			}
 		}
 	}
 
-	_ = skipped
 	fmt.Printf("\n%d passed, %d failed, %d skipped\n", passed, failed, skipped)
 	if failed > 0 {
 		os.Exit(1)
@@ -477,6 +533,10 @@ func executeSingle(ctx context.Context, client *fizzy.Client, tc TestCase, path 
 	if noRetryOps[tc.Operation] {
 		ctx = fizzy.WithNoRetry(ctx)
 	}
+	// Wrap ctx with WithIdempotent for POST operations marked idempotent
+	if idempotentPostOps[tc.Operation] {
+		ctx = fizzy.WithIdempotent(ctx)
+	}
 
 	var body any
 	if tc.RequestBody != nil {
@@ -538,30 +598,51 @@ func asFizzyError(err error) (*fizzy.Error, bool) {
 	return nil, false
 }
 
+// assertResult represents the outcome of checking a single assertion.
+type assertResult int
+
+const (
+	assertPass assertResult = iota
+	assertFail
+	assertSkip
+)
+
 // checkAssertions validates all assertions for a test case.
-func checkAssertions(tc TestCase, result *ExecResult, records []RequestRecord) bool {
-	allPassed := true
+// Returns pass, fail, or skip. A test is skipped only when every assertion was skipped.
+func checkAssertions(tc TestCase, result *ExecResult, records []RequestRecord) assertResult {
+	anyFailed := false
+	anyEvaluated := false
 
 	for _, a := range tc.Assertions {
-		if !checkAssertion(tc, a, result, records) {
-			allPassed = false
+		switch checkAssertion(tc, a, result, records) {
+		case assertFail:
+			anyFailed = true
+			anyEvaluated = true
+		case assertPass:
+			anyEvaluated = true
 		}
 	}
 
-	return allPassed
+	if anyFailed {
+		return assertFail
+	}
+	if !anyEvaluated {
+		return assertSkip
+	}
+	return assertPass
 }
 
 // checkAssertion validates a single assertion.
-func checkAssertion(tc TestCase, a Assertion, result *ExecResult, records []RequestRecord) bool {
+func checkAssertion(tc TestCase, a Assertion, result *ExecResult, records []RequestRecord) assertResult {
 	switch a.Type {
 	case "requestCount":
 		expected := toInt(a.Expected)
 		actual := len(records)
 		if actual != expected {
 			fmt.Printf("    ASSERT FAIL [requestCount]: expected %d, got %d\n", expected, actual)
-			return false
+			return assertFail
 		}
-		return true
+		return assertPass
 
 	case "delayBetweenRequests":
 		minMs := a.Min
@@ -570,17 +651,17 @@ func checkAssertion(tc TestCase, a Assertion, result *ExecResult, records []Requ
 		}
 		if len(records) < 2 {
 			fmt.Printf("    ASSERT FAIL [delayBetweenRequests]: need at least 2 requests, got %d\n", len(records))
-			return false
+			return assertFail
 		}
 		for i := 1; i < len(records); i++ {
 			delay := records[i].Time.Sub(records[i-1].Time)
 			if delay.Milliseconds() < int64(minMs) {
 				fmt.Printf("    ASSERT FAIL [delayBetweenRequests]: delay between request %d and %d was %dms, expected >= %dms\n",
 					i, i+1, delay.Milliseconds(), minMs)
-				return false
+				return assertFail
 			}
 		}
-		return true
+		return assertPass
 
 	case "statusCode":
 		expected := toInt(a.Expected)
@@ -598,175 +679,175 @@ func checkAssertion(tc TestCase, a Assertion, result *ExecResult, records []Requ
 		}
 		if actual != expected {
 			fmt.Printf("    ASSERT FAIL [statusCode]: expected %d, got %d (err=%v)\n", expected, actual, result.err)
-			return false
+			return assertFail
 		}
-		return true
+		return assertPass
 
 	case "noError":
 		if result.err != nil {
 			fmt.Printf("    ASSERT FAIL [noError]: got error: %v\n", result.err)
-			return false
+			return assertFail
 		}
-		return true
+		return assertPass
 
 	case "errorCode":
 		expected := fmt.Sprint(a.Expected)
 		if result.err == nil {
 			fmt.Printf("    ASSERT FAIL [errorCode]: expected error with code %q, got no error\n", expected)
-			return false
+			return assertFail
 		}
 		apiErr, ok := asFizzyError(result.err)
 		if !ok {
 			fmt.Printf("    ASSERT FAIL [errorCode]: error is not *fizzy.Error: %T: %v\n", result.err, result.err)
-			return false
+			return assertFail
 		}
 		if apiErr.Code != expected {
 			fmt.Printf("    ASSERT FAIL [errorCode]: expected %q, got %q\n", expected, apiErr.Code)
-			return false
+			return assertFail
 		}
-		return true
+		return assertPass
 
 	case "errorField":
 		if result.err == nil {
 			fmt.Printf("    ASSERT FAIL [errorField]: expected error, got nil\n")
-			return false
+			return assertFail
 		}
 		apiErr, ok := asFizzyError(result.err)
 		if !ok {
 			fmt.Printf("    ASSERT FAIL [errorField]: error is not *fizzy.Error\n")
-			return false
+			return assertFail
 		}
 		expected := fmt.Sprint(a.Expected)
 		switch a.Path {
 		case "requestId":
 			if apiErr.RequestID != expected {
 				fmt.Printf("    ASSERT FAIL [errorField.requestId]: expected %q, got %q\n", expected, apiErr.RequestID)
-				return false
+				return assertFail
 			}
 		default:
 			fmt.Printf("    ASSERT FAIL [errorField]: unknown field path %q\n", a.Path)
-			return false
+			return assertFail
 		}
-		return true
+		return assertPass
 
 	case "headerPresent":
 		headerName := a.Path
 		if len(records) == 0 {
 			fmt.Printf("    ASSERT FAIL [headerPresent]: no requests recorded\n")
-			return false
+			return assertFail
 		}
 		last := records[len(records)-1]
 		if last.Header.Get(headerName) == "" {
 			fmt.Printf("    ASSERT FAIL [headerPresent]: header %q not present\n", headerName)
-			return false
+			return assertFail
 		}
-		return true
+		return assertPass
 
 	case "headerValue":
 		headerName := a.Path
 		expected := fmt.Sprint(a.Expected)
 		if len(records) == 0 {
 			fmt.Printf("    ASSERT FAIL [headerValue]: no requests recorded\n")
-			return false
+			return assertFail
 		}
 		last := records[len(records)-1]
 		actual := last.Header.Get(headerName)
 		if actual != expected {
 			fmt.Printf("    ASSERT FAIL [headerValue]: header %q expected %q, got mismatch (len=%d)\n", headerName, expected, len(actual))
-			return false
+			return assertFail
 		}
-		return true
+		return assertPass
 
 	case "requestPath":
 		expected := fmt.Sprint(a.Expected)
 		if len(records) == 0 {
 			fmt.Printf("    ASSERT FAIL [requestPath]: no requests recorded\n")
-			return false
+			return assertFail
 		}
 		// Use the first request for path assertion (the initial request, not retries)
 		first := records[0]
 		if first.Path != expected {
 			fmt.Printf("    ASSERT FAIL [requestPath]: expected %q, got %q\n", expected, first.Path)
-			return false
+			return assertFail
 		}
-		return true
+		return assertPass
 
 	case "requestQueryParam":
 		paramName := a.Path
 		expected := fmt.Sprint(a.Expected)
 		if len(records) == 0 {
 			fmt.Printf("    ASSERT FAIL [requestQueryParam]: no requests recorded\n")
-			return false
+			return assertFail
 		}
 		first := records[0]
 		vals, _ := url.ParseQuery(first.RawQuery)
 		actual := vals.Get(paramName)
 		if actual != expected {
 			fmt.Printf("    ASSERT FAIL [requestQueryParam]: param %q expected %q, got %q\n", paramName, expected, actual)
-			return false
+			return assertFail
 		}
-		return true
+		return assertPass
 
 	case "urlOrigin":
 		expected := fmt.Sprint(a.Expected)
 		if expected == "rejected" {
 			if result.err != nil {
-				return true
+				return assertPass
 			}
 			fmt.Printf("    ASSERT FAIL [urlOrigin]: expected error (rejected), got success\n")
-			return false
+			return assertFail
 		}
-		return true
+		return assertPass
 
 	case "responseMeta":
-		return true
+		return assertPass
 
 	case "responseBody":
-		return true
+		return assertPass
 
 	case "errorMessage":
 		if result.err == nil {
 			fmt.Printf("    ASSERT FAIL [errorMessage]: expected error, got nil\n")
-			return false
+			return assertFail
 		}
 		expected := fmt.Sprint(a.Expected)
 		if !strings.Contains(result.err.Error(), expected) {
 			fmt.Printf("    ASSERT FAIL [errorMessage]: expected message containing %q, got %q\n", expected, result.err.Error())
-			return false
+			return assertFail
 		}
-		return true
+		return assertPass
 
 	case "headerInjected":
-		return true
+		return assertPass
 
 	case "requestScheme":
 		if len(records) == 0 {
 			fmt.Printf("    ASSERT FAIL [requestScheme]: no requests recorded\n")
-			return false
+			return assertFail
 		}
-		return true
+		return assertPass
 
 	case "requestBodyField":
 		expected := fmt.Sprint(a.Expected)
 		if len(records) == 0 {
 			fmt.Printf("    ASSERT FAIL [requestBodyField]: no requests recorded\n")
-			return false
+			return assertFail
 		}
 		last := records[len(records)-1]
 		var bodyMap map[string]any
 		if err := json.Unmarshal(last.Body, &bodyMap); err != nil {
 			fmt.Printf("    ASSERT FAIL [requestBodyField]: could not parse request body: %v\n", err)
-			return false
+			return assertFail
 		}
 		if _, ok := bodyMap[expected]; !ok {
 			fmt.Printf("    ASSERT FAIL [requestBodyField]: field %q not found in request body (keys: %v)\n", expected, mapKeys(bodyMap))
-			return false
+			return assertFail
 		}
-		return true
+		return assertPass
 
 	default:
 		fmt.Printf("    ASSERT SKIP [%s]: unsupported assertion type\n", a.Type)
-		return true
+		return assertSkip
 	}
 }
 

@@ -1,6 +1,28 @@
 {
   "routes": [
     {
+      "pattern": "/my/access_tokens",
+      "resource": "unknown",
+      "operations": {
+        "GET": "ListAccessTokens",
+        "POST": "CreateAccessToken"
+      },
+      "params": {}
+    },
+    {
+      "pattern": "/my/access_tokens/{accessTokenId}",
+      "resource": "unknown",
+      "operations": {
+        "DELETE": "DeleteAccessToken"
+      },
+      "params": {
+        "accessTokenId": {
+          "role": "resource",
+          "type": "integer"
+        }
+      }
+    },
+    {
       "pattern": "/my/identity",
       "resource": "unknown",
       "operations": {
@@ -40,6 +62,78 @@
         "POST": "CompleteSignup"
       },
       "params": {}
+    },
+    {
+      "pattern": "/{accountId}/account/entropy",
+      "resource": "unknown",
+      "operations": {
+        "PATCH": "UpdateAccountEntropy"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        }
+      }
+    },
+    {
+      "pattern": "/{accountId}/account/exports",
+      "resource": "unknown",
+      "operations": {
+        "POST": "CreateAccountExport"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        }
+      }
+    },
+    {
+      "pattern": "/{accountId}/account/exports/{exportId}",
+      "resource": "unknown",
+      "operations": {
+        "GET": "GetAccountExport"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        },
+        "exportId": {
+          "role": "resource",
+          "type": "integer"
+        }
+      }
+    },
+    {
+      "pattern": "/{accountId}/account/join_code",
+      "resource": "unknown",
+      "operations": {
+        "DELETE": "ResetJoinCode",
+        "GET": "GetJoinCode",
+        "PATCH": "UpdateJoinCode"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        }
+      }
+    },
+    {
+      "pattern": "/{accountId}/account/settings",
+      "resource": "unknown",
+      "operations": {
+        "GET": "GetAccountSettings",
+        "PATCH": "UpdateAccountSettings"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        }
+      }
     },
     {
       "pattern": "/{accountId}/boards",
@@ -93,6 +187,57 @@
       }
     },
     {
+      "pattern": "/{accountId}/boards/{boardId}/columns/closed",
+      "resource": "unknown",
+      "operations": {
+        "GET": "ListClosedCards"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        },
+        "boardId": {
+          "role": "resource",
+          "type": "integer"
+        }
+      }
+    },
+    {
+      "pattern": "/{accountId}/boards/{boardId}/columns/not_now",
+      "resource": "unknown",
+      "operations": {
+        "GET": "ListPostponedCards"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        },
+        "boardId": {
+          "role": "resource",
+          "type": "integer"
+        }
+      }
+    },
+    {
+      "pattern": "/{accountId}/boards/{boardId}/columns/stream",
+      "resource": "unknown",
+      "operations": {
+        "GET": "ListStreamCards"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        },
+        "boardId": {
+          "role": "resource",
+          "type": "integer"
+        }
+      }
+    },
+    {
       "pattern": "/{accountId}/boards/{boardId}/columns/{columnId}",
       "resource": "unknown",
       "operations": {
@@ -110,6 +255,58 @@
           "type": "integer"
         },
         "columnId": {
+          "role": "resource",
+          "type": "integer"
+        }
+      }
+    },
+    {
+      "pattern": "/{accountId}/boards/{boardId}/entropy",
+      "resource": "unknown",
+      "operations": {
+        "PATCH": "UpdateBoardEntropy"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        },
+        "boardId": {
+          "role": "resource",
+          "type": "integer"
+        }
+      }
+    },
+    {
+      "pattern": "/{accountId}/boards/{boardId}/involvement",
+      "resource": "unknown",
+      "operations": {
+        "PATCH": "UpdateBoardInvolvement"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        },
+        "boardId": {
+          "role": "resource",
+          "type": "integer"
+        }
+      }
+    },
+    {
+      "pattern": "/{accountId}/boards/{boardId}/publication",
+      "resource": "unknown",
+      "operations": {
+        "DELETE": "UnpublishBoard",
+        "POST": "PublishBoard"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        },
+        "boardId": {
           "role": "resource",
           "type": "integer"
         }
@@ -421,6 +618,23 @@
       }
     },
     {
+      "pattern": "/{accountId}/cards/{cardNumber}/publish",
+      "resource": "unknown",
+      "operations": {
+        "POST": "PublishCard"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        },
+        "cardNumber": {
+          "role": "resource",
+          "type": "integer"
+        }
+      }
+    },
+    {
       "pattern": "/{accountId}/cards/{cardNumber}/reactions",
       "resource": "unknown",
       "operations": {
@@ -460,6 +674,24 @@
       }
     },
     {
+      "pattern": "/{accountId}/cards/{cardNumber}/reading",
+      "resource": "unknown",
+      "operations": {
+        "DELETE": "MarkCardUnread",
+        "POST": "MarkCardRead"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        },
+        "cardNumber": {
+          "role": "resource",
+          "type": "integer"
+        }
+      }
+    },
+    {
       "pattern": "/{accountId}/cards/{cardNumber}/self_assignment",
       "resource": "unknown",
       "operations": {
@@ -480,6 +712,7 @@
       "pattern": "/{accountId}/cards/{cardNumber}/steps",
       "resource": "unknown",
       "operations": {
+        "GET": "ListSteps",
         "POST": "CreateStep"
       },
       "params": {
@@ -570,6 +803,40 @@
       }
     },
     {
+      "pattern": "/{accountId}/columns/{columnId}/left_position",
+      "resource": "unknown",
+      "operations": {
+        "POST": "MoveColumnLeft"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        },
+        "columnId": {
+          "role": "resource",
+          "type": "integer"
+        }
+      }
+    },
+    {
+      "pattern": "/{accountId}/columns/{columnId}/right_position",
+      "resource": "unknown",
+      "operations": {
+        "POST": "MoveColumnRight"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        },
+        "columnId": {
+          "role": "resource",
+          "type": "integer"
+        }
+      }
+    },
+    {
       "pattern": "/{accountId}/devices",
       "resource": "unknown",
       "operations": {
@@ -626,6 +893,20 @@
       }
     },
     {
+      "pattern": "/{accountId}/notifications/settings",
+      "resource": "unknown",
+      "operations": {
+        "GET": "GetNotificationSettings",
+        "PATCH": "UpdateNotificationSettings"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        }
+      }
+    },
+    {
       "pattern": "/{accountId}/notifications/tray",
       "resource": "unknown",
       "operations": {
@@ -670,6 +951,19 @@
       }
     },
     {
+      "pattern": "/{accountId}/search",
+      "resource": "unknown",
+      "operations": {
+        "GET": "SearchCards"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        }
+      }
+    },
+    {
       "pattern": "/{accountId}/tags",
       "resource": "unknown",
       "operations": {
@@ -702,6 +996,78 @@
         "DELETE": "DeactivateUser",
         "GET": "GetUser",
         "PATCH": "UpdateUser"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        },
+        "userId": {
+          "role": "resource",
+          "type": "integer"
+        }
+      }
+    },
+    {
+      "pattern": "/{accountId}/users/{userId}/avatar",
+      "resource": "unknown",
+      "operations": {
+        "DELETE": "DeleteUserAvatar"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        },
+        "userId": {
+          "role": "resource",
+          "type": "integer"
+        }
+      }
+    },
+    {
+      "pattern": "/{accountId}/users/{userId}/push_subscriptions",
+      "resource": "unknown",
+      "operations": {
+        "POST": "CreatePushSubscription"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        },
+        "userId": {
+          "role": "resource",
+          "type": "integer"
+        }
+      }
+    },
+    {
+      "pattern": "/{accountId}/users/{userId}/push_subscriptions/{pushSubscriptionId}",
+      "resource": "unknown",
+      "operations": {
+        "DELETE": "DeletePushSubscription"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        },
+        "userId": {
+          "role": "resource",
+          "type": "integer"
+        },
+        "pushSubscriptionId": {
+          "role": "resource",
+          "type": "integer"
+        }
+      }
+    },
+    {
+      "pattern": "/{accountId}/users/{userId}/role",
+      "resource": "unknown",
+      "operations": {
+        "PATCH": "UpdateUserRole"
       },
       "params": {
         "accountId": {

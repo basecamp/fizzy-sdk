@@ -7,6 +7,36 @@ module Fizzy
     # @generated from OpenAPI spec
     class CardsService < BaseService
 
+      # list_closed_cards operation
+      # @param account_id [String] account id ID
+      # @param board_id [String] board id ID
+      # @return [Enumerator<Hash>] paginated results
+      def list_closed_cards(account_id:, board_id:)
+        wrap_paginated(service: "cards", operation: "ListClosedCards", is_mutation: false, resource_id: board_id) do
+          paginate("/#{account_id}/boards/#{board_id}/columns/closed.json")
+        end
+      end
+
+      # list_postponed_cards operation
+      # @param account_id [String] account id ID
+      # @param board_id [String] board id ID
+      # @return [Enumerator<Hash>] paginated results
+      def list_postponed_cards(account_id:, board_id:)
+        wrap_paginated(service: "cards", operation: "ListPostponedCards", is_mutation: false, resource_id: board_id) do
+          paginate("/#{account_id}/boards/#{board_id}/columns/not_now.json")
+        end
+      end
+
+      # list_stream_cards operation
+      # @param account_id [String] account id ID
+      # @param board_id [String] board id ID
+      # @return [Enumerator<Hash>] paginated results
+      def list_stream_cards(account_id:, board_id:)
+        wrap_paginated(service: "cards", operation: "ListStreamCards", is_mutation: false, resource_id: board_id) do
+          paginate("/#{account_id}/boards/#{board_id}/columns/stream.json")
+        end
+      end
+
       # list operation
       # @param account_id [String] account id ID
       # @param board_id [String, nil] board id
@@ -107,7 +137,7 @@ module Fizzy
       # @return [void]
       def close(account_id:, card_number:)
         with_operation(service: "cards", operation: "CloseCard", is_mutation: true, resource_id: card_number) do
-          http_post("/#{account_id}/cards/#{card_number}/closure.json")
+          http_post("/#{account_id}/cards/#{card_number}/closure.json", retryable: true)
           nil
         end
       end
@@ -129,7 +159,7 @@ module Fizzy
       # @return [void]
       def gold(account_id:, card_number:)
         with_operation(service: "cards", operation: "GoldCard", is_mutation: true, resource_id: card_number) do
-          http_post("/#{account_id}/cards/#{card_number}/goldness.json")
+          http_post("/#{account_id}/cards/#{card_number}/goldness.json", retryable: true)
           nil
         end
       end
@@ -162,7 +192,7 @@ module Fizzy
       # @return [void]
       def postpone(account_id:, card_number:)
         with_operation(service: "cards", operation: "PostponeCard", is_mutation: true, resource_id: card_number) do
-          http_post("/#{account_id}/cards/#{card_number}/not_now.json")
+          http_post("/#{account_id}/cards/#{card_number}/not_now.json", retryable: true)
           nil
         end
       end
@@ -173,7 +203,7 @@ module Fizzy
       # @return [void]
       def pin(account_id:, card_number:)
         with_operation(service: "cards", operation: "PinCard", is_mutation: true, resource_id: card_number) do
-          http_post("/#{account_id}/cards/#{card_number}/pin.json")
+          http_post("/#{account_id}/cards/#{card_number}/pin.json", retryable: true)
           nil
         end
       end
@@ -185,6 +215,17 @@ module Fizzy
       def unpin(account_id:, card_number:)
         with_operation(service: "cards", operation: "UnpinCard", is_mutation: true, resource_id: card_number) do
           http_delete("/#{account_id}/cards/#{card_number}/pin.json")
+          nil
+        end
+      end
+
+      # publish_card operation
+      # @param account_id [String] account id ID
+      # @param card_number [Integer] card number ID
+      # @return [void]
+      def publish_card(account_id:, card_number:)
+        with_operation(service: "cards", operation: "PublishCard", is_mutation: true, resource_id: card_number) do
+          http_post("/#{account_id}/cards/#{card_number}/publish.json")
           nil
         end
       end
@@ -219,7 +260,7 @@ module Fizzy
       # @return [void]
       def triage(account_id:, card_number:, column_id: nil)
         with_operation(service: "cards", operation: "TriageCard", is_mutation: true, resource_id: card_number) do
-          http_post("/#{account_id}/cards/#{card_number}/triage.json", body: compact_params(column_id: column_id))
+          http_post("/#{account_id}/cards/#{card_number}/triage.json", body: compact_params(column_id: column_id), retryable: true)
           nil
         end
       end
@@ -241,7 +282,7 @@ module Fizzy
       # @return [void]
       def watch(account_id:, card_number:)
         with_operation(service: "cards", operation: "WatchCard", is_mutation: true, resource_id: card_number) do
-          http_post("/#{account_id}/cards/#{card_number}/watch.json")
+          http_post("/#{account_id}/cards/#{card_number}/watch.json", retryable: true)
           nil
         end
       end
@@ -254,6 +295,17 @@ module Fizzy
         with_operation(service: "cards", operation: "UnwatchCard", is_mutation: true, resource_id: card_number) do
           http_delete("/#{account_id}/cards/#{card_number}/watch.json")
           nil
+        end
+      end
+
+      # search_cards operation
+      # @param account_id [String] account id ID
+      # @param q [String] q
+      # @return [Enumerator<Hash>] paginated results
+      def search_cards(account_id:, q:)
+        wrap_paginated(service: "cards", operation: "SearchCards", is_mutation: false, resource_id: account_id) do
+          params = compact_params(q: q)
+          paginate("/#{account_id}/search.json", params: params)
         end
       end
     end

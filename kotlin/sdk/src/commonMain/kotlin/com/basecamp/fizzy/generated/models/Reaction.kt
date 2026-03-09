@@ -14,6 +14,6 @@ import kotlinx.serialization.json.JsonObject
 data class Reaction(
     val id: String,
     val content: String,
-    val reacter: UserSummary,
+    val reacter: User,
     val url: String
 )

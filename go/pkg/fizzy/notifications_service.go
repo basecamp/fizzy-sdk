@@ -14,6 +14,19 @@ func (s *NotificationsService) BulkRead(ctx context.Context, req *generated.Bulk
 	return resp, err
 }
 
+// GetSettings returns settings.
+func (s *NotificationsService) GetSettings(ctx context.Context) (*generated.NotificationSettings, *Response, error) {
+	resp, err := s.client.Get(ctx, "/notifications/settings.json")
+	if err != nil {
+		return nil, nil, err
+	}
+	var result generated.NotificationSettings
+	if err := resp.UnmarshalData(&result); err != nil {
+		return nil, resp, err
+	}
+	return &result, resp, nil
+}
+
 // GetTray returns a tray.
 func (s *NotificationsService) GetTray(ctx context.Context, includeRead *bool) ([]generated.Notification, *Response, error) {
 	path := "/notifications/tray.json"
@@ -51,11 +64,17 @@ func (s *NotificationsService) List(ctx context.Context, path string) ([]generat
 
 // Read performs the Read operation on a notification.
 func (s *NotificationsService) Read(ctx context.Context, notificationID string) (*Response, error) {
-	resp, err := s.client.Post(ctx, fmt.Sprintf("/notifications/%s/reading.json", notificationID), nil)
+	resp, err := s.client.Post(WithIdempotent(ctx), fmt.Sprintf("/notifications/%s/reading.json", notificationID), nil)
 	return resp, err
 }
 
 // Unread performs the Unread operation on a notification.
 func (s *NotificationsService) Unread(ctx context.Context, notificationID string) (*Response, error) {
 	return s.client.Delete(ctx, fmt.Sprintf("/notifications/%s/reading.json", notificationID))
+}
+
+// UpdateSettings updates settings.
+func (s *NotificationsService) UpdateSettings(ctx context.Context, req *generated.UpdateNotificationSettingsRequest) (*Response, error) {
+	resp, err := s.client.Patch(ctx, "/notifications/settings.json", req)
+	return resp, err
 }

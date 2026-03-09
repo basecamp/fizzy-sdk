@@ -6,6 +6,26 @@
  */
 
 export const PATH_TO_OPERATION: Record<string, string> = {
+  // Other
+  "PATCH:/{accountId}/account/entropy.json": "UpdateAccountEntropy",
+  "POST:/{accountId}/account/exports.json": "CreateAccountExport",
+  "GET:/{accountId}/account/exports/{exportId}": "GetAccountExport",
+  "DELETE:/{accountId}/account/join_code.json": "ResetJoinCode",
+  "GET:/{accountId}/account/join_code.json": "GetJoinCode",
+  "PATCH:/{accountId}/account/join_code.json": "UpdateJoinCode",
+  "GET:/{accountId}/account/settings.json": "GetAccountSettings",
+  "PATCH:/{accountId}/account/settings.json": "UpdateAccountSettings",
+  "POST:/{accountId}/rails/active_storage/direct_uploads": "CreateDirectUpload",
+  "GET:/{accountId}/search.json": "SearchCards",
+  "GET:/my/access_tokens.json": "ListAccessTokens",
+  "POST:/my/access_tokens.json": "CreateAccessToken",
+  "DELETE:/my/access_tokens/{accessTokenId}": "DeleteAccessToken",
+  "GET:/my/identity.json": "GetMyIdentity",
+  "DELETE:/session.json": "DestroySession",
+  "POST:/session.json": "CreateSession",
+  "POST:/session/magic_link.json": "RedeemMagicLink",
+  "POST:/signup/completion.json": "CompleteSignup",
+
   // Boards
   "GET:/{accountId}/boards.json": "ListBoards",
   "POST:/{accountId}/boards.json": "CreateBoard",
@@ -17,6 +37,13 @@ export const PATH_TO_OPERATION: Record<string, string> = {
   "DELETE:/{accountId}/boards/{boardId}/columns/{columnId}": "DeleteColumn",
   "GET:/{accountId}/boards/{boardId}/columns/{columnId}": "GetColumn",
   "PATCH:/{accountId}/boards/{boardId}/columns/{columnId}": "UpdateColumn",
+  "GET:/{accountId}/boards/{boardId}/columns/closed.json": "ListClosedCards",
+  "GET:/{accountId}/boards/{boardId}/columns/not_now.json": "ListPostponedCards",
+  "GET:/{accountId}/boards/{boardId}/columns/stream.json": "ListStreamCards",
+  "PATCH:/{accountId}/boards/{boardId}/entropy.json": "UpdateBoardEntropy",
+  "PATCH:/{accountId}/boards/{boardId}/involvement.json": "UpdateBoardInvolvement",
+  "DELETE:/{accountId}/boards/{boardId}/publication.json": "UnpublishBoard",
+  "POST:/{accountId}/boards/{boardId}/publication.json": "PublishBoard",
   "GET:/{accountId}/boards/{boardId}/webhooks.json": "ListWebhooks",
   "POST:/{accountId}/boards/{boardId}/webhooks.json": "CreateWebhook",
   "DELETE:/{accountId}/boards/{boardId}/webhooks/{webhookId}": "DeleteWebhook",
@@ -40,6 +67,9 @@ export const PATH_TO_OPERATION: Record<string, string> = {
   "POST:/{accountId}/cards/{cardNumber}/not_now.json": "PostponeCard",
   "DELETE:/{accountId}/cards/{cardNumber}/pin.json": "UnpinCard",
   "POST:/{accountId}/cards/{cardNumber}/pin.json": "PinCard",
+  "POST:/{accountId}/cards/{cardNumber}/publish.json": "PublishCard",
+  "DELETE:/{accountId}/cards/{cardNumber}/reading.json": "MarkCardUnread",
+  "POST:/{accountId}/cards/{cardNumber}/reading.json": "MarkCardRead",
   "POST:/{accountId}/cards/{cardNumber}/self_assignment.json": "SelfAssignCard",
   "POST:/{accountId}/cards/{cardNumber}/taggings.json": "TagCard",
   "DELETE:/{accountId}/cards/{cardNumber}/triage.json": "UnTriageCard",
@@ -63,10 +93,15 @@ export const PATH_TO_OPERATION: Record<string, string> = {
   "DELETE:/{accountId}/cards/{cardNumber}/reactions/{reactionId}": "DeleteCardReaction",
 
   // Steps
+  "GET:/{accountId}/cards/{cardNumber}/steps.json": "ListSteps",
   "POST:/{accountId}/cards/{cardNumber}/steps.json": "CreateStep",
   "DELETE:/{accountId}/cards/{cardNumber}/steps/{stepId}": "DeleteStep",
   "GET:/{accountId}/cards/{cardNumber}/steps/{stepId}": "GetStep",
   "PATCH:/{accountId}/cards/{cardNumber}/steps/{stepId}": "UpdateStep",
+
+  // Columns
+  "POST:/{accountId}/columns/{columnId}/left_position.json": "MoveColumnLeft",
+  "POST:/{accountId}/columns/{columnId}/right_position.json": "MoveColumnRight",
 
   // Devices
   "POST:/{accountId}/devices": "RegisterDevice",
@@ -77,15 +112,9 @@ export const PATH_TO_OPERATION: Record<string, string> = {
   "DELETE:/{accountId}/notifications/{notificationId}/reading.json": "UnreadNotification",
   "POST:/{accountId}/notifications/{notificationId}/reading.json": "ReadNotification",
   "POST:/{accountId}/notifications/bulk_reading.json": "BulkReadNotifications",
+  "GET:/{accountId}/notifications/settings.json": "GetNotificationSettings",
+  "PATCH:/{accountId}/notifications/settings.json": "UpdateNotificationSettings",
   "GET:/{accountId}/notifications/tray.json": "GetNotificationTray",
-
-  // Other
-  "POST:/{accountId}/rails/active_storage/direct_uploads": "CreateDirectUpload",
-  "GET:/my/identity.json": "GetMyIdentity",
-  "DELETE:/session.json": "DestroySession",
-  "POST:/session.json": "CreateSession",
-  "POST:/session/magic_link.json": "RedeemMagicLink",
-  "POST:/signup/completion.json": "CompleteSignup",
 
   // Tags
   "GET:/{accountId}/tags.json": "ListTags",
@@ -95,6 +124,10 @@ export const PATH_TO_OPERATION: Record<string, string> = {
   "DELETE:/{accountId}/users/{userId}": "DeactivateUser",
   "GET:/{accountId}/users/{userId}": "GetUser",
   "PATCH:/{accountId}/users/{userId}": "UpdateUser",
+  "DELETE:/{accountId}/users/{userId}/avatar": "DeleteUserAvatar",
+  "POST:/{accountId}/users/{userId}/push_subscriptions.json": "CreatePushSubscription",
+  "DELETE:/{accountId}/users/{userId}/push_subscriptions/{pushSubscriptionId}": "DeletePushSubscription",
+  "PATCH:/{accountId}/users/{userId}/role.json": "UpdateUserRole",
 
   // Pins
   "GET:/my/pins.json": "ListPins",

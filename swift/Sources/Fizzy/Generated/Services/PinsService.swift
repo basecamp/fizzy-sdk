@@ -2,7 +2,7 @@
 import Foundation
 
 public final class PinsService: BaseService, @unchecked Sendable {
-    public func list() async throws -> [Pin] {
+    public func list() async throws -> [Card] {
         return try await request(
             OperationInfo(service: "Pins", operation: "ListPins", resourceType: "pin", isMutation: false),
             method: "GET",

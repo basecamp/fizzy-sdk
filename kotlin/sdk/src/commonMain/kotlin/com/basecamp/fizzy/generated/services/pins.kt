@@ -15,7 +15,7 @@ class PinsService(client: AccountClient) : BaseService(client) {
     /**
      * list operation
      */
-    suspend fun list(): List<Pin> {
+    suspend fun list(): List<Card> {
         val info = OperationInfo(
             service = "Pins",
             operation = "ListPins",
@@ -27,7 +27,7 @@ class PinsService(client: AccountClient) : BaseService(client) {
         return request(info, {
             httpGetRoot("/my/pins.json", operationName = info.operation)
         }) { body ->
-            json.decodeFromString<List<Pin>>(body)
+            json.decodeFromString<List<Card>>(body)
         }
     }
 }

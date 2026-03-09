@@ -94,8 +94,8 @@ internal class FizzyHttpClient(
 
         val status = response.status.value
 
-        // Determine retry eligibility: safe HTTP methods (GET, PUT, DELETE, HEAD) are
-        // always retryable, and the per-operation `idempotent` flag can upgrade others.
+        // Determine retry eligibility: safe HTTP methods (GET, PUT, PATCH, DELETE, HEAD)
+        // are always retryable, and the per-operation `idempotent` flag can upgrade others.
         val opConfig = operationName?.let { Metadata.operations[it] }
         val opRetry = opConfig?.retry
         val isRetryable = method in IDEMPOTENT_METHODS || opConfig?.idempotent == true

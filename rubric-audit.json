@@ -1,9 +1,9 @@
 {
   "profile": "full-sdk",
-  "date": "2026-03-04",
+  "date": "2026-03-08",
   "reviewer": "agent:rubric-audit",
   "criteria": {
-    "1A.6": { "pass": true, "note": "All 70 operations generated from Smithy model via per-language generators" },
+    "1A.6": { "pass": true, "note": "All 102 operations generated from Smithy model via per-language generators" },
     "1B.2": { "pass": true, "note": "Request/response types generated from OpenAPI schema, not hand-constructed" },
     "1B.4": { "pass": true, "note": "Optional fields use pointers (Go), optional (TS/Swift/Kotlin), nilable (Ruby)" },
     "1B.5": { "pass": true, "note": "ISO 8601 date strings used for all timestamp fields" },
@@ -17,7 +17,7 @@
     "3C.2": { "pass": true, "note": "Response body limited to 10MB in all languages" },
     "3C.3": { "pass": true, "note": "Error messages truncated to prevent unbounded memory" },
     "3C.4": { "pass": true, "note": "Authorization and Cookie headers redacted in all logging hooks" },
-    "4B.5": { "pass": true, "note": "All operations have corresponding conformance tests" },
+    "4B.5": { "pass": true, "note": "All 102 operations have corresponding conformance tests (111 test cases across 4 runners)" },
     "4C.4": { "pass": true, "note": "Release workflows are idempotent; Go sub-tag creation checks for existing tags" }
   }
 }

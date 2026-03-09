@@ -8,12 +8,12 @@ import (
 )
 
 // List returns pins.
-func (s *PinsService) List(ctx context.Context) ([]generated.Pin, *Response, error) {
+func (s *PinsService) List(ctx context.Context) ([]generated.Card, *Response, error) {
 	resp, err := s.client.Get(ctx, "/my/pins.json")
 	if err != nil {
 		return nil, nil, err
 	}
-	var result []generated.Pin
+	var result []generated.Card
 	if err := resp.UnmarshalData(&result); err != nil {
 		return nil, resp, err
 	}

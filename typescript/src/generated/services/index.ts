@@ -4,6 +4,7 @@ export * from "./columns.js";
 export * from "./comments.js";
 export * from "./devices.js";
 export * from "./identity.js";
+export * from "./miscellaneous.js";
 export * from "./notifications.js";
 export * from "./pins.js";
 export * from "./reactions.js";

@@ -150,6 +150,10 @@ class ConformanceRunner
       client.boards.update(account_id: account_id, board_id: pp["boardId"], **symbolize_body(body))
     when "DeleteBoard"
       client.boards.delete(account_id: account_id, board_id: pp["boardId"])
+    when "PublishBoard"
+      client.boards.publish_board(account_id: account_id, board_id: pp["boardId"])
+    when "UnpublishBoard"
+      client.boards.unpublish_board(account_id: account_id, board_id: pp["boardId"])
 
     # Cards
     when "ListCards"
@@ -195,6 +199,21 @@ class ConformanceRunner
       client.cards.watch(account_id: account_id, card_number: pp["cardNumber"])
     when "UnwatchCard"
       client.cards.unwatch(account_id: account_id, card_number: pp["cardNumber"])
+    when "ListStreamCards"
+      enum = client.cards.list_stream_cards(account_id: account_id, board_id: pp["boardId"])
+      dispatch_list(enum, tc)
+    when "ListPostponedCards"
+      enum = client.cards.list_postponed_cards(account_id: account_id, board_id: pp["boardId"])
+      dispatch_list(enum, tc)
+    when "ListClosedCards"
+      enum = client.cards.list_closed_cards(account_id: account_id, board_id: pp["boardId"])
+      dispatch_list(enum, tc)
+    when "PublishCard"
+      client.cards.publish_card(account_id: account_id, card_number: pp["cardNumber"])
+    when "SearchCards"
+      qp = tc["queryParams"] || {}
+      enum = client.cards.search_cards(account_id: account_id, q: qp["q"])
+      dispatch_list(enum, tc)
 
     # Columns
     when "ListColumns"
@@ -220,6 +239,8 @@ class ConformanceRunner
       client.comments.delete(account_id: account_id, card_number: pp["cardNumber"], comment_id: pp["commentId"])
 
     # Steps
+    when "ListSteps"
+      client.steps.list(account_id: account_id, card_number: pp["cardNumber"])
     when "CreateStep"
       client.steps.create(account_id: account_id, card_number: pp["cardNumber"], **symbolize_body(body))
     when "GetStep"
@@ -311,6 +332,66 @@ class ConformanceRunner
       client.devices.register(account_id: account_id, **symbolize_body(body))
     when "UnregisterDevice"
       client.devices.unregister(account_id: account_id, device_token: pp["deviceToken"].to_s)
+
+    # Miscellaneous — Access Tokens
+    when "ListAccessTokens"
+      client.miscellaneous.list_access_tokens
+    when "CreateAccessToken"
+      client.miscellaneous.create_access_token(**symbolize_body(body))
+    when "DeleteAccessToken"
+      client.miscellaneous.delete_access_token(access_token_id: pp["accessTokenId"].to_s)
+
+    # Miscellaneous — Account
+    when "UpdateAccountEntropy"
+      client.miscellaneous.update_account_entropy(account_id: account_id, **symbolize_body(body))
+    when "CreateAccountExport"
+      client.miscellaneous.create_account_export(account_id: account_id)
+    when "GetAccountExport"
+      client.miscellaneous.get_account_export(account_id: account_id, export_id: pp["exportId"].to_s)
+    when "GetJoinCode"
+      client.miscellaneous.get_join_code(account_id: account_id)
+    when "UpdateJoinCode"
+      client.miscellaneous.update_join_code(account_id: account_id, **symbolize_body(body))
+    when "ResetJoinCode"
+      client.miscellaneous.reset_join_code(account_id: account_id)
+    when "GetAccountSettings"
+      client.miscellaneous.get_account_settings(account_id: account_id)
+    when "UpdateAccountSettings"
+      client.miscellaneous.update_account_settings(account_id: account_id, **symbolize_body(body))
+
+    # Miscellaneous — Board extras
+    when "UpdateBoardEntropy"
+      client.miscellaneous.update_board_entropy(account_id: account_id, board_id: pp["boardId"], **symbolize_body(body))
+    when "UpdateBoardInvolvement"
+      client.miscellaneous.update_board_involvement(account_id: account_id, board_id: pp["boardId"], **symbolize_body(body))
+
+    # Miscellaneous — Card read/unread
+    when "MarkCardRead"
+      client.miscellaneous.mark_card_read(account_id: account_id, card_number: pp["cardNumber"])
+    when "MarkCardUnread"
+      client.miscellaneous.mark_card_unread(account_id: account_id, card_number: pp["cardNumber"])
+
+    # Miscellaneous — Column movement
+    when "MoveColumnLeft"
+      client.miscellaneous.move_column_left(account_id: account_id, column_id: pp["columnId"])
+    when "MoveColumnRight"
+      client.miscellaneous.move_column_right(account_id: account_id, column_id: pp["columnId"])
+
+    # Miscellaneous — Notification settings
+    when "GetNotificationSettings"
+      client.miscellaneous.get_notification_settings(account_id: account_id)
+    when "UpdateNotificationSettings"
+      client.miscellaneous.update_notification_settings(account_id: account_id, **symbolize_body(body))
+
+    # Miscellaneous — User extras
+    when "DeleteUserAvatar"
+      client.miscellaneous.delete_user_avatar(account_id: account_id, user_id: pp["userId"])
+    when "CreatePushSubscription"
+      client.miscellaneous.create_push_subscription(account_id: account_id, user_id: pp["userId"], **symbolize_body(body))
+    when "DeletePushSubscription"
+      client.miscellaneous.delete_push_subscription(account_id: account_id, user_id: pp["userId"], push_subscription_id: pp["pushSubscriptionId"].to_s)
+    when "UpdateUserRole"
+      client.miscellaneous.update_user_role(account_id: account_id, user_id: pp["userId"], **symbolize_body(body))
 
     else
       raise "Unknown operation: #{op}"

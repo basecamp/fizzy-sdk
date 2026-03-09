@@ -16,7 +16,7 @@ data class Comment(
     @SerialName("created_at") val createdAt: String,
     @SerialName("updated_at") val updatedAt: String,
     val body: RichTextBody,
-    val creator: UserSummary,
+    val creator: User,
     val url: String,
     val card: CardRef? = null,
     @SerialName("reactions_url") val reactionsUrl: String? = null

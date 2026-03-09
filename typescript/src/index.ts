@@ -138,7 +138,6 @@ export {
 export {
   NotificationsService,
   type Notification,
-  type NotificationTray,
 } from "./generated/services/notifications.js";
 
 export {
@@ -154,7 +153,6 @@ export {
 
 export {
   PinsService,
-  type Pin,
 } from "./generated/services/pins.js";
 
 export {
@@ -184,6 +182,20 @@ export {
   DevicesService,
   type RegisterDeviceRequest,
 } from "./generated/services/devices.js";
+
+// Miscellaneous service (access tokens, account/board settings, entropy, etc.)
+export {
+  MiscellaneousService,
+  type CreateAccessTokenRequest,
+  type UpdateAccountEntropyRequest,
+  type UpdateJoinCodeRequest,
+  type UpdateAccountSettingsRequest,
+  type UpdateBoardEntropyRequest,
+  type UpdateBoardInvolvementRequest,
+  type UpdateNotificationSettingsRequest,
+  type CreatePushSubscriptionRequest,
+  type UpdateUserRoleRequest,
+} from "./generated/services/miscellaneous.js";
 
 // =============================================================================
 // Webhook Receiving Infrastructure (hand-written, framework-agnostic)

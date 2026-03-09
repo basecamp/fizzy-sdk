@@ -17,5 +17,5 @@ data class Board(
     @SerialName("all_access") val allAccess: Boolean,
     @SerialName("created_at") val createdAt: String,
     val url: String,
-    val creator: UserSummary? = null
+    val creator: User? = null
 )

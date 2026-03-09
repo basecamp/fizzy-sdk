@@ -7,6 +7,16 @@ module Fizzy
     # @generated from OpenAPI spec
     class StepsService < BaseService
 
+      # list operation
+      # @param account_id [String] account id ID
+      # @param card_number [Integer] card number ID
+      # @return [Hash] response data
+      def list(account_id:, card_number:)
+        with_operation(service: "steps", operation: "ListSteps", is_mutation: false, resource_id: card_number) do
+          http_get("/#{account_id}/cards/#{card_number}/steps.json").json
+        end
+      end
+
       # create operation
       # @param account_id [String] account id ID
       # @param card_number [Integer] card number ID
