@@ -142,7 +142,7 @@ The SDK retries these operations on 503/5xx (naturally idempotent — calling tw
 - `ActivateWebhook` (POST)
 - `ReadNotification` (POST)
 
-The SDK does **not** retry: `CreateCard`, `CreateBoard`, `CreateComment`, `CreateStep`, `CreateWebhook`, `AssignCard`, `TagCard`, `PublishCard`, `DeactivateWebhook`, `CreateSession`, `CreateAccessToken`, `CreatePushSubscription`, `CreateAccountExport`.
+The SDK does **not** retry: `CreateCard`, `CreateBoard`, `CreateComment`, `CreateStep`, `CreateWebhook`, `AssignCard`, `TagCard`, `PublishCard`, `CreateSession`, `CreateAccessToken`, `CreatePushSubscription`, `CreateAccountExport`.
 
 ---
 
