@@ -1,0 +1,31 @@
+conformance/runner/typescript/runner.test.ts
+  15ed7f0034b85bec 11
+typescript/src/client.ts
+  15ed7f0034b85bec 107
+conformance/runner/typescript/package.json
+  15ed7f0034b85bec 9
+typescript/src/index.ts
+  15ed7f0034b85bec 8
+README.md
+  15ed7f0034b85bec 21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.9",
+  "base_commit_sha": "d6bfbd4e2f0bd3c383f9482c632ee5ddec3a0a63",
+  "prompts": {
+    "15ed7f0034b85bec": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4b367311-e4d7-47aa-a5cd-da77b8d9fa0d",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Jeremy Daer <jeremy@37signals.com>",
+      "messages": [],
+      "total_additions": 5,
+      "total_deletions": 5,
+      "accepted_lines": 5,
+      "overriden_lines": 0
+    }
+  }
+}
