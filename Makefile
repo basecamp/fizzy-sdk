@@ -304,7 +304,7 @@ conformance-go: conformance-build
 	@echo "==> Running Go conformance..."
 	cd conformance/runner/go && ./conformance-runner ../../tests/
 
-conformance-typescript:
+conformance-typescript: ts-build
 	@echo "==> Running TypeScript conformance..."
 	cd conformance/runner/typescript && npm ci && npm test
 
