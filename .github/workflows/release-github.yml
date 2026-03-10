@@ -1,105 +1,192 @@
-name: Release GitHub
+name: Create GitHub Release
 
 on:
   push:
-    tags: ['v*']
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to create release for'
+        description: 'Tag to release (e.g. v0.3.0). Required for manual runs.'
         required: true
-        type: string
 
 permissions:
   contents: write
+  actions: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
+  wait-for-publishes:
+    name: Wait for SDK publishes
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for all SDK release workflows
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          WORKFLOWS=("release-go.yml" "release-typescript.yml" "release-ruby.yml" "release-swift.yml" "release-kotlin.yml")
+          TAG="${GITHUB_REF#refs/tags/}"
+          MAX_WAIT=1800  # 30 minutes
+          POLL=30
+          ELAPSED=0
+
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            ALL_DONE=true
+            ANY_FAILED=false
+            STATUS_LINE=""
+
+            for WF in "${WORKFLOWS[@]}"; do
+              # Fetch recent runs and find the one matching this tag push
+              RUN_JSON=$(gh run list \
+                --repo "$GITHUB_REPOSITORY" \
+                --workflow "$WF" \
+                --branch "$TAG" \
+                --limit 5 \
+                --json conclusion,headSha \
+                --jq "[.[] | select(.headSha == \"$GITHUB_SHA\")] | .[0] // empty")
+
+              if [ -z "$RUN_JSON" ]; then
+                ALL_DONE=false
+                STATUS_LINE+="  ⏳ $WF: waiting for current run"$'\n'
+                continue
+              fi
+
+              CONCLUSION=$(echo "$RUN_JSON" | jq -r '.conclusion // empty')
+
+              if [ -z "$CONCLUSION" ]; then
+                ALL_DONE=false
+                STATUS_LINE+="  ⏳ $WF: in progress"$'\n'
+              elif [ "$CONCLUSION" = "success" ]; then
+                STATUS_LINE+="  ✅ $WF: success"$'\n'
+              else
+                ANY_FAILED=true
+                STATUS_LINE+="  ❌ $WF: $CONCLUSION"$'\n'
+              fi
+            done
+
+            echo "$STATUS_LINE"
+
+            if $ANY_FAILED; then
+              echo "::error::One or more SDK release workflows failed"
+              exit 1
+            fi
+
+            if $ALL_DONE; then
+              echo "All SDK release workflows completed successfully"
+              exit 0
+            fi
+
+            echo "Waiting ${POLL}s for remaining workflows... (${ELAPSED}s elapsed)"
+            sleep $POLL
+            ELAPSED=$((ELAPSED + POLL))
+          done
+
+          echo "::error::Timed out waiting for SDK release workflows after ${MAX_WAIT}s"
+          echo "Final status:"
+          echo "$STATUS_LINE"
+          exit 1
+
   release:
-    name: Create GitHub Release
+    name: Create Release
+    needs: [wait-for-publishes]
+    if: always() && (needs.wait-for-publishes.result == 'success' || needs.wait-for-publishes.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
 
-      - name: Determine tag
+      - name: Resolve tag
         id: tag
         env:
           EVENT_NAME: ${{ github.event_name }}
-          INPUT_TAG: ${{ inputs.tag }}
+          INPUT_TAG: ${{ github.event.inputs.tag }}
         run: |
-          if [[ "$EVENT_NAME" == "push" ]]; then
-            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          if [ "$EVENT_NAME" = "push" ]; then
+            TAG="${GITHUB_REF#refs/tags/}"
           else
-            echo "tag=$INPUT_TAG" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Wait for release workflows
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          WORKFLOWS="release-go release-typescript release-ruby release-kotlin release-swift"
-          MAX_WAIT=1800
-          POLL_INTERVAL=30
-          ELAPSED=0
-
-          for WORKFLOW in $WORKFLOWS; do
-            echo "Waiting for ${WORKFLOW}..."
-            while [ $ELAPSED -lt $MAX_WAIT ]; do
-              STATUS=$(gh run list --workflow="${WORKFLOW}.yml" --limit=1 --json headSha,conclusion -q ".[0] | select(.headSha == \"$GITHUB_SHA\") | .conclusion")
-              if [[ "$STATUS" == "success" ]]; then
-                echo "  ${WORKFLOW}: success"
-                break
-              elif [[ "$STATUS" == "failure" ]]; then
-                echo "::error::${WORKFLOW} failed"
-                exit 1
-              fi
-              sleep $POLL_INTERVAL
-              ELAPSED=$((ELAPSED + POLL_INTERVAL))
-            done
-
-            if [ $ELAPSED -ge $MAX_WAIT ]; then
-              echo "::error::Timed out waiting for ${WORKFLOW}"
+            TAG="$INPUT_TAG"
+            if [ -z "$TAG" ]; then
+              echo "::error::tag input is required for manual runs"
               exit 1
             fi
-          done
-
-      - name: Create release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ steps.tag.outputs.tag }}
-          EVENT_NAME: ${{ github.event_name }}
-        run: |
-          VERSION="${TAG#v}"
-
-          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
-            DRAFT="--draft"
-          else
-            DRAFT=""
+            if [[ "$TAG" != v* ]]; then
+              echo "::error::tag must start with 'v' (e.g. v0.3.0), got: $TAG"
+              exit 1
+            fi
           fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Resolved tag: $TAG"
 
-          gh release create "$TAG" $DRAFT --generate-notes --title "$TAG" --notes-start-tag "$TAG" --notes "## Installation
+      - name: Verify tag is on main
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          git fetch origin main
+          TAG_SHA=$(git rev-parse "refs/tags/${TAG}^{commit}" 2>/dev/null || git rev-parse "refs/tags/${TAG}^{}" 2>/dev/null)
+          git merge-base --is-ancestor "$TAG_SHA" origin/main
 
-          ### Go
-          \`\`\`
-          go get github.com/basecamp/fizzy-sdk/go@${TAG}
-          \`\`\`
+      - name: Extract version
+        id: version
+        env:
+          VERSION: ${{ steps.tag.outputs.tag }}
+        run: |
+          SEMVER="${VERSION#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "semver=$SEMVER" >> $GITHUB_OUTPUT
 
-          ### TypeScript
-          \`\`\`
-          npm install @basecamp/fizzy-sdk@${VERSION}
-          \`\`\`
+      - name: Checkout tag
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: git checkout "refs/tags/$TAG"
 
-          ### Ruby
-          \`\`\`
-          gem install fizzy-sdk -v ${VERSION}
-          \`\`\`
+      - name: Build installation body
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          SEMVER: ${{ steps.version.outputs.semver }}
+        run: |
+          {
+            echo "## Installation"
+            echo ""
+            echo "**Go**"
+            echo '```'
+            echo "go get github.com/basecamp/fizzy-sdk/go@${VERSION}"
+            echo '```'
+            echo ""
+            echo "**TypeScript**"
+            echo '```'
+            echo "npm install @37signals/fizzy@${SEMVER}"
+            echo '```'
+            echo ""
+            echo "**Ruby**"
+            echo '```'
+            echo "gem install fizzy-sdk -v ${SEMVER}"
+            echo '```'
+            echo ""
+            echo "**Swift**"
+            echo '```swift'
+            echo ".package(url: \"https://github.com/basecamp/fizzy-sdk.git\", from: \"${SEMVER}\")"
+            echo '```'
+            echo ""
+            echo "**Kotlin**"
+            echo '```kotlin'
+            echo "implementation(\"com.basecamp:fizzy-sdk:${SEMVER}\")"
+            echo '```'
+          } > body.md
 
-          ### Kotlin
-          \`\`\`kotlin
-          implementation(\"com.basecamp:fizzy-sdk:${VERSION}\")
-          \`\`\`
-
-          ### Swift
-          \`\`\`swift
-          .package(url: \"https://github.com/basecamp/fizzy-sdk.git\", from: \"${VERSION}\")
-          \`\`\`
-          "
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: Fizzy SDK ${{ steps.version.outputs.version }}
+          body_path: body.md
+          generate_release_notes: true
+          draft: ${{ github.event_name == 'workflow_dispatch' }}
+          prerelease: ${{ contains(steps.version.outputs.version, '-') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
