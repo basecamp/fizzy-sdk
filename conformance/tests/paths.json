@@ -309,12 +309,12 @@
     "operation": "CompleteSignup",
     "method": "POST",
     "path": "/signup/completion.json",
-    "requestBody": { "name": "Test User" },
+    "requestBody": { "full_name": "Test User" },
     "mockResponses": [
       {
-        "status": 200,
+        "status": 201,
         "headers": { "Content-Type": "application/json" },
-        "body": { "id": 1, "name": "Test User", "email_address": "test@example.com", "role": "member", "active": true, "url": "https://fizzy.do/users/1", "created_at": "2026-01-01T00:00:00Z" }
+        "body": null
       }
     ],
     "assertions": [

@@ -484,7 +484,10 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
             RedeemMagicLinkBody(token = body?.str("token") ?: ""),
         )
         "CompleteSignup" -> account.sessions.completeSignup(
-            CompleteSignupBody(name = body?.str("name") ?: ""),
+            CompleteSignupBody(fullName = body?.str("full_name") ?: ""),
+        )
+        "CompleteJoin" -> account.sessions.completeJoin(
+            CompleteJoinBody(name = body?.str("name") ?: ""),
         )
 
         // Steps
