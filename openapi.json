@@ -974,7 +974,7 @@
             }
         },
         "/{accountId}/account/entropy.json": {
-            "patch": {
+            "put": {
                 "operationId": "UpdateAccountEntropy",
                 "requestBody": {
                     "content": {
@@ -3372,7 +3372,7 @@
             }
         },
         "/{accountId}/boards/{boardId}/entropy.json": {
-            "patch": {
+            "put": {
                 "operationId": "UpdateBoardEntropy",
                 "requestBody": {
                     "content": {

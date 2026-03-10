@@ -113,7 +113,7 @@ export class MiscellaneousService extends BaseService {
         resourceType: "account_entropy",
         isMutation: true,
       },
-      () => this.client.PATCH("/account/entropy.json" as never, {
+      () => this.client.PUT("/account/entropy.json" as never, {
         body: { auto_postpone_period_in_days: body?.autoPostponePeriodInDays } as never,
       } as never),
     );
@@ -245,7 +245,7 @@ export class MiscellaneousService extends BaseService {
         resourceType: "board_entropy",
         isMutation: true,
       },
-      () => this.client.PATCH("/boards/{boardId}/entropy.json" as never, {
+      () => this.client.PUT("/boards/{boardId}/entropy.json" as never, {
         params: { path: { boardId } },
         body: { auto_postpone_period_in_days: body?.autoPostponePeriodInDays } as never,
       } as never),

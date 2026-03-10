@@ -75,7 +75,7 @@
       "pattern": "/{accountId}/account/entropy",
       "resource": "unknown",
       "operations": {
-        "PATCH": "UpdateAccountEntropy"
+        "PUT": "UpdateAccountEntropy"
       },
       "params": {
         "accountId": {
@@ -272,7 +272,7 @@
       "pattern": "/{accountId}/boards/{boardId}/entropy",
       "resource": "unknown",
       "operations": {
-        "PATCH": "UpdateBoardEntropy"
+        "PUT": "UpdateBoardEntropy"
       },
       "params": {
         "accountId": {

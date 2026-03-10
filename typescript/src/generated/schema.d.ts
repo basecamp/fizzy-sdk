@@ -140,12 +140,12 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
+        put: operations["UpdateAccountEntropy"];
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["UpdateAccountEntropy"];
+        patch?: never;
         trace?: never;
     };
     "/account/exports.json": {
@@ -332,12 +332,12 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
+        put: operations["UpdateBoardEntropy"];
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["UpdateBoardEntropy"];
+        patch?: never;
         trace?: never;
     };
     "/boards/{boardId}/involvement.json": {

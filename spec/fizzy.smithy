@@ -810,7 +810,8 @@ operation ResetJoinCode {
     errors: [UnauthorizedError, ForbiddenError]
 }
 
-@http(method: "PATCH", uri: "/{accountId}/account/entropy.json")
+@idempotent
+@http(method: "PUT", uri: "/{accountId}/account/entropy.json")
 @tags(["Account"])
 @fizzyIdempotent(natural: true)
 @fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
@@ -1054,7 +1055,8 @@ structure UpdateBoardInvolvementInput {
     involvement: String
 }
 
-@http(method: "PATCH", uri: "/{accountId}/boards/{boardId}/entropy.json")
+@idempotent
+@http(method: "PUT", uri: "/{accountId}/boards/{boardId}/entropy.json")
 @tags(["Boards"])
 @fizzyIdempotent(natural: true)
 @fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])

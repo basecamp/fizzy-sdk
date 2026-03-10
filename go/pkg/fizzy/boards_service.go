@@ -129,7 +129,7 @@ func (s *BoardsService) Update(ctx context.Context, boardID string, req *generat
 
 // UpdateEntropy updates an entropy.
 func (s *BoardsService) UpdateEntropy(ctx context.Context, boardID string, req *generated.UpdateBoardEntropyRequest) (*generated.Board, *Response, error) {
-	resp, err := s.client.Patch(ctx, fmt.Sprintf("/boards/%s/entropy.json", boardID), req)
+	resp, err := s.client.Put(ctx, fmt.Sprintf("/boards/%s/entropy.json", boardID), req)
 	if err != nil {
 		return nil, nil, err
 	}

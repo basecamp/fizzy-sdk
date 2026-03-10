@@ -67,7 +67,7 @@ func (s *AccountService) ResetJoinCode(ctx context.Context) (*Response, error) {
 
 // UpdateEntropy updates an entropy.
 func (s *AccountService) UpdateEntropy(ctx context.Context, req *generated.UpdateAccountEntropyRequest) (*generated.AccountSettings, *Response, error) {
-	resp, err := s.client.Patch(ctx, "/account/entropy.json", req)
+	resp, err := s.client.Put(ctx, "/account/entropy.json", req)
 	if err != nil {
 		return nil, nil, err
 	}

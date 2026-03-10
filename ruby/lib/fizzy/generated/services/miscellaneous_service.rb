@@ -41,7 +41,7 @@ module Fizzy
       # @return [Hash] response data
       def update_account_entropy(account_id:, auto_postpone_period_in_days: nil)
         with_operation(service: "miscellaneous", operation: "UpdateAccountEntropy", is_mutation: true, resource_id: account_id) do
-          http_patch("/#{account_id}/account/entropy.json", body: compact_params(auto_postpone_period_in_days: auto_postpone_period_in_days)).json
+          http_put("/#{account_id}/account/entropy.json", body: compact_params(auto_postpone_period_in_days: auto_postpone_period_in_days)).json
         end
       end
 
@@ -121,7 +121,7 @@ module Fizzy
       # @return [Hash] response data
       def update_board_entropy(account_id:, board_id:, auto_postpone_period_in_days: nil)
         with_operation(service: "miscellaneous", operation: "UpdateBoardEntropy", is_mutation: true, resource_id: board_id) do
-          http_patch("/#{account_id}/boards/#{board_id}/entropy.json", body: compact_params(auto_postpone_period_in_days: auto_postpone_period_in_days)).json
+          http_put("/#{account_id}/boards/#{board_id}/entropy.json", body: compact_params(auto_postpone_period_in_days: auto_postpone_period_in_days)).json
         end
       end
 

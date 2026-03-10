@@ -7,7 +7,7 @@
 
 export const PATH_TO_OPERATION: Record<string, string> = {
   // Other
-  "PATCH:/{accountId}/account/entropy.json": "UpdateAccountEntropy",
+  "PUT:/{accountId}/account/entropy.json": "UpdateAccountEntropy",
   "POST:/{accountId}/account/exports.json": "CreateAccountExport",
   "GET:/{accountId}/account/exports/{exportId}": "GetAccountExport",
   "DELETE:/{accountId}/account/join_code.json": "ResetJoinCode",
@@ -40,7 +40,7 @@ export const PATH_TO_OPERATION: Record<string, string> = {
   "GET:/{accountId}/boards/{boardId}/columns/closed.json": "ListClosedCards",
   "GET:/{accountId}/boards/{boardId}/columns/not_now.json": "ListPostponedCards",
   "GET:/{accountId}/boards/{boardId}/columns/stream.json": "ListStreamCards",
-  "PATCH:/{accountId}/boards/{boardId}/entropy.json": "UpdateBoardEntropy",
+  "PUT:/{accountId}/boards/{boardId}/entropy.json": "UpdateBoardEntropy",
   "PATCH:/{accountId}/boards/{boardId}/involvement.json": "UpdateBoardInvolvement",
   "DELETE:/{accountId}/boards/{boardId}/publication.json": "UnpublishBoard",
   "POST:/{accountId}/boards/{boardId}/publication.json": "PublishBoard",

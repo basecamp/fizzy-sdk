@@ -86,7 +86,7 @@ class MiscellaneousService(client: AccountClient) : BaseService(client) {
             resourceId = null,
         )
         return request(info, {
-            httpPatch("/account/entropy.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
+            httpPut("/account/entropy.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
                 body.autoPostponePeriodInDays?.let { put("auto_postpone_period_in_days", kotlinx.serialization.json.JsonPrimitive(it)) }
             }), operationName = info.operation)
         }) { body ->
@@ -243,7 +243,7 @@ class MiscellaneousService(client: AccountClient) : BaseService(client) {
             resourceId = null,
         )
         return request(info, {
-            httpPatch("/boards/${boardId}/entropy.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
+            httpPut("/boards/${boardId}/entropy.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
                 body.autoPostponePeriodInDays?.let { put("auto_postpone_period_in_days", kotlinx.serialization.json.JsonPrimitive(it)) }
             }), operationName = info.operation)
         }) { body ->
