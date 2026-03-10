@@ -1,0 +1,49 @@
+spec/fizzy.smithy
+  bdbd7d946a91cc8b 164,2832,2835-2840,2843,2845
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.9",
+  "base_commit_sha": "bc1b0efe0013966f110ef8d15521074b3ce8f65a",
+  "prompts": {
+    "0f91336343d32ae3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b696fdea-461b-4407-b67c-3c46999e63a6",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Jeremy Daer <jeremy@37signals.com>",
+      "messages": [],
+      "total_additions": 429,
+      "total_deletions": 253,
+      "accepted_lines": 344,
+      "overriden_lines": 0
+    },
+    "9ee8a309aa836b55": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "90f1d5dc-f8a2-4462-9968-61cb19304acd",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Jeremy Daer <jeremy@37signals.com>",
+      "messages": [],
+      "total_additions": 23,
+      "total_deletions": 2,
+      "accepted_lines": 21,
+      "overriden_lines": 0
+    },
+    "bdbd7d946a91cc8b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fe441a9e-d318-40f8-b625-76cdba41de85",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Jeremy Daer <jeremy@37signals.com>",
+      "messages": [],
+      "total_additions": 15,
+      "total_deletions": 7,
+      "accepted_lines": 15,
+      "overriden_lines": 0
+    }
+  }
+}
