@@ -1,0 +1,29 @@
+.github/workflows/release-kotlin.yml
+  15ed7f0034b85bec 74,84
+.github/workflows/release-typescript.yml
+  15ed7f0034b85bec 93,103,113,115,126,129
+.github/workflows/release-ruby.yml
+  15ed7f0034b85bec 77,87
+.github/workflows/release-github.yml
+  15ed7f0034b85bec 122,139-140
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.9",
+  "base_commit_sha": "09f1e9ab52fb13ab607888de331cb0fbee3f89e3",
+  "prompts": {
+    "15ed7f0034b85bec": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4b367311-e4d7-47aa-a5cd-da77b8d9fa0d",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Jeremy Daer <jeremy@37signals.com>",
+      "messages": [],
+      "total_additions": 13,
+      "total_deletions": 13,
+      "accepted_lines": 13,
+      "overriden_lines": 0
+    }
+  }
+}
