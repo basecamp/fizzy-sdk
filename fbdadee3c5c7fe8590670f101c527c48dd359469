@@ -1,0 +1,29 @@
+conformance/tests/paths.json
+  bdbd7d946a91cc8b 312,315,317
+conformance/runner/typescript/runner.test.ts
+  bdbd7d946a91cc8b 268-271
+kotlin/conformance/src/main/kotlin/com/basecamp/fizzy/conformance/Main.kt
+  bdbd7d946a91cc8b 487-490
+conformance/runner/ruby/runner.rb
+  bdbd7d946a91cc8b 325-326
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.9",
+  "base_commit_sha": "fbdadee3c5c7fe8590670f101c527c48dd359469",
+  "prompts": {
+    "bdbd7d946a91cc8b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fe441a9e-d318-40f8-b625-76cdba41de85",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Jeremy Daer <jeremy@37signals.com>",
+      "messages": [],
+      "total_additions": 13,
+      "total_deletions": 5,
+      "accepted_lines": 13,
+      "overriden_lines": 0
+    }
+  }
+}
