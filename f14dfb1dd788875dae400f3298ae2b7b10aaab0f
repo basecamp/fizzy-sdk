@@ -1,0 +1,23 @@
+.github/workflows/release-typescript.yml
+  15ed7f0034b85bec 79-80
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.9",
+  "base_commit_sha": "f14dfb1dd788875dae400f3298ae2b7b10aaab0f",
+  "prompts": {
+    "15ed7f0034b85bec": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4b367311-e4d7-47aa-a5cd-da77b8d9fa0d",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": null,
+      "messages": [],
+      "total_additions": 3,
+      "total_deletions": 3,
+      "accepted_lines": 11,
+      "overriden_lines": 0
+    }
+  }
+}
