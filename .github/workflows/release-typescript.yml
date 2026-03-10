@@ -134,7 +134,6 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           NPM_TAG: ${{ steps.npm-tag.outputs.tag }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}  # Bootstrap; remove after OIDC configured
         shell: bash
         run: |
           if [[ "$EVENT_NAME" == "push" ]]; then
