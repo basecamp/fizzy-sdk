@@ -18,7 +18,7 @@ boards, err := account.Boards.List(ctx, nil)
 ### TypeScript
 
 ```typescript
-import { createFizzyClient } from "@basecamp/fizzy-sdk";
+import { createFizzyClient } from "@37signals/fizzy";
 
 const client = createFizzyClient({ accessToken: "tok_..." });
 const account = client.forAccount("12345");

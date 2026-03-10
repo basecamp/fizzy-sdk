@@ -6,7 +6,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@basecamp/fizzy-sdk": "file:../../../typescript"
+    "@37signals/fizzy": "file:../../../typescript"
   },
   "devDependencies": {
     "vitest": "^3.0.0",
