@@ -1,5 +1,8 @@
-Generated /Users/jeremy/Work/basecamp/fizzy-sdk/ruby/lib/fizzy/generated/types.rb (119 types)
-e types provide structured access to API response data.
+# frozen_string_literal: true
+
+# @generated from OpenAPI spec — do not edit by hand
+#
+# These types provide structured access to API response data.
 # Each type is a Data.define (Ruby 3.2+) with keyword initialization.
 
 module Fizzy

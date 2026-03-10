@@ -11,8 +11,6 @@ all: check
 
 .PHONY: smithy-validate smithy-build smithy-check smithy-clean smithy-mapper
 
-MAVEN_ARTIFACT := $(HOME)/.m2/repository/com/basecamp/smithy-bare-arrays/1.0.0/smithy-bare-arrays-1.0.0.jar
-
 smithy-mapper:
 	@echo "==> Building Smithy mapper plugin..."
 	cd spec/smithy-bare-arrays && ./gradlew publishToMavenLocal --quiet
@@ -206,7 +204,7 @@ ts-clean:
 rb-generate:
 	@echo "==> Generating Ruby SDK types and metadata..."
 	cd ruby && ruby scripts/generate-metadata.rb > lib/fizzy/generated/metadata.json
-	cd ruby && ruby scripts/generate-types.rb > lib/fizzy/generated/types.rb
+	cd ruby && ruby scripts/generate-types.rb
 
 rb-generate-services:
 	@echo "==> Generating Ruby services..."
@@ -398,7 +396,7 @@ check-mvp: smithy-check behavior-model-check url-routes-check sync-api-version-c
 check-full: check-mvp provenance-check audit-check ts-check rb-check swift-check kt-check conformance
 	@echo "==> Full checks passed"
 
-check: smithy-check behavior-model-check url-routes-check sync-api-version-check provenance-check audit-check go-check ts-check rb-check swift-check kt-check conformance
+check: smithy-check behavior-model-check url-routes-check sync-api-version-check provenance-check audit-check go-check go-check-drift ts-check ts-check-drift rb-check rb-check-drift swift-check swift-check-drift kt-check kt-check-drift conformance
 	@echo "==> All checks passed"
 
 clean: smithy-clean go-clean ts-clean rb-clean swift-clean kt-clean
