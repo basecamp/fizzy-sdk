@@ -43,7 +43,7 @@ jobs:
       - name: Verify module path
         if: github.event_name == 'push'
         run: |
-          if ! grep -q "^module github.com/basecamp/fizzy-sdk/go" go.mod; then
+          if ! grep -q "^module github.com/basecamp/fizzy-sdk/go$" go.mod; then
             echo "::error::go.mod module path mismatch"
             exit 1
           fi
