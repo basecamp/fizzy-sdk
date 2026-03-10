@@ -4,80 +4,101 @@ set -euo pipefail
 # Generate behavior-model.json from the Smithy AST.
 # Input:  spec/build/smithy/source/model/model.json (Smithy AST)
 # Output: behavior-model.json
+#
+# Usage:
+#   ./scripts/generate-behavior-model           # generate to default path
+#   ./scripts/generate-behavior-model --check    # verify freshness (exit 1 if stale)
 
-AST="spec/build/smithy/source/model/model.json"
-OUTPUT="${1:-behavior-model.json}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+AST="$PROJECT_ROOT/spec/build/smithy/source/model/model.json"
 
 if [ ! -f "$AST" ]; then
   echo "ERROR: Smithy AST not found at $AST. Run 'make smithy-build' first." >&2
   exit 1
 fi
 
-jq '{
-  "$schema": "https://fizzy.do/schemas/behavior-model.json",
-  "version": "1.0.0",
-  "generated": true,
-  "operations": (
-    [.shapes | to_entries[] |
-      select(.value.type == "operation") |
-      {
-        key: (.key | split("#")[1]),
-        value: {
-          readonly: (if .value.traits["smithy.api#readonly"] != null then true else null end),
-          idempotent: (
-            if .value.traits["smithy.api#idempotent"] != null then true
-            elif .value.traits["fizzy.traits#fizzyIdempotent"] != null then true
-            else null end
-          ),
-          pagination: (
-            if .value.traits["fizzy.traits#fizzyPagination"] != null then
-              .value.traits["fizzy.traits#fizzyPagination"] | {
-                style: .style,
-                page_param: .pageParam,
-                max_page_size: .maxPageSize
-              }
-            else null end
-          ),
-          retry: (
-            if .value.traits["fizzy.traits#fizzyRetry"] != null then
-              .value.traits["fizzy.traits#fizzyRetry"] | {
-                max: .maxAttempts,
-                base_delay_ms: .baseDelayMs,
-                backoff: .backoff,
-                retry_on: .retryOn
-              }
-            else null end
-          )
-        } | with_entries(select(.value != null))
-      }
-    ] | from_entries
-  ),
-  "redaction": (
-    [.shapes | to_entries[] |
-      select(.value.type == "structure") |
-      select(.value.members != null) |
-      . as $shape |
-      [.value.members | to_entries[] |
-        select(.value.traits["fizzy.traits#fizzySensitive"] != null) |
+generate() {
+  local dest="$1"
+  jq '{
+    "$schema": "https://fizzy.do/schemas/behavior-model.json",
+    "version": "1.0.0",
+    "generated": true,
+    "operations": (
+      [.shapes | to_entries[] |
+        select(.value.type == "operation") |
         {
-          path: ("$." + .key),
-          category: .value.traits["fizzy.traits#fizzySensitive"].category,
-          redact: (.value.traits["fizzy.traits#fizzySensitive"].redact // false)
+          key: (.key | split("#")[1]),
+          value: {
+            readonly: (if .value.traits["smithy.api#readonly"] != null then true else null end),
+            idempotent: (
+              if .value.traits["smithy.api#idempotent"] != null then true
+              elif .value.traits["fizzy.traits#fizzyIdempotent"] != null then true
+              else null end
+            ),
+            pagination: (
+              if .value.traits["fizzy.traits#fizzyPagination"] != null then
+                .value.traits["fizzy.traits#fizzyPagination"] | {
+                  style: .style,
+                  page_param: .pageParam,
+                  max_page_size: .maxPageSize
+                }
+              else null end
+            ),
+            retry: (
+              if .value.traits["fizzy.traits#fizzyRetry"] != null then
+                .value.traits["fizzy.traits#fizzyRetry"] | {
+                  max: .maxAttempts,
+                  base_delay_ms: .baseDelayMs,
+                  backoff: .backoff,
+                  retry_on: .retryOn
+                }
+              else null end
+            )
+          } | with_entries(select(.value != null))
         }
-      ] |
-      select(length > 0) |
-      {
-        key: ($shape.key | split("#")[1]),
-        value: .
-      }
-    ] | from_entries
-  ),
-  "sensitiveTypes": (
-    [.shapes | to_entries[] |
-      select(.value.traits["smithy.api#sensitive"] != null) |
-      .key | split("#")[1]
-    ] | sort
-  )
-}' "$AST" > "$OUTPUT"
+      ] | from_entries
+    ),
+    "redaction": (
+      [.shapes | to_entries[] |
+        select(.value.type == "structure") |
+        select(.value.members != null) |
+        . as $shape |
+        [.value.members | to_entries[] |
+          select(.value.traits["fizzy.traits#fizzySensitive"] != null) |
+          {
+            path: ("$." + .key),
+            category: .value.traits["fizzy.traits#fizzySensitive"].category,
+            redact: (.value.traits["fizzy.traits#fizzySensitive"].redact // false)
+          }
+        ] |
+        select(length > 0) |
+        {
+          key: ($shape.key | split("#")[1]),
+          value: .
+        }
+      ] | from_entries
+    ),
+    "sensitiveTypes": (
+      [.shapes | to_entries[] |
+        select(.value.traits["smithy.api#sensitive"] != null) |
+        .key | split("#")[1]
+      ] | sort
+    )
+  }' "$AST" > "$dest"
+}
 
+if [ "${1:-}" = "--check" ]; then
+  TMPFILE=$(mktemp)
+  trap 'rm -f "$TMPFILE"' EXIT
+  generate "$TMPFILE"
+  diff -q "$PROJECT_ROOT/behavior-model.json" "$TMPFILE" > /dev/null 2>&1 || \
+    { echo "ERROR: behavior-model.json is out of date. Run 'make behavior-model'"; exit 1; }
+  echo "behavior-model.json is up to date"
+  exit 0
+fi
+
+OUTPUT="${1:-$PROJECT_ROOT/behavior-model.json}"
+generate "$OUTPUT"
 echo "Generated $OUTPUT"

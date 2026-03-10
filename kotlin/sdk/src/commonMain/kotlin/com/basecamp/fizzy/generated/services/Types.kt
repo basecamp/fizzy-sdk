@@ -202,6 +202,11 @@ data class RedeemMagicLinkBody(
 
 /** Request body for CompleteSignup. */
 data class CompleteSignupBody(
+    val fullName: String
+)
+
+/** Request body for CompleteJoin. */
+data class CompleteJoinBody(
     val name: String
 )
 

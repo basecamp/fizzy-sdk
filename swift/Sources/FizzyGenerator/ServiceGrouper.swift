@@ -46,6 +46,7 @@ private let operationServiceOverrides: [String: String] = [
     "CreateDirectUpload": "Uploads",
     "RedeemMagicLink": "Sessions",
     "CompleteSignup": "Sessions",
+    "CompleteJoin": "Sessions",
     "GetNotificationTray": "Notifications",
     "BulkReadNotifications": "Notifications",
     "DeleteCardImage": "Cards",

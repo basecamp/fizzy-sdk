@@ -1,8 +1,5 @@
-# frozen_string_literal: true
-
-# @generated from OpenAPI spec — do not edit by hand
-#
-# These types provide structured access to API response data.
+Generated /Users/jeremy/Work/basecamp/fizzy-sdk/ruby/lib/fizzy/generated/types.rb (119 types)
+e types provide structured access to API response data.
 # Each type is a Data.define (Ruby 3.2+) with keyword initialization.
 
 module Fizzy
@@ -189,7 +186,7 @@ module Fizzy
     end
 
     # @generated
-    CompleteSignupRequestContent = Data.define(:name) do
+    CompleteJoinRequestContent = Data.define(:name) do
       # @param data [Hash] raw JSON response
       def self.from_json(data)
         new(
@@ -199,7 +196,14 @@ module Fizzy
     end
 
     # @generated
-    CompleteSignupResponseContent = Data.define
+    CompleteSignupRequestContent = Data.define(:full_name) do
+      # @param data [Hash] raw JSON response
+      def self.from_json(data)
+        new(
+          full_name: data["full_name"]
+        )
+      end
+    end
 
     # @generated
     CreateAccessTokenRequestContent = Data.define(:description, :permission) do

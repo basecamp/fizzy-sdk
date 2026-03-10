@@ -17,6 +17,10 @@ export interface RedeemMagicLinkRequest {
 }
 
 export interface CompleteSignupRequest {
+  fullName: string;
+}
+
+export interface CompleteJoinRequest {
   /** Display name */
   name: string;
 }
@@ -76,7 +80,7 @@ export class SessionsService extends BaseService {
   /**
    * CompleteSignup
    */
-  async completeSignup(body: CompleteSignupRequest): Promise<components["schemas"]["User"]> {
+  async completeSignup(body: CompleteSignupRequest): Promise<void> {
     return this.request(
       {
         service: "Signup",
@@ -85,6 +89,23 @@ export class SessionsService extends BaseService {
         isMutation: true,
       },
       () => this.client.POST("/signup/completion.json" as never, {
+        body: { full_name: body.fullName } as never,
+      } as never),
+    );
+  }
+
+  /**
+   * CompleteJoin
+   */
+  async completeJoin(body: CompleteJoinRequest): Promise<void> {
+    return this.request(
+      {
+        service: "Join",
+        operation: "CompleteJoin",
+        resourceType: "join",
+        isMutation: true,
+      },
+      () => this.client.POST("/users/joins.json" as never, {
         body: { name: body.name } as never,
       } as never),
     );

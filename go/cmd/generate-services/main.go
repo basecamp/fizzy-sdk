@@ -147,6 +147,7 @@ var operationServiceOverrides = map[string]string{
 	"GetMyIdentity":         "Identity",
 	"CreateDirectUpload":    "Uploads",
 	"RedeemMagicLink":       "Sessions",
+	"CompleteJoin":          "Sessions",
 	"CompleteSignup":        "Sessions",
 	"GetNotificationTray":   "Notifications",
 	"BulkReadNotifications": "Notifications",
@@ -249,6 +250,7 @@ func deriveServiceName(opID string) string {
 var methodNameOverrides = map[string]string{
 	"GetMyIdentity":         "GetMyIdentity",
 	"RedeemMagicLink":       "RedeemMagicLink",
+	"CompleteJoin":          "CompleteJoin",
 	"CompleteSignup":        "CompleteSignup",
 	"DestroySession":        "Destroy",
 	"DeleteCardImage":       "DeleteImage",

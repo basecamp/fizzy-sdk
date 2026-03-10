@@ -4,46 +4,67 @@ set -euo pipefail
 # Generate url-routes.json from openapi.json.
 # Input:  openapi.json
 # Output: go/pkg/fizzy/url-routes.json
+#
+# Usage:
+#   ./scripts/generate-url-routes           # generate to default path
+#   ./scripts/generate-url-routes --check    # verify freshness (exit 1 if stale)
 
-OPENAPI="openapi.json"
-OUTPUT="${1:-go/pkg/fizzy/url-routes.json}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+OPENAPI="$PROJECT_ROOT/openapi.json"
 
 if [ ! -f "$OPENAPI" ]; then
   echo "ERROR: openapi.json not found. Run 'make smithy-build' first." >&2
   exit 1
 fi
 
-jq '{
-  routes: [
-    .paths | to_entries[] | . as $path |
-    {
-      pattern: ($path.key | sub("\\.json$"; "")),
-      resource: (
-        [$path.value | to_entries[] | select(.key != "parameters") | .value.tags[0]] | first // "unknown"
-      ),
-      operations: (
-        [$path.value | to_entries[] | select(.key != "parameters") |
-          {key: (.key | ascii_upcase), value: .value.operationId}
-        ] | from_entries
-      ),
-      params: (
-        [$path.key | scan("\\{([^}]+)\\}"; "") | .[0]] |
-        map({
-          key: .,
-          value: {
-            role: (
-              if . == "accountId" then "account"
-              else "resource" end
-            ),
-            type: (
-              if . == "accountId" then "string"
-              else "integer" end
-            )
-          }
-        }) | from_entries
-      )
-    }
-  ]
-}' "$OPENAPI" > "$OUTPUT"
+generate() {
+  local dest="$1"
+  jq '{
+    routes: [
+      .paths | to_entries[] | . as $path |
+      {
+        pattern: ($path.key | sub("\\.json$"; "")),
+        resource: (
+          [$path.value | to_entries[] | select(.key != "parameters") | .value.tags[0]] | first // "unknown"
+        ),
+        operations: (
+          [$path.value | to_entries[] | select(.key != "parameters") |
+            {key: (.key | ascii_upcase), value: .value.operationId}
+          ] | from_entries
+        ),
+        params: (
+          [$path.key | scan("\\{([^}]+)\\}"; "") | .[0]] |
+          map({
+            key: .,
+            value: {
+              role: (
+                if . == "accountId" then "account"
+                else "resource" end
+              ),
+              type: (
+                if . == "accountId" then "string"
+                else "integer" end
+              )
+            }
+          }) | from_entries
+        )
+      }
+    ]
+  }' "$OPENAPI" > "$dest"
+}
 
+if [ "${1:-}" = "--check" ]; then
+  TMPFILE=$(mktemp)
+  trap 'rm -f "$TMPFILE"' EXIT
+  generate "$TMPFILE"
+  diff -q "$PROJECT_ROOT/go/pkg/fizzy/url-routes.json" "$TMPFILE" > /dev/null 2>&1 || \
+    { echo "ERROR: url-routes.json is out of date. Run 'make url-routes'"; exit 1; }
+  echo "url-routes.json is up to date"
+  exit 0
+fi
+
+OUTPUT="${1:-$PROJECT_ROOT/go/pkg/fizzy/url-routes.json}"
+generate "$OUTPUT"
 echo "Generated $OUTPUT"

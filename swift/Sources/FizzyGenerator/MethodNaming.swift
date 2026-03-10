@@ -83,6 +83,7 @@ let methodNameOverrides: [String: String] = [
     "RedeemMagicLink": "redeemMagicLink",
     "DestroySession": "destroy",
     "CompleteSignup": "completeSignup",
+    "CompleteJoin": "completeJoin",
     "RegisterDevice": "register",
     "UnregisterDevice": "unregister",
     "DeactivateUser": "deactivate",

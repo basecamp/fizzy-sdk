@@ -7,6 +7,7 @@ enum Metadata {
         "AssignCard": RetryConfig(maxAttempts: 1, baseDelayMs: 1000, backoff: .exponential, retryOn: [429, 503]),
         "BulkReadNotifications": RetryConfig(maxAttempts: 1, baseDelayMs: 1000, backoff: .exponential, retryOn: [429, 503]),
         "CloseCard": RetryConfig(maxAttempts: 3, baseDelayMs: 1000, backoff: .exponential, retryOn: [429, 500, 503]),
+        "CompleteJoin": RetryConfig(maxAttempts: 1, baseDelayMs: 1000, backoff: .exponential, retryOn: [429, 503]),
         "CompleteSignup": RetryConfig(maxAttempts: 1, baseDelayMs: 1000, backoff: .exponential, retryOn: [429, 503]),
         "CreateAccessToken": RetryConfig(maxAttempts: 1, baseDelayMs: 1000, backoff: .exponential, retryOn: [429, 503]),
         "CreateAccountExport": RetryConfig(maxAttempts: 1, baseDelayMs: 1000, backoff: .exponential, retryOn: [429, 503]),

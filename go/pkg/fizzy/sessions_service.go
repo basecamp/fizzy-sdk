@@ -7,17 +7,16 @@ import (
 	"github.com/basecamp/fizzy-sdk/go/pkg/generated"
 )
 
+// CompleteJoin performs the CompleteJoin operation on a session.
+func (s *SessionsService) CompleteJoin(ctx context.Context, req *generated.CompleteJoinRequest) (*Response, error) {
+	resp, err := s.client.Post(ctx, "/users/joins.json", req)
+	return resp, err
+}
+
 // CompleteSignup performs the CompleteSignup operation on a session.
-func (s *SessionsService) CompleteSignup(ctx context.Context, req *generated.CompleteSignupRequest) (*generated.User, *Response, error) {
+func (s *SessionsService) CompleteSignup(ctx context.Context, req *generated.CompleteSignupRequest) (*Response, error) {
 	resp, err := s.client.Post(ctx, "/signup/completion.json", req)
-	if err != nil {
-		return nil, nil, err
-	}
-	var result generated.User
-	if err := resp.UnmarshalData(&result); err != nil {
-		return nil, resp, err
-	}
-	return &result, resp, nil
+	return resp, err
 }
 
 // Create creates a session.

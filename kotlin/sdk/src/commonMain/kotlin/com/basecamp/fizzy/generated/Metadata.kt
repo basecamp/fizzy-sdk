@@ -24,6 +24,7 @@ object Metadata {
         "AssignCard" to OperationConfig(false, RetryConfig(1, 1000L, "none", setOf())),
         "BulkReadNotifications" to OperationConfig(false, RetryConfig(1, 1000L, "none", setOf())),
         "CloseCard" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 500, 503))),
+        "CompleteJoin" to OperationConfig(false, RetryConfig(1, 1000L, "none", setOf())),
         "CompleteSignup" to OperationConfig(false, RetryConfig(1, 1000L, "none", setOf())),
         "CreateAccessToken" to OperationConfig(false, RetryConfig(1, 1000L, "none", setOf())),
         "CreateAccountExport" to OperationConfig(false, RetryConfig(1, 1000L, "none", setOf())),

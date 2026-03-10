@@ -1,7 +1,7 @@
 {
   "$schema": "https://fizzy.do/schemas/sdk-metadata.json",
   "version": "1.0.0",
-  "generated": "2026-03-10T05:23:40.263Z",
+  "generated": "2026-03-10T05:24:18Z",
   "operations": {
     "ListAccessTokens": {
       "retry": {
@@ -17,7 +17,10 @@
     },
     "CreateAccessToken": {
       "retry": {
-        "maxAttempts": 1
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "DeleteAccessToken": {
@@ -61,27 +64,42 @@
     },
     "CreateSession": {
       "retry": {
-        "maxAttempts": 1
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "DestroySession": {
       "retry": {
-        "maxAttempts": 1
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "RedeemMagicLink": {
       "retry": {
-        "maxAttempts": 1
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "CompleteSignup": {
       "retry": {
-        "maxAttempts": 1
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "CompleteJoin": {
       "retry": {
-        "maxAttempts": 1
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "UpdateAccountEntropy": {
@@ -101,7 +119,10 @@
     },
     "CreateAccountExport": {
       "retry": {
-        "maxAttempts": 1
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "GetAccountExport": {
@@ -203,7 +224,10 @@
     },
     "CreateBoard": {
       "retry": {
-        "maxAttempts": 1
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "GetBoard": {
@@ -262,7 +286,10 @@
     },
     "CreateColumn": {
       "retry": {
-        "maxAttempts": 1
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "ListClosedCards": {
@@ -429,7 +456,10 @@
     },
     "CreateWebhook": {
       "retry": {
-        "maxAttempts": 1
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "GetWebhook": {
@@ -507,7 +537,10 @@
     },
     "CreateCard": {
       "retry": {
-        "maxAttempts": 1
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "GetCard": {
@@ -554,7 +587,10 @@
     },
     "AssignCard": {
       "retry": {
-        "maxAttempts": 1
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "MoveCard": {
@@ -620,7 +656,10 @@
     },
     "CreateComment": {
       "retry": {
-        "maxAttempts": 1
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "GetComment": {
@@ -679,7 +718,10 @@
     },
     "CreateCommentReaction": {
       "retry": {
-        "maxAttempts": 1
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "DeleteCommentReaction": {
@@ -789,7 +831,10 @@
     },
     "PublishCard": {
       "retry": {
-        "maxAttempts": 1
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "ListCardReactions": {
@@ -806,7 +851,10 @@
     },
     "CreateCardReaction": {
       "retry": {
-        "maxAttempts": 1
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "DeleteCardReaction": {
@@ -856,7 +904,10 @@
     },
     "SelfAssignCard": {
       "retry": {
-        "maxAttempts": 1
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "ListSteps": {
@@ -873,7 +924,10 @@
     },
     "CreateStep": {
       "retry": {
-        "maxAttempts": 1
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "GetStep": {
@@ -920,7 +974,10 @@
     },
     "TagCard": {
       "retry": {
-        "maxAttempts": 1
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "TriageCard": {
@@ -1015,7 +1072,10 @@
     },
     "RegisterDevice": {
       "retry": {
-        "maxAttempts": 1
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "UnregisterDevice": {
@@ -1051,7 +1111,10 @@
     },
     "BulkReadNotifications": {
       "retry": {
-        "maxAttempts": 1
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "GetNotificationSettings": {
@@ -1125,7 +1188,10 @@
     },
     "CreateDirectUpload": {
       "retry": {
-        "maxAttempts": 1
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "SearchCards": {
@@ -1235,7 +1301,10 @@
     },
     "CreatePushSubscription": {
       "retry": {
-        "maxAttempts": 1
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "DeletePushSubscription": {

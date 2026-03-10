@@ -1,43 +1,34 @@
-.PHONY: help check clean
-.PHONY: smithy-validate smithy-mapper smithy-build smithy-check smithy-clean
-.PHONY: behavior-model behavior-model-check
-.PHONY: url-routes url-routes-check
-.PHONY: sync-api-version sync-api-version-check
-.PHONY: go-generate-services go-test go-lint go-check go-clean go-check-drift
-.PHONY: ts-install ts-generate ts-generate-services ts-build ts-test ts-typecheck ts-check ts-check-drift ts-clean
-.PHONY: rb-generate rb-generate-services rb-build rb-test rb-check rb-check-drift rb-clean
-.PHONY: swift-build swift-test swift-check swift-check-drift swift-generate swift-clean
-.PHONY: kt-generate-services kt-build kt-test kt-check kt-check-drift kt-clean
-.PHONY: conformance-build conformance-go conformance-kotlin conformance-typescript conformance-ruby conformance
-.PHONY: provenance-sync provenance-check sync-status
-.PHONY: check-mvp check-full
-.PHONY: bump release audit-check
+# Fizzy SDK Makefile
 
-# ──────────────────────────────────────────────
-# Smithy
-# ──────────────────────────────────────────────
+.PHONY: all check clean help
+
+# Default: run all checks
+all: check
+
+#---
+# Smithy targets
+#---
+
+.PHONY: smithy-validate smithy-build smithy-check smithy-clean smithy-mapper
 
 MAVEN_ARTIFACT := $(HOME)/.m2/repository/com/basecamp/smithy-bare-arrays/1.0.0/smithy-bare-arrays-1.0.0.jar
 
-smithy-mapper: ## Build vendored smithy-bare-arrays plugin to local Maven
-	@if [ -f "$(MAVEN_ARTIFACT)" ]; then \
-		echo "==> Smithy mapper plugin already in local Maven, skipping build"; \
-	else \
-		echo "==> Building Smithy mapper plugin..."; \
-		cd spec/smithy-bare-arrays && ./gradlew publishToMavenLocal; \
-	fi
+smithy-mapper:
+	@echo "==> Building Smithy mapper plugin..."
+	cd spec/smithy-bare-arrays && ./gradlew publishToMavenLocal --quiet
 
-smithy-validate: ## Validate Smithy model
+smithy-validate:
 	@echo "==> Validating Smithy model..."
 	cd spec && smithy validate
 
-smithy-build: smithy-mapper ## Build OpenAPI from Smithy
+smithy-build: behavior-model smithy-mapper
 	@echo "==> Building OpenAPI spec..."
 	cd spec && smithy build
 	@cp spec/build/smithy/openapi/openapi/Fizzy.openapi.json openapi.json
 	@echo "==> OpenAPI spec generated: openapi.json"
+	@$(MAKE) sync-api-version
 
-smithy-check: smithy-validate smithy-mapper ## Verify openapi.json is up to date
+smithy-check: smithy-validate smithy-mapper
 	@echo "==> Checking OpenAPI freshness..."
 	@cd spec && smithy build
 	@TMPFILE=$$(mktemp) && \
@@ -48,48 +39,44 @@ smithy-check: smithy-validate smithy-mapper ## Verify openapi.json is up to date
 	@echo "  openapi.json is fresh"
 
 smithy-clean:
-	rm -rf spec/build
+	rm -rf spec/build spec/smithy-bare-arrays/build spec/smithy-bare-arrays/.gradle
 
-# ──────────────────────────────────────────────
+#---
 # Behavior Model
-# ──────────────────────────────────────────────
+#---
 
-behavior-model: ## Generate behavior-model.json from Smithy AST
+.PHONY: behavior-model behavior-model-check
+
+behavior-model:
 	@echo "==> Generating behavior model..."
 	./scripts/generate-behavior-model
 	@echo "  behavior-model.json generated"
 
-behavior-model-check: ## Verify behavior-model.json is up to date
+behavior-model-check:
 	@echo "==> Checking behavior model freshness..."
-	@TMPFILE=$$(mktemp) && \
-		./scripts/generate-behavior-model "$$TMPFILE" && \
-		(diff -q behavior-model.json "$$TMPFILE" > /dev/null 2>&1 || \
-			(rm -f "$$TMPFILE" && echo "ERROR: behavior-model.json is stale. Run 'make behavior-model'" && exit 1)) && \
-		rm -f "$$TMPFILE"
-	@echo "  behavior-model.json is fresh"
+	@./scripts/generate-behavior-model --check
 
-# ──────────────────────────────────────────────
+#---
 # URL Routes
-# ──────────────────────────────────────────────
+#---
 
-url-routes: ## Generate url-routes.json from OpenAPI
+.PHONY: url-routes url-routes-check
+
+url-routes:
 	@echo "==> Generating URL routes..."
 	./scripts/generate-url-routes
 
 url-routes-check:
 	@echo "==> Checking URL routes freshness..."
-	@TMPFILE=$$(mktemp) && \
-		./scripts/generate-url-routes "$$TMPFILE" && \
-		(diff -q go/pkg/fizzy/url-routes.json "$$TMPFILE" > /dev/null 2>&1 || \
-			(rm -f "$$TMPFILE" && echo "ERROR: url-routes.json is stale. Run 'make url-routes'" && exit 1)) && \
-		rm -f "$$TMPFILE"
-	@echo "  url-routes.json is fresh"
+	@./scripts/generate-url-routes --check
 
-# ──────────────────────────────────────────────
+#---
 # API Version Sync
-# ──────────────────────────────────────────────
+#---
 
-sync-api-version: ## Sync API version from openapi.json to all SDKs
+.PHONY: sync-api-version sync-api-version-check
+
+sync-api-version:
 	@echo "==> Syncing API version..."
 	./scripts/sync-api-version.sh
 
@@ -105,22 +92,24 @@ sync-api-version-check:
 	if [ "$$ok" = false ]; then echo "ERROR: API_VERSION constants out of sync. Run 'make sync-api-version'"; exit 1; fi
 	@echo "  API version is in sync"
 
-# ──────────────────────────────────────────────
+#---
 # Provenance
-# ──────────────────────────────────────────────
+#---
 
-provenance-sync: ## Sync provenance file to Go SDK
+.PHONY: provenance-sync provenance-check sync-status
+
+provenance-sync:
 	@echo "==> Syncing provenance..."
 	@cp spec/api-provenance.json go/pkg/fizzy/api-provenance.json
 	@echo "  Provenance synced"
 
-provenance-check: ## Verify provenance file is in sync
+provenance-check:
 	@echo "==> Checking provenance..."
 	@diff -q spec/api-provenance.json go/pkg/fizzy/api-provenance.json > /dev/null 2>&1 || \
 		(echo "ERROR: go/pkg/fizzy/api-provenance.json is out of date. Run 'make provenance-sync'" && exit 1)
 	@echo "  Provenance is in sync"
 
-sync-status: ## Show upstream changes since last sync
+sync-status:
 	@REV=$$(jq -r '.fizzy.revision' spec/api-provenance.json); \
 	if [ -z "$$REV" ] || [ "$$REV" = "null" ] || [ "$$REV" = "" ]; then \
 		echo "No revision recorded in api-provenance.json. Run provenance-sync after setting revision."; \
@@ -130,151 +119,181 @@ sync-status: ## Show upstream changes since last sync
 	gh api "repos/basecamp/fizzy/compare/$$REV...main" --jq '.ahead_by' 2>/dev/null | xargs -I{} echo "  {} commits ahead" || \
 		echo "  Could not query upstream (check gh auth)"
 
-# ──────────────────────────────────────────────
-# Go SDK
-# ──────────────────────────────────────────────
+#---
+# Go SDK (delegates to go/Makefile)
+#---
 
-go-generate-services: ## Generate Go service files from openapi.json
+.PHONY: go-generate-services go-test go-lint go-check go-clean go-check-drift
+
+go-generate-services:
 	@echo "==> Generating Go services..."
 	cd go && go run ./cmd/generate-services/
 
-go-test: ## Run Go tests
-	@echo "==> Running Go tests..."
-	cd go && go test ./pkg/fizzy/... -count=1 -race
+go-test:
+	@$(MAKE) -C go test
 
 go-lint:
-	@echo "==> Linting Go..."
-	cd go && golangci-lint run ./...
+	@$(MAKE) -C go lint
 
-go-check-drift: ## Check Go service drift against generated client
+go-check:
+	@$(MAKE) -C go check
+
+go-clean:
+	@$(MAKE) -C go clean
+
+go-check-drift:
 	@echo "==> Checking Go service drift..."
 	./scripts/check-service-drift.sh
 
-go-check: go-test go-lint go-check-drift
-	@echo "==> Go SDK checks passed"
-
-go-clean:
-	cd go && go clean -testcache
-
-# ──────────────────────────────────────────────
+#---
 # TypeScript SDK
-# ──────────────────────────────────────────────
+#---
 
-ts-install:
+.PHONY: ts-install ts-generate ts-generate-services ts-build ts-test ts-typecheck ts-check ts-check-drift ts-clean
+
+TS_NODE_STAMP := typescript/node_modules/.install-stamp
+
+$(TS_NODE_STAMP): typescript/package-lock.json typescript/package.json
 	@echo "==> Installing TypeScript dependencies..."
 	cd typescript && npm ci
+	@touch $(TS_NODE_STAMP)
 
-ts-generate: ts-install ## Generate TypeScript types from OpenAPI
+ts-install: $(TS_NODE_STAMP)
+
+ts-generate: ts-install
+ts-generate-services: ts-install
+ts-build: ts-install
+ts-test: ts-install
+ts-typecheck: ts-install
+
+ts-generate:
 	@echo "==> Generating TypeScript types..."
 	cd typescript && npm run generate
 
-ts-generate-services: ## Generate TypeScript service files
+ts-generate-services:
 	@echo "==> Generating TypeScript services..."
 	cd typescript && npx tsx scripts/generate-services.ts
 
-ts-build: ts-install
+ts-build:
 	@echo "==> Building TypeScript SDK..."
 	cd typescript && npm run build
 
-ts-test: ts-install
+ts-test:
 	@echo "==> Running TypeScript tests..."
 	cd typescript && npm test
 
-ts-typecheck: ts-install
+ts-typecheck:
 	@echo "==> Type-checking TypeScript..."
 	cd typescript && npm run typecheck
 
-ts-check-drift: ## Check TypeScript service drift
+ts-check-drift:
 	@echo "==> Checking TypeScript service drift..."
 	./scripts/check-ts-service-drift.sh
 
-ts-check: ts-test ts-typecheck ts-check-drift
+ts-check: ts-typecheck ts-test
 	@echo "==> TypeScript SDK checks passed"
 
 ts-clean:
-	rm -rf typescript/dist typescript/node_modules typescript/coverage
+	rm -rf typescript/dist typescript/node_modules
 
-# ──────────────────────────────────────────────
+#---
 # Ruby SDK
-# ──────────────────────────────────────────────
+#---
 
-rb-generate-services: ## Generate Ruby service files
+.PHONY: rb-generate rb-generate-services rb-build rb-test rb-check rb-check-drift rb-doc rb-clean
+
+rb-generate:
+	@echo "==> Generating Ruby SDK types and metadata..."
+	cd ruby && ruby scripts/generate-metadata.rb > lib/fizzy/generated/metadata.json
+	cd ruby && ruby scripts/generate-types.rb > lib/fizzy/generated/types.rb
+
+rb-generate-services:
 	@echo "==> Generating Ruby services..."
 	cd ruby && ruby scripts/generate-services.rb
 
 rb-build:
-	@echo "==> Building Ruby gem..."
-	cd ruby && bundle exec rake build
+	@echo "==> Building Ruby SDK..."
+	cd ruby && bundle install
 
-rb-test: ## Run Ruby tests
+rb-test:
 	@echo "==> Running Ruby tests..."
 	cd ruby && bundle exec rake test
 
-rb-check-drift: ## Check Ruby service drift
+rb-check: rb-test
+	@echo "==> Running Ruby linter..."
+	cd ruby && bundle exec rubocop
+	@echo "==> Ruby SDK checks passed"
+
+rb-check-drift:
 	@echo "==> Checking Ruby service drift..."
 	./scripts/check-rb-service-drift.sh
 
-rb-check: rb-test rb-check-drift
-	@echo "==> Ruby SDK checks passed"
+rb-doc:
+	@echo "==> Generating Ruby documentation..."
+	cd ruby && bundle exec rake doc
+	@echo "Documentation generated in ruby/doc/"
 
 rb-clean:
-	rm -rf ruby/pkg ruby/coverage ruby/doc
+	rm -rf ruby/.bundle ruby/vendor ruby/doc ruby/coverage
 
-# ──────────────────────────────────────────────
-# Swift SDK
-# ──────────────────────────────────────────────
+#---
+# Swift SDK (delegates to swift/Makefile)
+#---
 
-swift-build: ## Build Swift SDK
-	@echo "==> Building Swift SDK..."
-	cd swift && swift build
+.PHONY: swift-build swift-test swift-check swift-check-drift swift-generate swift-clean
 
-swift-test: ## Run Swift tests
-	@echo "==> Running Swift tests..."
-	cd swift && swift test
+swift-build:
+	@$(MAKE) -C swift build
 
-swift-generate: ## Generate Swift services
-	@echo "==> Generating Swift services..."
-	cd swift && swift run FizzyGenerator --openapi ../openapi.json --behavior ../behavior-model.json --output Sources/Fizzy/Generated
+swift-test:
+	@$(MAKE) -C swift test
 
-swift-check-drift: ## Check Swift service drift
+swift-check:
+	@$(MAKE) -C swift check
+
+swift-generate:
+	@$(MAKE) -C swift generate
+
+swift-clean:
+	@$(MAKE) -C swift clean
+
+swift-check-drift:
 	@echo "==> Checking Swift service drift..."
 	./scripts/check-swift-service-drift.sh
 
-swift-check: swift-build swift-test swift-check-drift
-	@echo "==> Swift SDK checks passed"
-
-swift-clean:
-	cd swift && swift package clean
-
-# ──────────────────────────────────────────────
+#---
 # Kotlin SDK
-# ──────────────────────────────────────────────
+#---
 
-kt-generate-services: ## Generate Kotlin services
+.PHONY: kt-generate-services kt-build kt-test kt-check kt-check-drift kt-clean
+
+kt-generate-services:
 	@echo "==> Generating Kotlin services..."
-	cd kotlin && ./gradlew :generator:run
+	cd kotlin && ./gradlew :generator:run --args="--openapi ../openapi.json --behavior ../behavior-model.json --output sdk/src/commonMain/kotlin/com/basecamp/fizzy/generated"
 
-kt-build: ## Build Kotlin SDK
+kt-build:
 	@echo "==> Building Kotlin SDK..."
-	cd kotlin && ./gradlew :fizzy-sdk:compileKotlinJvm
+	cd kotlin && ./gradlew :fizzy-sdk:build
 
-kt-test: ## Run Kotlin tests
+kt-test:
 	@echo "==> Running Kotlin tests..."
-	cd kotlin && ./gradlew :fizzy-sdk:jvmTest
+	cd kotlin && ./gradlew :fizzy-sdk:check
+
+kt-check: kt-test
+	@echo "==> Kotlin SDK checks passed"
 
 kt-check-drift:
 	@echo "==> Checking Kotlin service drift..."
 	./scripts/check-kotlin-service-drift.sh
 
-kt-check: kt-test kt-check-drift
-	@echo "==> Kotlin SDK checks passed"
-
 kt-clean:
 	cd kotlin && ./gradlew clean
 
-# ──────────────────────────────────────────────
+#---
 # Conformance
-# ──────────────────────────────────────────────
+#---
+
+.PHONY: conformance-build conformance-go conformance-kotlin conformance-typescript conformance-ruby conformance-swift conformance
 
 conformance-build:
 	@echo "==> Building conformance runners..."
@@ -282,27 +301,21 @@ conformance-build:
 	cd conformance/runner/typescript && npm ci
 	cd kotlin && ./gradlew :conformance:build
 
-conformance-go:
+conformance-go: conformance-build
 	@echo "==> Running Go conformance..."
-	cd conformance/runner/go && go build -o conformance-runner . && ./conformance-runner ../../tests/
+	cd conformance/runner/go && ./conformance-runner ../../tests/
 
 conformance-typescript:
-	@if [ -f conformance/runner/typescript/package.json ]; then \
-		echo "==> Running TypeScript conformance..."; \
-		cd conformance/runner/typescript && npx vitest run; \
-	else echo "SKIP: TypeScript conformance runner not found"; fi
+	@echo "==> Running TypeScript conformance..."
+	cd conformance/runner/typescript && npm ci && npm test
 
 conformance-ruby:
-	@if [ -f conformance/runner/ruby/runner.rb ]; then \
-		echo "==> Running Ruby conformance..."; \
-		cd conformance/runner/ruby && bundle exec ruby runner.rb ../../tests/; \
-	else echo "SKIP: Ruby conformance runner not found"; fi
+	@echo "==> Running Ruby conformance..."
+	cd conformance/runner/ruby && bundle install --quiet && ruby runner.rb ../../tests/
 
 conformance-kotlin:
-	@if find kotlin/conformance/src -name "*.kt" 2>/dev/null | grep -q .; then \
-		echo "==> Running Kotlin conformance..."; \
-		cd kotlin && ./gradlew :conformance:run; \
-	else echo "SKIP: Kotlin conformance runner has no source files"; fi
+	@echo "==> Running Kotlin conformance..."
+	cd kotlin && ./gradlew :conformance:run
 
 conformance-swift:
 	@if [ -f conformance/runner/swift/Package.swift ]; then \
@@ -313,19 +326,27 @@ conformance-swift:
 conformance: conformance-go conformance-typescript conformance-ruby conformance-kotlin
 	@echo "==> All conformance tests passed"
 
-# ──────────────────────────────────────────────
+#---
 # Version & Release
-# ──────────────────────────────────────────────
+#---
 
-bump: ## Bump version: make bump VERSION=x.y.z
-	@test -n "$(VERSION)" || (echo "Usage: make bump VERSION=x.y.z" && exit 1)
+.PHONY: bump release audit-check
+
+bump:
+ifndef VERSION
+	$(error VERSION is required. Usage: make bump VERSION=x.y.z)
+endif
 	@echo "==> Bumping version to $(VERSION)..."
 	./scripts/bump-version.sh $(VERSION)
 	@echo "  Version bumped to $(VERSION)"
 
-release: ## Release: make release VERSION=x.y.z
-	@test -n "$(VERSION)" || (echo "Usage: make release VERSION=x.y.z" && exit 1)
+release:
+ifndef VERSION
+	$(error VERSION is required. Usage: make release VERSION=x.y.z)
+endif
 	@echo "==> Releasing v$(VERSION)..."
+	@[ "$$(git rev-parse --abbrev-ref HEAD)" = "main" ] || \
+		{ echo "ERROR: Must be on main branch to release."; exit 1; }
 	@grep -qF 'Version = "$(VERSION)"' go/pkg/fizzy/version.go || \
 		{ echo "ERROR: Go version does not match. Run 'make bump VERSION=$(VERSION)' first."; exit 1; }
 	@grep -qF '"version": "$(VERSION)"' typescript/package.json || \
@@ -336,6 +357,8 @@ release: ## Release: make release VERSION=x.y.z
 		{ echo "ERROR: Swift version does not match."; exit 1; }
 	@grep -qF 'VERSION = "$(VERSION)"' kotlin/sdk/src/commonMain/kotlin/com/basecamp/fizzy/FizzyConfig.kt || \
 		{ echo "ERROR: Kotlin version does not match."; exit 1; }
+	@grep -qF 'version = "$(VERSION)"' kotlin/sdk/build.gradle.kts || \
+		{ echo "ERROR: Kotlin Gradle project version does not match."; exit 1; }
 	@grep -qF 'VERSION = "$(VERSION)"' typescript/src/client.ts || \
 		{ echo "ERROR: TypeScript client.ts version does not match."; exit 1; }
 	@git diff --quiet && git diff --cached --quiet && \
@@ -343,10 +366,10 @@ release: ## Release: make release VERSION=x.y.z
 		{ echo "ERROR: Working tree has uncommitted or untracked changes."; git status --short; exit 1; }
 	$(MAKE) check
 	git tag "v$(VERSION)"
-	git push origin main "v$(VERSION)"
+	git push origin "v$(VERSION)"
 	@echo "  Released v$(VERSION)"
 
-audit-check: ## Check rubric audit freshness and must-pass criteria
+audit-check:
 	@echo "==> Checking rubric audit..."
 	@test -f rubric-audit.json || (echo "ERROR: rubric-audit.json not found" && exit 1)
 	@for c in 1A.6 1B.2 1C.3; do \
@@ -362,23 +385,107 @@ audit-check: ## Check rubric audit freshness and must-pass criteria
 		fi
 	@echo "  rubric-audit.json is fresh and must-pass criteria verified"
 
-# ──────────────────────────────────────────────
+#---
 # Combined
-# ──────────────────────────────────────────────
+#---
 
-check-mvp: smithy-check behavior-model-check url-routes-check sync-api-version-check go-check ## Fast MVP checks
+.PHONY: check-mvp check-full
+
+check-mvp: smithy-check behavior-model-check url-routes-check sync-api-version-check go-check
 	@echo "==> MVP checks passed"
 
-check-full: check-mvp provenance-check audit-check ts-check rb-check swift-check kt-check conformance ## Full CI-grade checks
+check-full: check-mvp provenance-check audit-check ts-check rb-check swift-check kt-check conformance
 	@echo "==> Full checks passed"
 
-check: smithy-check behavior-model-check url-routes-check sync-api-version-check provenance-check audit-check go-check ts-check rb-check swift-check kt-check conformance ## Run all checks
+check: smithy-check behavior-model-check url-routes-check sync-api-version-check provenance-check audit-check go-check ts-check rb-check swift-check kt-check conformance
 	@echo "==> All checks passed"
 
-clean: smithy-clean go-clean ts-clean rb-clean swift-clean kt-clean ## Clean all build artifacts
+clean: smithy-clean go-clean ts-clean rb-clean swift-clean kt-clean
 	@echo "==> Cleaned"
 
-help: ## Show this help
+help:
 	@echo "Fizzy SDK Makefile"
 	@echo ""
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-24s\033[0m %s\n", $$1, $$2}'
+	@echo "Smithy:"
+	@echo "  smithy-validate      Validate Smithy spec syntax"
+	@echo "  smithy-mapper        Build custom OpenAPI mapper JAR"
+	@echo "  smithy-build         Build OpenAPI from Smithy (updates openapi.json)"
+	@echo "  smithy-check         Verify openapi.json is up to date"
+	@echo "  smithy-clean         Remove Smithy build artifacts"
+	@echo ""
+	@echo "Behavior Model:"
+	@echo "  behavior-model       Generate behavior-model.json from Smithy spec"
+	@echo "  behavior-model-check Verify behavior-model.json is up to date"
+	@echo ""
+	@echo "URL Routes:"
+	@echo "  url-routes           Generate url-routes.json from OpenAPI spec"
+	@echo "  url-routes-check     Verify url-routes.json is up to date"
+	@echo ""
+	@echo "Go SDK:"
+	@echo "  go-generate-services Generate service files from openapi.json"
+	@echo "  go-test              Run Go tests"
+	@echo "  go-lint              Run Go linter"
+	@echo "  go-check             Run all Go checks"
+	@echo "  go-check-drift       Check service layer drift vs generated client"
+	@echo "  go-clean             Remove Go build artifacts"
+	@echo ""
+	@echo "TypeScript SDK:"
+	@echo "  ts-generate          Generate types and metadata from OpenAPI"
+	@echo "  ts-generate-services Generate service classes from OpenAPI"
+	@echo "  ts-build             Build TypeScript SDK"
+	@echo "  ts-test              Run TypeScript tests"
+	@echo "  ts-typecheck         Run TypeScript type checking"
+	@echo "  ts-check             Run all TypeScript checks"
+	@echo "  ts-clean             Remove TypeScript build artifacts"
+	@echo ""
+	@echo "Ruby SDK:"
+	@echo "  rb-generate          Generate types and metadata from OpenAPI"
+	@echo "  rb-generate-services Generate service classes from OpenAPI"
+	@echo "  rb-build             Build Ruby SDK (install deps)"
+	@echo "  rb-test              Run Ruby tests"
+	@echo "  rb-check             Run all Ruby checks (test + rubocop)"
+	@echo "  rb-doc               Generate YARD documentation"
+	@echo "  rb-clean             Remove Ruby build artifacts"
+	@echo ""
+	@echo "Swift SDK:"
+	@echo "  swift-generate       Generate service classes from OpenAPI"
+	@echo "  swift-build          Build Swift SDK"
+	@echo "  swift-test           Run Swift tests"
+	@echo "  swift-check          Run all Swift checks"
+	@echo "  swift-clean          Remove Swift build artifacts"
+	@echo ""
+	@echo "Kotlin SDK:"
+	@echo "  kt-generate-services Generate service classes from OpenAPI"
+	@echo "  kt-build             Build Kotlin SDK"
+	@echo "  kt-test              Run Kotlin tests"
+	@echo "  kt-check             Run all Kotlin checks"
+	@echo "  kt-check-drift       Check service drift vs OpenAPI spec"
+	@echo "  kt-clean             Remove Kotlin build artifacts"
+	@echo ""
+	@echo "Conformance:"
+	@echo "  conformance          Run all conformance tests"
+	@echo "  conformance-go       Run Go conformance tests"
+	@echo "  conformance-kotlin   Run Kotlin conformance tests"
+	@echo "  conformance-typescript Run TypeScript conformance tests"
+	@echo "  conformance-ruby     Run Ruby conformance tests"
+	@echo "  conformance-swift    Run Swift conformance tests"
+	@echo "  conformance-build    Build conformance test runners"
+	@echo ""
+	@echo "Provenance:"
+	@echo "  provenance-sync      Copy provenance into Go package for go:embed"
+	@echo "  provenance-check     Verify Go embedded provenance is up to date"
+	@echo "  sync-status          Show upstream changes since last spec sync"
+	@echo ""
+	@echo "Version & Release:"
+	@echo "  bump VERSION=x.y.z       Bump SDK version across all languages"
+	@echo "  sync-api-version         Sync API_VERSION from openapi.json"
+	@echo "  sync-api-version-check   Verify API_VERSION constants are up to date"
+	@echo "  release VERSION=x.y.z    Tag and push a release (triggers all SDK releases)"
+	@echo "  audit-check              Validate rubric-audit.json freshness and criteria"
+	@echo ""
+	@echo "Combined:"
+	@echo "  check-mvp        Fast MVP checks (smithy + behavior + routes + api-version + go)"
+	@echo "  check-full       Full CI-grade checks (check-mvp + all languages + conformance)"
+	@echo "  check            Run all checks"
+	@echo "  clean            Remove all build artifacts"
+	@echo "  help             Show this help"
