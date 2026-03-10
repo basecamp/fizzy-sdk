@@ -1,51 +1,53 @@
-name: Release Swift
+name: Release Swift SDK
 
 on:
   push:
-    tags: ['v*']
-  workflow_dispatch:
-    inputs:
-      dry_run:
-        description: 'Dry run (build only)'
-        required: false
-        default: true
-        type: boolean
+    tags:
+      - 'v*'
+  workflow_dispatch:  # Manual trigger is always dry-run (rehearsal mode)
 
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  release:
-    name: Verify Swift release
+  smithy:
+    uses: ./.github/workflows/smithy-verify.yml
+
+  test:
+    name: Test Swift SDK
     runs-on: macos-15
+    defaults:
+      run:
+        working-directory: swift
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
 
-      - name: Extract version
-        id: version
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-        run: |
-          if [[ "$EVENT_NAME" == "push" ]]; then
-            VERSION="${GITHUB_REF#refs/tags/v}"
-          else
-            VERSION="0.0.0-dryrun"
-          fi
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Verify version matches
+      - name: Verify tag is on main
         if: github.event_name == 'push'
-        env:
-          EXPECTED_VERSION: ${{ steps.version.outputs.version }}
         run: |
-          SWIFT_VERSION=$(grep 'sdkVersion' swift/Sources/Fizzy/FizzyConfig.swift | sed 's/.*"\(.*\)".*/\1/')
-          if [[ "$SWIFT_VERSION" != "$EXPECTED_VERSION" ]]; then
-            echo "::error::FizzyConfig.swift ($SWIFT_VERSION) does not match tag ($EXPECTED_VERSION)"
+          git fetch origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+
+      - name: Verify SDK version matches tag
+        if: github.event_name == 'push'
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          if ! grep -q "public static let sdkVersion = \"${VERSION}\"" Sources/Fizzy/FizzyConfig.swift; then
+            echo "::error::FizzyConfig.swift version does not match tag v${VERSION}"
+            echo "Expected: public static let sdkVersion = \"${VERSION}\""
+            echo "Found:    $(grep 'static let sdkVersion' Sources/Fizzy/FizzyConfig.swift)"
             exit 1
           fi
+          echo "Version verification passed"
 
       - name: Build
-        run: cd swift && swift build
+        run: swift build
 
       - name: Test
-        run: cd swift && swift test
+        run: swift test
