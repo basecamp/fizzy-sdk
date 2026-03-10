@@ -27,10 +27,10 @@ generate() {
       {
         pattern: ($path.key | sub("\\.json$"; "")),
         resource: (
-          [$path.value | to_entries[] | select(.key != "parameters") | .value.tags[0]] | first // "unknown"
+          [$path.value | to_entries[] | select(.key | test("^(get|put|post|delete|patch|head|options|trace)$")) | .value.tags[0]] | first // "unknown"
         ),
         operations: (
-          [$path.value | to_entries[] | select(.key != "parameters") |
+          [$path.value | to_entries[] | select(.key | test("^(get|put|post|delete|patch|head|options|trace)$")) |
             {key: (.key | ascii_upcase), value: .value.operationId}
           ] | from_entries
         ),

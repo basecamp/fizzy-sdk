@@ -21,12 +21,13 @@ smithy-validate:
 	@echo "==> Validating Smithy model..."
 	cd spec && smithy validate
 
-smithy-build: behavior-model smithy-mapper
+smithy-build: smithy-mapper ## Build OpenAPI from Smithy
 	@echo "==> Building OpenAPI spec..."
 	cd spec && smithy build
 	@cp spec/build/smithy/openapi/openapi/Fizzy.openapi.json openapi.json
 	@echo "==> OpenAPI spec generated: openapi.json"
 	@$(MAKE) sync-api-version
+	@$(MAKE) behavior-model
 
 smithy-check: smithy-validate smithy-mapper
 	@echo "==> Checking OpenAPI freshness..."

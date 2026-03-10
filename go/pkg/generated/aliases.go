@@ -8,6 +8,7 @@ package generated
 // AssignCardRequest is a type alias for the generated request type.
 type AssignCardRequest = AssignCardRequestContent
 type BulkReadNotificationsRequest = BulkReadNotificationsRequestContent
+type CompleteJoinRequest = CompleteJoinRequestContent
 type CompleteSignupRequest = CompleteSignupRequestContent
 type CreateAccessTokenRequest = CreateAccessTokenRequestContent
 type CreateBoardRequest = CreateBoardRequestContent
