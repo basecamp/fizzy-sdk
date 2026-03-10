@@ -2,8 +2,18 @@
 import Foundation
 
 public final class SessionsService: BaseService, @unchecked Sendable {
-    public func completeSignup(req: CompleteSignupRequest) async throws -> User {
-        return try await request(
+    public func completeJoin(req: CompleteJoinRequest) async throws {
+        try await requestVoid(
+            OperationInfo(service: "Sessions", operation: "CompleteJoin", resourceType: "join", isMutation: true),
+            method: "POST",
+            path: "/users/joins.json",
+            body: req,
+            retryConfig: Metadata.retryConfig(for: "CompleteJoin")
+        )
+    }
+
+    public func completeSignup(req: CompleteSignupRequest) async throws {
+        try await requestVoid(
             OperationInfo(service: "Sessions", operation: "CompleteSignup", resourceType: "signup", isMutation: true),
             method: "POST",
             path: "/signup/completion.json",

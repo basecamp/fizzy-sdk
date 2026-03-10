@@ -322,6 +322,8 @@ class ConformanceRunner
       client.sessions.redeem_magic_link(**symbolize_body(body))
     when "CompleteSignup"
       client.sessions.complete_signup(**symbolize_body(body))
+    when "CompleteJoin"
+      client.sessions.complete_join(**symbolize_body(body))
 
     # Identity (account-independent)
     when "GetMyIdentity"

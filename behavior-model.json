@@ -45,6 +45,14 @@
         ]
       }
     },
+    "CompleteJoin": {
+      "retry": {
+        "max": 1,
+        "base_delay_ms": null,
+        "backoff": null,
+        "retry_on": null
+      }
+    },
     "CompleteSignup": {
       "retry": {
         "max": 1,

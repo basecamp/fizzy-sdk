@@ -35,11 +35,22 @@ module Fizzy
       end
 
       # complete_signup operation
-      # @param name [String] name
-      # @return [Hash] response data
-      def complete_signup(name:)
+      # @param full_name [String] full name
+      # @return [void]
+      def complete_signup(full_name:)
         with_operation(service: "sessions", operation: "CompleteSignup", is_mutation: true) do
-          http_post("/signup/completion.json", body: compact_params(name: name)).json
+          http_post("/signup/completion.json", body: compact_params(full_name: full_name))
+          nil
+        end
+      end
+
+      # complete_join operation
+      # @param name [String] name
+      # @return [void]
+      def complete_join(name:)
+        with_operation(service: "sessions", operation: "CompleteJoin", is_mutation: true) do
+          http_post("/users/joins.json", body: compact_params(name: name))
+          nil
         end
       end
     end

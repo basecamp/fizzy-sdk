@@ -161,6 +161,7 @@ service Fizzy {
         RedeemMagicLink
         DestroySession
         CompleteSignup
+        CompleteJoin
 
         // Devices
         RegisterDevice
@@ -2818,23 +2819,30 @@ operation DestroySession {
     errors: [UnauthorizedError]
 }
 
-@http(method: "POST", uri: "/signup/completion.json")
+@http(method: "POST", uri: "/signup/completion.json", code: 201)
 @tags(["Sessions"])
 @fizzyRetry(maxAttempts: 1)
 operation CompleteSignup {
     input: CompleteSignupInput
-    output: CompleteSignupOutput
     errors: [UnauthorizedError, ValidationError]
 }
 
 structure CompleteSignupInput {
     @required
-    name: String
+    full_name: PersonName
 }
 
-structure CompleteSignupOutput {
+@http(method: "POST", uri: "/users/joins.json", code: 204)
+@tags(["Sessions"])
+@fizzyRetry(maxAttempts: 1)
+operation CompleteJoin {
+    input: CompleteJoinInput
+    errors: [UnauthorizedError, ValidationError]
+}
+
+structure CompleteJoinInput {
     @required
-    user: User
+    name: PersonName
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

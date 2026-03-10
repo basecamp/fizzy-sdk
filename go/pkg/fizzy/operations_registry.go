@@ -109,6 +109,7 @@ var OperationRegistry = map[string]string{
 	"SearchCards": "SearchService.Search",
 
 	// Sessions
+	"CompleteJoin": "SessionsService.CompleteJoin",
 	"CompleteSignup": "SessionsService.CompleteSignup",
 	"CreateSession": "SessionsService.Create",
 	"DestroySession": "SessionsService.Destroy",

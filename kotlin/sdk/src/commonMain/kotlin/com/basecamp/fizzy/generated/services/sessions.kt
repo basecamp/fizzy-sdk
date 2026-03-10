@@ -77,7 +77,7 @@ class SessionsService(client: AccountClient) : BaseService(client) {
      * completeSignup operation
      * @param body Request body
      */
-    suspend fun completeSignup(body: CompleteSignupBody): User {
+    suspend fun completeSignup(body: CompleteSignupBody): Unit {
         val info = OperationInfo(
             service = "Sessions",
             operation = "CompleteSignup",
@@ -86,12 +86,30 @@ class SessionsService(client: AccountClient) : BaseService(client) {
             boardId = null,
             resourceId = null,
         )
-        return request(info, {
+        request(info, {
             httpPostRoot("/signup/completion.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
+                put("full_name", kotlinx.serialization.json.JsonPrimitive(body.fullName))
+            }), operationName = info.operation)
+        }) { Unit }
+    }
+
+    /**
+     * completeJoin operation
+     * @param body Request body
+     */
+    suspend fun completeJoin(body: CompleteJoinBody): Unit {
+        val info = OperationInfo(
+            service = "Sessions",
+            operation = "CompleteJoin",
+            resourceType = "join",
+            isMutation = true,
+            boardId = null,
+            resourceId = null,
+        )
+        request(info, {
+            httpPostRoot("/users/joins.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
                 put("name", kotlinx.serialization.json.JsonPrimitive(body.name))
             }), operationName = info.operation)
-        }) { body ->
-            json.decodeFromString<User>(body)
-        }
+        }) { Unit }
     }
 }

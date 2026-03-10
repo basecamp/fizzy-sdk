@@ -265,7 +265,10 @@ async function dispatch(
         data = await (client as any).sessions.redeemMagicLink({ token: body.token });
         break;
       case "CompleteSignup":
-        data = await (client as any).sessions.completeSignup({ name: body.name });
+        data = await (client as any).sessions.completeSignup({ full_name: body.full_name });
+        break;
+      case "CompleteJoin":
+        data = await (client as any).sessions.completeJoin({ name: body.name });
         break;
 
       // Identity

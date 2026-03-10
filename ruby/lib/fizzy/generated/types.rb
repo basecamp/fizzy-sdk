@@ -189,7 +189,7 @@ module Fizzy
     end
 
     # @generated
-    CompleteSignupRequestContent = Data.define(:name) do
+    CompleteJoinRequestContent = Data.define(:name) do
       # @param data [Hash] raw JSON response
       def self.from_json(data)
         new(
@@ -199,7 +199,14 @@ module Fizzy
     end
 
     # @generated
-    CompleteSignupResponseContent = Data.define
+    CompleteSignupRequestContent = Data.define(:full_name) do
+      # @param data [Hash] raw JSON response
+      def self.from_json(data)
+        new(
+          full_name: data["full_name"]
+        )
+      end
+    end
 
     # @generated
     CreateAccessTokenRequestContent = Data.define(:description, :permission) do

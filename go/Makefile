@@ -35,6 +35,29 @@ test-coverage:
 bench:
 	$(GOTEST) -run=^$$ -bench=. -benchmem ./pkg/fizzy/
 
+# Run benchmarks with CPU profile for PGO
+.PHONY: bench-pgo
+bench-pgo:
+	@echo "Running benchmarks to generate CPU profile for PGO..."
+	$(GOTEST) -run=^$$ -bench=. -benchtime=5s -cpuprofile=pkg/fizzy/default.pgo ./pkg/fizzy/
+	@echo "Profile saved to pkg/fizzy/default.pgo"
+
+# Run benchmarks and compare with baseline (requires benchstat)
+.PHONY: bench-compare
+bench-compare:
+	@if [ ! -f bench-baseline.txt ]; then \
+		echo "No baseline found. Run 'make bench-baseline' first."; \
+		exit 1; \
+	fi
+	$(GOTEST) -run=^$$ -bench=. -benchmem -count=6 ./pkg/fizzy/ > bench-current.txt
+	benchstat bench-baseline.txt bench-current.txt
+
+# Save benchmark baseline for future comparisons
+.PHONY: bench-baseline
+bench-baseline:
+	$(GOTEST) -run=^$$ -bench=. -benchmem -count=6 ./pkg/fizzy/ > bench-baseline.txt
+	@echo "Baseline saved to bench-baseline.txt"
+
 # Run go vet
 .PHONY: vet
 vet:
@@ -75,6 +98,7 @@ verify:
 .PHONY: clean
 clean:
 	rm -f coverage.out coverage.html
+	rm -f bench-baseline.txt bench-current.txt
 	rm -f pkg/generated/*.gen.go
 
 # Run all checks (local development gate)
@@ -107,6 +131,9 @@ help:
 	@echo ""
 	@echo "Benchmarks:"
 	@echo "  bench          Run all benchmarks"
+	@echo "  bench-pgo      Run benchmarks and generate PGO profile (default.pgo)"
+	@echo "  bench-baseline Save benchmark baseline for comparisons"
+	@echo "  bench-compare  Compare current benchmarks against baseline"
 	@echo ""
 	@echo "Code Quality:"
 	@echo "  vet            Run go vet"

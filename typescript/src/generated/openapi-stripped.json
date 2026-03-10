@@ -801,15 +801,101 @@
           "required": true
         },
         "responses": {
-          "200": {
-            "description": "CompleteSignup 200 response",
+          "201": {
+            "description": "CompleteSignup 201 response"
+          },
+          "400": {
+            "description": "BadRequestError 400 response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CompleteSignupResponseContent"
+                  "$ref": "#/components/schemas/BadRequestErrorResponseContent"
                 }
               }
             }
+          },
+          "401": {
+            "description": "UnauthorizedError 401 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorResponseContent"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "ForbiddenError 403 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenErrorResponseContent"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NotFoundError 404 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundErrorResponseContent"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "ValidationError 422 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponseContent"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RateLimitError 429 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitErrorResponseContent"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "InternalServerError 500 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseContent"
+                }
+              }
+            }
+          }
+        },
+        "x-fizzy-retry": {
+          "maxAttempts": 1
+        }
+      }
+    },
+    "/users/joins.json": {
+      "post": {
+        "operationId": "CompleteJoin",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteJoinRequestContent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "CompleteJoin 204 response"
           },
           "400": {
             "description": "BadRequestError 400 response",
@@ -11197,19 +11283,29 @@
           "url"
         ]
       },
-      "CompleteSignupRequestContent": {
+      "CompleteJoinRequestContent": {
         "type": "object",
         "properties": {
           "name": {
-            "type": "string"
+            "type": "string",
+            "format": "password"
           }
         },
         "required": [
           "name"
         ]
       },
-      "CompleteSignupResponseContent": {
-        "$ref": "#/components/schemas/User"
+      "CompleteSignupRequestContent": {
+        "type": "object",
+        "properties": {
+          "full_name": {
+            "type": "string",
+            "format": "password"
+          }
+        },
+        "required": [
+          "full_name"
+        ]
       },
       "CreateAccessTokenRequestContent": {
         "type": "object",

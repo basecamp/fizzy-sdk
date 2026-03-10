@@ -30,6 +30,7 @@ private val OPERATION_SERVICE_OVERRIDES = mapOf(
     "CreateDirectUpload" to "Uploads",
     "RedeemMagicLink" to "Sessions",
     "CompleteSignup" to "Sessions",
+    "CompleteJoin" to "Sessions",
     "GetNotificationTray" to "Notifications",
     "BulkReadNotifications" to "Notifications",
     "DeleteCardImage" to "Cards",
@@ -163,6 +164,7 @@ val METHOD_NAME_OVERRIDES = mapOf(
     "RedeemMagicLink" to "redeemMagicLink",
     "DestroySession" to "destroy",
     "CompleteSignup" to "completeSignup",
+    "CompleteJoin" to "completeJoin",
     "RegisterDevice" to "register",
     "UnregisterDevice" to "unregister",
 )

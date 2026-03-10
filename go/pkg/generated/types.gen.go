@@ -119,13 +119,15 @@ type Comment struct {
 	Url          string       `json:"url"`
 }
 
-// CompleteSignupRequestContent defines model for CompleteSignupRequestContent.
-type CompleteSignupRequestContent struct {
+// CompleteJoinRequestContent defines model for CompleteJoinRequestContent.
+type CompleteJoinRequestContent struct {
 	Name string `json:"name"`
 }
 
-// CompleteSignupResponseContent defines model for CompleteSignupResponseContent.
-type CompleteSignupResponseContent = User
+// CompleteSignupRequestContent defines model for CompleteSignupRequestContent.
+type CompleteSignupRequestContent struct {
+	FullName string `json:"full_name"`
+}
 
 // CreateAccessTokenRequestContent defines model for CreateAccessTokenRequestContent.
 type CreateAccessTokenRequestContent struct {
@@ -674,6 +676,9 @@ type RedeemMagicLinkJSONRequestBody = RedeemMagicLinkRequestContent
 
 // CompleteSignupJSONRequestBody defines body for CompleteSignup for application/json ContentType.
 type CompleteSignupJSONRequestBody = CompleteSignupRequestContent
+
+// CompleteJoinJSONRequestBody defines body for CompleteJoin for application/json ContentType.
+type CompleteJoinJSONRequestBody = CompleteJoinRequestContent
 
 // UpdateAccountEntropyJSONRequestBody defines body for UpdateAccountEntropy for application/json ContentType.
 type UpdateAccountEntropyJSONRequestBody = UpdateAccountEntropyRequestContent

@@ -128,6 +128,7 @@ export const PATH_TO_OPERATION: Record<string, string> = {
   "POST:/{accountId}/users/{userId}/push_subscriptions.json": "CreatePushSubscription",
   "DELETE:/{accountId}/users/{userId}/push_subscriptions/{pushSubscriptionId}": "DeletePushSubscription",
   "PATCH:/{accountId}/users/{userId}/role.json": "UpdateUserRole",
+  "POST:/users/joins.json": "CompleteJoin",
 
   // Pins
   "GET:/my/pins.json": "ListPins",
