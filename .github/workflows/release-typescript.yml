@@ -1,72 +1,143 @@
-name: Release TypeScript
+name: Release TypeScript SDK
 
 on:
   push:
-    tags: ['v*']
-  workflow_dispatch:
-    inputs:
-      dry_run:
-        description: 'Dry run (skip publish)'
-        required: false
-        default: true
-        type: boolean
+    tags:
+      - 'v*'
+  workflow_dispatch:  # Manual trigger is always dry-run (rehearsal mode)
 
 permissions:
   contents: read
   id-token: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  release:
-    name: Publish to npm
+  smithy:
+    uses: ./.github/workflows/smithy-verify.yml
+
+  test:
+    name: Test TypeScript SDK
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: typescript
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - name: Setup Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
         with:
-          node-version: '20'
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: typescript/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+  publish:
+    name: Publish to npm
+    needs: [smithy, test]
+    runs-on: ubuntu-latest
+    environment: release-npm
+    defaults:
+      run:
+        working-directory: typescript
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag is on main
+        if: github.event_name == 'push'
+        run: |
+          git fetch origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+
+      - name: Setup Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: '22'
           registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+          cache-dependency-path: typescript/package-lock.json
+
+      - name: Upgrade npm for provenance support
+        run: npm install -g npm@latest
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Extract version
         id: version
         env:
           EVENT_NAME: ${{ github.event_name }}
         run: |
-          if [[ "$EVENT_NAME" == "push" ]]; then
-            VERSION="${GITHUB_REF#refs/tags/v}"
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            # Manual trigger (dry-run): read from package.json
+            VERSION=$(node -p "require('./package.json').version")
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "Rehearsal for version: $VERSION"
           else
-            VERSION="0.0.0-dryrun"
+            # Tag trigger: extract from tag (v0.2.1 → 0.2.1)
+            VERSION="${GITHUB_REF#refs/tags/v}"
+            PKG_VERSION=$(node -p "require('./package.json').version")
+            if [ "$PKG_VERSION" != "$VERSION" ]; then
+              echo "::error::Package version ($PKG_VERSION) does not match tag version ($VERSION)"
+              exit 1
+            fi
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "Releasing version: $VERSION"
           fi
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Install and test
+      - name: Determine npm tag
+        id: npm-tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          cd typescript
-          npm ci
-          npm test
-          npm run build
+          if [[ "$VERSION" == *-* ]]; then
+            echo "tag=next" >> $GITHUB_OUTPUT
+          else
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          fi
 
       - name: Check if already published
-        id: check
-        run: |
-          PKG_VERSION=$(jq -r .version typescript/package.json)
-          if npm view "@basecamp/fizzy-sdk@$PKG_VERSION" version 2>/dev/null; then
-            echo "already_published=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "already_published=false" >> "$GITHUB_OUTPUT"
-          fi
+        id: check-published
+        if: github.event_name == 'push'
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if npm view "@37signals/fizzy@${VERSION}" version 2>/dev/null; then
+            echo "already_published=true" >> $GITHUB_OUTPUT
+            echo "::notice::Version ${VERSION} already published to npm"
+          else
+            echo "already_published=false" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Publish
-        if: steps.check.outputs.already_published == 'false' && (github.event_name == 'push' || inputs.dry_run == false)
-        run: |
-          cd typescript
-          PKG_VERSION=$(jq -r .version package.json)
-          if [[ "$PKG_VERSION" == *"-"* ]]; then
-            npm publish --provenance --tag next
-          else
-            npm publish --provenance --tag latest
-          fi
+      - name: Publish to npm
+        if: steps.check-published.outputs.already_published != 'true'
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          NPM_TAG: ${{ steps.npm-tag.outputs.tag }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}  # Bootstrap; remove after OIDC configured
+        run: |
+          if [[ "$EVENT_NAME" == "push" ]]; then
+            npm publish --access public --tag "$NPM_TAG" --provenance
+          else
+            echo "::notice::Dry run mode - not actually publishing"
+            npm publish --access public --tag "$NPM_TAG" --dry-run
+          fi
