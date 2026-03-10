@@ -1,82 +1,93 @@
-name: Release Go
+name: Release Go SDK
 
 on:
   push:
-    tags: ['v*']
-  workflow_dispatch:
-    inputs:
-      dry_run:
-        description: 'Dry run (skip tag push)'
-        required: false
-        default: true
-        type: boolean
+    tags:
+      - 'v*'
+  workflow_dispatch:  # Manual trigger is always dry-run (rehearsal mode)
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  release:
-    name: Publish Go module
+  smithy:
+    uses: ./.github/workflows/smithy-verify.yml
+
+  test:
+    name: Test before release
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: go
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6
-        with:
-          go-version: '1.26'
-
-      - name: Extract version
-        id: version
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-        run: |
-          if [[ "$EVENT_NAME" == "push" ]]; then
-            VERSION="${GITHUB_REF#refs/tags/v}"
-          else
-            VERSION="0.0.0-dryrun"
-          fi
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Verify version matches
-        env:
-          EXPECTED_VERSION: ${{ steps.version.outputs.version }}
-          EVENT_NAME: ${{ github.event_name }}
-        run: |
-          GO_VERSION=$(grep 'Version = ' go/pkg/fizzy/version.go | sed 's/.*"\(.*\)".*/\1/')
-          if [[ "$GO_VERSION" != "$EXPECTED_VERSION" ]] && [[ "$EVENT_NAME" == "push" ]]; then
-            echo "::error::version.go ($GO_VERSION) does not match tag ($EXPECTED_VERSION)"
-            exit 1
-          fi
-
-      - name: Verify go.mod module path
-        run: |
-          MODULE=$(head -1 go/go.mod | awk '{print $2}')
-          if [[ "$MODULE" != "github.com/basecamp/fizzy-sdk/go" ]]; then
-            echo "::error::go.mod module path ($MODULE) is incorrect"
-            exit 1
-          fi
-
-      - name: Test
-        run: cd go && go test ./pkg/fizzy/... -count=1 -race
-
-      - name: Create Go sub-tag
+      - name: Verify tag is on main
         if: github.event_name == 'push'
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          GO_TAG="go/v${VERSION}"
-          # Check if tag already exists
-          if git rev-parse "$GO_TAG" >/dev/null 2>&1; then
-            EXISTING_SHA=$(git rev-parse "$GO_TAG")
-            if [[ "$EXISTING_SHA" != "$GITHUB_SHA" ]]; then
-              echo "::error::$GO_TAG already exists at $EXISTING_SHA (current: $GITHUB_SHA). Must not force-move. Create a new patch release."
+          git fetch origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+
+      - name: Set up Go
+        uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6
+        with:
+          go-version-file: 'go/go.mod'
+          cache-dependency-path: 'go/go.sum'
+
+      - name: Verify module path
+        if: github.event_name == 'push'
+        run: |
+          if ! grep -q "^module github.com/basecamp/fizzy-sdk/go" go.mod; then
+            echo "::error::go.mod module path mismatch"
+            exit 1
+          fi
+
+      - name: Verify version matches tag
+        if: github.event_name == 'push'
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          if ! grep -q "Version = \"${VERSION}\"" pkg/fizzy/version.go; then
+            echo "::error::version.go does not match tag v${VERSION}"
+            echo "Expected: Version = \"${VERSION}\""
+            echo "Found:    $(grep 'Version =' pkg/fizzy/version.go)"
+            exit 1
+          fi
+          echo "Module verification passed"
+
+      - name: Run tests
+        run: go test ./... -count=1 -race
+
+  tag:
+    name: Create Go module tag
+    needs: [smithy, test]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Push go/ subdirectory tag
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          GO_TAG="go/${TAG}"
+
+          REMOTE_SHA=$(git ls-remote --tags --refs origin "$GO_TAG" | awk '{print $1}')
+          if [ -n "$REMOTE_SHA" ]; then
+            if [ "$REMOTE_SHA" = "$GITHUB_SHA" ]; then
+              echo "Tag $GO_TAG already exists at $GITHUB_SHA — nothing to do."
+              exit 0
+            else
+              echo "::error::$GO_TAG already exists at $REMOTE_SHA (current: $GITHUB_SHA). Must not force-move. Create a new patch release."
               exit 1
             fi
-            echo "$GO_TAG already exists at correct SHA"
-          else
-            git tag "$GO_TAG" "$GITHUB_SHA"
-            git push origin "$GO_TAG"
-            echo "Created $GO_TAG"
           fi
+
+          git tag "$GO_TAG" "$GITHUB_SHA"
+          git push origin "$GO_TAG"
