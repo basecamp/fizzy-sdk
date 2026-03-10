@@ -74,7 +74,7 @@ jobs:
           if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
             # Manual trigger (dry-run): read from version.rb
             VERSION=$(ruby -e "require_relative 'lib/fizzy/version'; puts Fizzy::VERSION")
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
             echo "Rehearsal for version: $VERSION"
           else
             # Tag trigger: extract from tag (v0.2.1 → 0.2.1)
@@ -84,7 +84,7 @@ jobs:
               echo "::error::Gem version ($GEM_VERSION) does not match tag version ($VERSION)"
               exit 1
             fi
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
             echo "Releasing version: $VERSION"
           fi
 

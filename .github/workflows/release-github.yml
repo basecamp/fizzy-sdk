@@ -119,7 +119,7 @@ jobs:
               exit 1
             fi
           fi
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Resolved tag: $TAG"
 
       - name: Verify tag is on main
@@ -136,8 +136,8 @@ jobs:
           VERSION: ${{ steps.tag.outputs.tag }}
         run: |
           SEMVER="${VERSION#v}"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "semver=$SEMVER" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "semver=$SEMVER" >> "$GITHUB_OUTPUT"
 
       - name: Checkout tag
         if: github.event_name == 'workflow_dispatch'
