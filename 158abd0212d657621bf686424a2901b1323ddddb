@@ -1,0 +1,36 @@
+spec/fizzy.smithy
+  bdbd7d946a91cc8b 2822,2832,2835,2845
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.9",
+  "base_commit_sha": "158abd0212d657621bf686424a2901b1323ddddb",
+  "prompts": {
+    "0f91336343d32ae3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b696fdea-461b-4407-b67c-3c46999e63a6",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Jeremy Daer <jeremy@37signals.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 333,
+      "overriden_lines": 0
+    },
+    "bdbd7d946a91cc8b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fe441a9e-d318-40f8-b625-76cdba41de85",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Jeremy Daer <jeremy@37signals.com>",
+      "messages": [],
+      "total_additions": 4,
+      "total_deletions": 4,
+      "accepted_lines": 4,
+      "overriden_lines": 0
+    }
+  }
+}
