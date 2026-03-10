@@ -801,8 +801,8 @@
                     "required": true
                 },
                 "responses": {
-                    "200": {
-                        "description": "CompleteSignup 200 response"
+                    "201": {
+                        "description": "CompleteSignup 201 response"
                     },
                     "400": {
                         "description": "BadRequestError 400 response",
@@ -894,8 +894,8 @@
                     "required": true
                 },
                 "responses": {
-                    "200": {
-                        "description": "CompleteJoin 200 response"
+                    "204": {
+                        "description": "CompleteJoin 204 response"
                     },
                     "400": {
                         "description": "BadRequestError 400 response",
@@ -12048,7 +12048,8 @@
                 "type": "object",
                 "properties": {
                     "name": {
-                        "type": "string"
+                        "type": "string",
+                        "format": "password"
                     }
                 },
                 "required": [
@@ -12059,7 +12060,8 @@
                 "type": "object",
                 "properties": {
                     "full_name": {
-                        "type": "string"
+                        "type": "string",
+                        "format": "password"
                     }
                 },
                 "required": [

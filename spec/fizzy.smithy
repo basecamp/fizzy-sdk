@@ -2819,7 +2819,7 @@ operation DestroySession {
     errors: [UnauthorizedError]
 }
 
-@http(method: "POST", uri: "/signup/completion.json")
+@http(method: "POST", uri: "/signup/completion.json", code: 201)
 @tags(["Sessions"])
 @fizzyRetry(maxAttempts: 1)
 operation CompleteSignup {
@@ -2829,10 +2829,10 @@ operation CompleteSignup {
 
 structure CompleteSignupInput {
     @required
-    full_name: String
+    full_name: PersonName
 }
 
-@http(method: "POST", uri: "/users/joins.json")
+@http(method: "POST", uri: "/users/joins.json", code: 204)
 @tags(["Sessions"])
 @fizzyRetry(maxAttempts: 1)
 operation CompleteJoin {
@@ -2842,7 +2842,7 @@ operation CompleteJoin {
 
 structure CompleteJoinInput {
     @required
-    name: String
+    name: PersonName
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
