@@ -121,7 +121,8 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          if npm view "@37signals/fizzy@${VERSION}" version 2>/dev/null; then
+          PKG_NAME=$(node -p "require('./package.json').name")
+          if npm view "${PKG_NAME}@${VERSION}" version 2>/dev/null; then
             echo "already_published=true" >> $GITHUB_OUTPUT
             echo "::notice::Version ${VERSION} already published to npm"
           else
