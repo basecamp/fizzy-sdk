@@ -8,7 +8,7 @@ import {
   createFizzyClient,
   FizzyError,
   type FizzyClient,
-} from "@basecamp/fizzy-sdk";
+} from "@37signals/fizzy";
 
 // ---------------------------------------------------------------------------
 // Types

@@ -5,7 +5,7 @@
  *
  * @example
  * ```ts
- * import { createFizzyClient } from "@basecamp/fizzy-sdk";
+ * import { createFizzyClient } from "@37signals/fizzy";
  *
  * const client = createFizzyClient({
  *   accessToken: process.env.FIZZY_TOKEN!,
