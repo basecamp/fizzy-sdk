@@ -64,6 +64,14 @@
       "params": {}
     },
     {
+      "pattern": "/users/joins",
+      "resource": "unknown",
+      "operations": {
+        "POST": "CompleteJoin"
+      },
+      "params": {}
+    },
+    {
       "pattern": "/{accountId}/account/entropy",
       "resource": "unknown",
       "operations": {
