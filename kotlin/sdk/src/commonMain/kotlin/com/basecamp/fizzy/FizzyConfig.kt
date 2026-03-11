@@ -28,7 +28,7 @@ data class FizzyConfig(
     val baseRetryDelay: Duration = 1.seconds,
 ) {
     companion object {
-        const val VERSION = "0.1.0"
+        const val VERSION = "0.1.1"
         const val API_VERSION = "2026-03-01"
         const val DEFAULT_BASE_URL = "https://fizzy.do"
         const val DEFAULT_USER_AGENT = "fizzy-sdk-kotlin/$VERSION (api:$API_VERSION)"

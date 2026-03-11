@@ -1,6 +1,6 @@
 {
   "name": "@37signals/fizzy",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "TypeScript SDK for the Fizzy API",
   "type": "module",
   "main": "dist/index.js",
