@@ -337,7 +337,7 @@ async function dispatch(
 
       // Miscellaneous — Account
       case "UpdateAccountEntropy":
-        data = await (client as any).miscellaneous.updateAccountEntropy({ autoPostponePeriod: body.auto_postpone_period });
+        data = await (client as any).miscellaneous.updateAccountEntropy({ autoPostponePeriodInDays: body.auto_postpone_period_in_days });
         break;
       case "CreateAccountExport":
         data = await (client as any).miscellaneous.createAccountExport();
@@ -363,7 +363,7 @@ async function dispatch(
 
       // Miscellaneous — Board extras
       case "UpdateBoardEntropy":
-        data = await (client as any).miscellaneous.updateBoardEntropy(p.boardId as number, { autoPostponePeriod: body.auto_postpone_period });
+        data = await (client as any).miscellaneous.updateBoardEntropy(p.boardId as number, { autoPostponePeriodInDays: body.auto_postpone_period_in_days });
         break;
       case "UpdateBoardInvolvement":
         data = await (client as any).miscellaneous.updateBoardInvolvement(p.boardId as number, { involvement: body.involvement });

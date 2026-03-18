@@ -501,7 +501,7 @@
     "method": "PATCH",
     "path": "/{accountId}/account/entropy.json",
     "pathParams": { "accountId": "999" },
-    "requestBody": { "auto_postpone_period": 7 },
+    "requestBody": { "auto_postpone_period_in_days": 7 },
     "mockResponses": [
       {
         "status": 200,
@@ -617,7 +617,7 @@
     "method": "PATCH",
     "path": "/{accountId}/boards/{boardId}/entropy.json",
     "pathParams": { "accountId": "999", "boardId": 42 },
-    "requestBody": { "auto_postpone_period": 14 },
+    "requestBody": { "auto_postpone_period_in_days": 14 },
     "mockResponses": [
       {
         "status": 200,

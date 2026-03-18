@@ -565,7 +565,7 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
         // Miscellaneous — Account
         "UpdateAccountEntropy" -> account.miscellaneous.updateAccountEntropy(
             UpdateAccountEntropyBody(
-                autoPostponePeriod = body?.longOrNull("auto_postpone_period")?.toInt(),
+                autoPostponePeriodInDays = body?.longOrNull("auto_postpone_period_in_days")?.toInt(),
             )
         )
         "CreateAccountExport" -> account.miscellaneous.createAccountExport()
@@ -588,7 +588,7 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
         "UpdateBoardEntropy" -> account.miscellaneous.updateBoardEntropy(
             pp.string("boardId"),
             UpdateBoardEntropyBody(
-                autoPostponePeriod = body?.longOrNull("auto_postpone_period")?.toInt(),
+                autoPostponePeriodInDays = body?.longOrNull("auto_postpone_period_in_days")?.toInt(),
             ),
         )
         "UpdateBoardInvolvement" -> account.miscellaneous.updateBoardInvolvement(

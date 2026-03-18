@@ -16,7 +16,7 @@ struct FizzyConfigTests {
 
     @Test("SDK version")
     func sdkVersion() {
-        #expect(FizzyConfig.sdkVersion == "0.1.0")
+        #expect(FizzyConfig.sdkVersion == "0.1.2")
         #expect(FizzyConfig.apiVersion == "2026-03-01")
     }
 
