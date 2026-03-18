@@ -506,7 +506,7 @@
       {
         "status": 200,
         "headers": { "Content-Type": "application/json" },
-        "body": null
+        "body": { "name": "My Account", "auto_postpone_period_in_days": 7 }
       }
     ],
     "assertions": [
@@ -622,7 +622,7 @@
       {
         "status": 200,
         "headers": { "Content-Type": "application/json" },
-        "body": null
+        "body": { "name": "My Board", "auto_postpone_period_in_days": 14 }
       }
     ],
     "assertions": [
