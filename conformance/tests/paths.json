@@ -622,7 +622,7 @@
       {
         "status": 200,
         "headers": { "Content-Type": "application/json" },
-        "body": { "name": "My Board", "auto_postpone_period_in_days": 14 }
+        "body": { "id": "42", "name": "My Board", "all_access": false, "created_at": "2026-01-01T00:00:00Z", "url": "https://fizzy.test/boards/42", "auto_postpone_period_in_days": 14 }
       }
     ],
     "assertions": [
