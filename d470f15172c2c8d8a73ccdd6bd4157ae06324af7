@@ -1,0 +1,23 @@
+conformance/tests/paths.json
+  68adfe78068efa89 509,625
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.15",
+  "base_commit_sha": "d470f15172c2c8d8a73ccdd6bd4157ae06324af7",
+  "prompts": {
+    "68adfe78068efa89": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7ba324fb-4b1d-4cce-8e86-3917ffbd4f48",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Jeremy Daer <jeremydaer@gmail.com>",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 2,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  }
+}
