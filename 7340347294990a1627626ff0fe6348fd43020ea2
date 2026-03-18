@@ -1,0 +1,29 @@
+swift/Tests/FizzyTests/FizzyTests.swift
+  68adfe78068efa89 19
+conformance/runner/typescript/runner.test.ts
+  68adfe78068efa89 340,366
+kotlin/conformance/src/main/kotlin/com/basecamp/fizzy/conformance/Main.kt
+  68adfe78068efa89 568,591
+conformance/tests/paths.json
+  68adfe78068efa89 504,620
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.15",
+  "base_commit_sha": "7340347294990a1627626ff0fe6348fd43020ea2",
+  "prompts": {
+    "68adfe78068efa89": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7ba324fb-4b1d-4cce-8e86-3917ffbd4f48",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Jeremy Daer <jeremydaer@gmail.com>",
+      "messages": [],
+      "total_additions": 7,
+      "total_deletions": 7,
+      "accepted_lines": 7,
+      "overriden_lines": 0
+    }
+  }
+}
