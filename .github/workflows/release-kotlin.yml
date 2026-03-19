@@ -6,10 +6,6 @@ on:
       - 'v*'
   workflow_dispatch:  # Manual trigger is always dry-run (rehearsal mode)
 
-permissions:
-  contents: read
-  packages: write
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
@@ -17,10 +13,14 @@ concurrency:
 jobs:
   smithy:
     uses: ./.github/workflows/smithy-verify.yml
+    permissions:
+      contents: read
 
   test:
     name: Test Kotlin SDK
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: kotlin
@@ -44,6 +44,9 @@ jobs:
     name: Publish to GitHub Packages
     needs: [smithy, test]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     defaults:
       run:
         working-directory: kotlin
