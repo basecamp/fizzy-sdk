@@ -7,6 +7,8 @@ updates:
     groups:
       go-deps:
         patterns: ["*"]
+    cooldown:
+      default-days: 10
 
   - package-ecosystem: npm
     directory: /typescript
@@ -15,6 +17,8 @@ updates:
     groups:
       npm-deps:
         patterns: ["*"]
+    cooldown:
+      default-days: 10
 
   - package-ecosystem: bundler
     directory: /ruby
@@ -23,6 +27,8 @@ updates:
     groups:
       ruby-deps:
         patterns: ["*"]
+    cooldown:
+      default-days: 10
 
   - package-ecosystem: gradle
     directory: /kotlin
@@ -31,11 +37,15 @@ updates:
     groups:
       kotlin-deps:
         patterns: ["*"]
+    cooldown:
+      default-days: 10
 
   - package-ecosystem: swift
     directory: /swift
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 10
 
   - package-ecosystem: github-actions
     directory: /
@@ -44,3 +54,5 @@ updates:
     groups:
       actions:
         patterns: ["*"]
+    cooldown:
+      default-days: 10
