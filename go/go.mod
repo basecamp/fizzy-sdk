@@ -2,7 +2,7 @@ module github.com/basecamp/fizzy-sdk/go
 
 go 1.26
 
-require github.com/zalando/go-keyring v0.2.7
+require github.com/zalando/go-keyring v0.2.8
 
 require (
 	github.com/danieljoos/wincred v1.2.3 // indirect
