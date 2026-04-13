@@ -1,6 +1,6 @@
 {
   "profile": "full-sdk",
-  "date": "2026-03-08",
+  "date": "2026-04-06",
   "reviewer": "agent:rubric-audit",
   "criteria": {
     "1A.6": { "pass": true, "note": "All 102 operations generated from Smithy model via per-language generators" },
