@@ -22,12 +22,32 @@ Smithy spec -> OpenAPI -> Behavior Model -> Per-language generators -> SDK code
 
 ## Development Workflow
 
-1. Edit the Smithy spec in `spec/`
-2. Run `make smithy-build` to regenerate OpenAPI
-3. Run per-language generators: `make {lang}-generate-services`
-4. Add/update tests
-5. Run `make check`
-6. Commit
+1. Review upstream Fizzy API sources:
+   - [`docs/api/README.md`](https://github.com/basecamp/fizzy/blob/main/docs/api/README.md)
+   - [`docs/api/sections/`](https://github.com/basecamp/fizzy/tree/main/docs/api/sections)
+   - [`config/routes.rb`](https://github.com/basecamp/fizzy/blob/main/config/routes.rb)
+   - [`app/controllers/`](https://github.com/basecamp/fizzy/tree/main/app/controllers)
+   - [`app/views/`](https://github.com/basecamp/fizzy/tree/main/app/views)
+   - [`app/models/`](https://github.com/basecamp/fizzy/tree/main/app/models)
+2. Edit the Smithy spec in `spec/`
+3. Run `make smithy-build` to regenerate OpenAPI
+4. Run per-language generators: `make {lang}-generate-services`
+5. Add/update tests
+6. Run `make check`
+7. Commit
+
+## Upstream Reference Sources
+
+When syncing the SDK spec to upstream Fizzy changes, treat these as the primary references:
+
+- **API docs** — [`docs/api/README.md`](https://github.com/basecamp/fizzy/blob/main/docs/api/README.md)
+- **API section docs** — [`docs/api/sections/`](https://github.com/basecamp/fizzy/tree/main/docs/api/sections)
+- **Routes** — [`config/routes.rb`](https://github.com/basecamp/fizzy/blob/main/config/routes.rb)
+- **Controllers** — [`app/controllers/`](https://github.com/basecamp/fizzy/tree/main/app/controllers)
+- **Views / JSON rendering** — [`app/views/`](https://github.com/basecamp/fizzy/tree/main/app/views)
+- **Relevant models** — [`app/models/`](https://github.com/basecamp/fizzy/tree/main/app/models)
+
+The SDK generation pipeline still starts from Smithy, but Smithy should be kept aligned with these upstream sources.
 
 ## Auth Model
 
@@ -37,24 +57,28 @@ Fizzy uses **two auth strategies** (no OAuth):
 - **CookieAuth** — `Cookie: session_token=<value>` for session-based auth (mobile/web)
 - **MagicLinkFlow** — orchestrates passwordless login: `CreateSession` → `RedeemMagicLink`
 
-## Service Inventory
+## API Surface Inventory
 
-70 operations across 15 services:
+111 operations across the current Smithy-defined API surface:
 
-| Service | Operations |
+| Area | Operations |
 |---------|-----------|
 | Identity | GetMyIdentity |
-| Boards | ListBoards, CreateBoard, GetBoard, UpdateBoard, DeleteBoard |
-| Columns | ListColumns, CreateColumn, GetColumn, UpdateColumn |
-| Cards | ListCards, CreateCard, GetCard, UpdateCard, DeleteCard, CloseCard, ReopenCard, PostponeCard, TriageCard, UnTriageCard, GoldCard, UngoldCard, AssignCard, SelfAssignCard, TagCard, WatchCard, UnwatchCard, PinCard, UnpinCard, MoveCard, DeleteCardImage |
+| Access Tokens | ListAccessTokens, CreateAccessToken, DeleteAccessToken |
+| Account | GetAccountSettings, UpdateAccountSettings, GetJoinCode, UpdateJoinCode, ResetJoinCode, UpdateAccountEntropy, CreateAccountExport, GetAccountExport |
+| Boards | ListBoards, CreateBoard, GetBoard, ListBoardAccesses, UpdateBoard, DeleteBoard, PublishBoard, UnpublishBoard, UpdateBoardInvolvement, UpdateBoardEntropy, ListStreamCards, ListPostponedCards, ListClosedCards |
+| Columns | ListColumns, CreateColumn, GetColumn, UpdateColumn, DeleteColumn, MoveColumnLeft, MoveColumnRight |
+| Cards | ListCards, ListColumnCards, CreateCard, GetCard, UpdateCard, DeleteCard, CloseCard, ReopenCard, PostponeCard, TriageCard, UnTriageCard, GoldCard, UngoldCard, AssignCard, SelfAssignCard, TagCard, WatchCard, UnwatchCard, PinCard, UnpinCard, MoveCard, DeleteCardImage, MarkCardRead, MarkCardUnread, PublishCard |
 | Comments | ListComments, CreateComment, GetComment, UpdateComment, DeleteComment |
-| Steps | CreateStep, GetStep, UpdateStep, DeleteStep |
+| Steps | ListSteps, CreateStep, GetStep, UpdateStep, DeleteStep |
 | Reactions | ListCardReactions, CreateCardReaction, DeleteCardReaction, ListCommentReactions, CreateCommentReaction, DeleteCommentReaction |
-| Notifications | ListNotifications, ReadNotification, UnreadNotification, BulkReadNotifications, GetNotificationTray |
+| Notifications | ListNotifications, ReadNotification, UnreadNotification, BulkReadNotifications, GetNotificationTray, GetNotificationSettings, UpdateNotificationSettings |
+| Search | SearchCards |
+| Activities | ListActivities |
 | Tags | ListTags |
-| Users | ListUsers, GetUser, UpdateUser, DeactivateUser |
+| Users | ListUsers, GetUser, UpdateUser, DeactivateUser, RequestEmailAddressChange, ConfirmEmailAddressChange, CreateUserDataExport, GetUserDataExport, UpdateUserRole, DeleteUserAvatar, CreatePushSubscription, DeletePushSubscription |
 | Pins | ListPins |
 | Uploads | CreateDirectUpload |
-| Webhooks | ListWebhooks, CreateWebhook, GetWebhook, UpdateWebhook, DeleteWebhook, ActivateWebhook |
-| Sessions | CreateSession, RedeemMagicLink, DestroySession, CompleteSignup |
+| Webhooks | ListWebhooks, CreateWebhook, GetWebhook, UpdateWebhook, DeleteWebhook, ActivateWebhook, ListWebhookDeliveries |
+| Sessions | CreateSession, RedeemMagicLink, DestroySession, CompleteSignup, CompleteJoin |
 | Devices | RegisterDevice, UnregisterDevice |

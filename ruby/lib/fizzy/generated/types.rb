@@ -64,6 +64,75 @@ module Fizzy
     end
 
     # @generated
+    Activity = Data.define(:id, :action, :created_at, :description, :particulars, :url, :eventable_type, :eventable, :board, :creator) do
+      # @param data [Hash] raw JSON response
+      def self.from_json(data)
+        new(
+          id: data["id"],
+          action: data["action"],
+          created_at: data["created_at"],
+          description: data["description"],
+          particulars: data["particulars"],
+          url: data["url"],
+          eventable_type: data["eventable_type"],
+          eventable: data["eventable"],
+          board: data["board"],
+          creator: data["creator"]
+        )
+      end
+    end
+
+    # @generated
+    ActivityEventable = Data.define(:id, :number, :title, :status, :description, :description_html, :image_url, :has_attachments, :tags, :closed, :postponed, :golden, :last_active_at, :created_at, :updated_at, :body, :creator, :card, :board, :column, :assignees, :has_more_assignees, :comments_url, :reactions_url, :steps, :url) do
+      # @param data [Hash] raw JSON response
+      def self.from_json(data)
+        new(
+          id: data["id"],
+          number: data["number"],
+          title: data["title"],
+          status: data["status"],
+          description: data["description"],
+          description_html: data["description_html"],
+          image_url: data["image_url"],
+          has_attachments: data["has_attachments"],
+          tags: data["tags"],
+          closed: data["closed"],
+          postponed: data["postponed"],
+          golden: data["golden"],
+          last_active_at: data["last_active_at"],
+          created_at: data["created_at"],
+          updated_at: data["updated_at"],
+          body: data["body"],
+          creator: data["creator"],
+          card: data["card"],
+          board: data["board"],
+          column: data["column"],
+          assignees: data["assignees"],
+          has_more_assignees: data["has_more_assignees"],
+          comments_url: data["comments_url"],
+          reactions_url: data["reactions_url"],
+          steps: data["steps"],
+          url: data["url"]
+        )
+      end
+    end
+
+    # @generated
+    ActivityParticulars = Data.define(:assignee_ids, :old_board, :new_board, :old_title, :new_title, :column) do
+      # @param data [Hash] raw JSON response
+      def self.from_json(data)
+        new(
+          assignee_ids: data["assignee_ids"],
+          old_board: data["old_board"],
+          new_board: data["new_board"],
+          old_title: data["old_title"],
+          new_title: data["new_title"],
+          column: data["column"]
+        )
+      end
+    end
+
+    # @generated
     AssignCardRequestContent = Data.define(:assignee_id) do
       # @param data [Hash] raw JSON response
       def self.from_json(data)
@@ -84,7 +153,7 @@ module Fizzy
     end
 
     # @generated
-    Board = Data.define(:id, :name, :all_access, :created_at, :auto_postpone_period_in_days, :url, :creator) do
+    Board = Data.define(:id, :name, :all_access, :created_at, :auto_postpone_period_in_days, :public_description, :public_description_html, :public_url, :user_ids, :url, :creator) do
       # @param data [Hash] raw JSON response
       def self.from_json(data)
         new(
@@ -93,8 +162,43 @@ module Fizzy
           all_access: data["all_access"],
           created_at: data["created_at"],
           auto_postpone_period_in_days: data["auto_postpone_period_in_days"],
+          public_description: data["public_description"],
+          public_description_html: data["public_description_html"],
+          public_url: data["public_url"],
+          user_ids: data["user_ids"],
           url: data["url"],
           creator: data["creator"]
+        )
+      end
+    end
+
+    # @generated
+    BoardAccessUser = Data.define(:id, :name, :role, :active, :email_address, :created_at, :url, :avatar_url, :has_access, :involvement) do
+      # @param data [Hash] raw JSON response
+      def self.from_json(data)
+        new(
+          id: data["id"],
+          name: data["name"],
+          role: data["role"],
+          active: data["active"],
+          email_address: data["email_address"],
+          created_at: data["created_at"],
+          url: data["url"],
+          avatar_url: data["avatar_url"],
+          has_access: data["has_access"],
+          involvement: data["involvement"]
+        )
+      end
+    end
+
+    # @generated
+    BoardAccesses = Data.define(:board_id, :all_access, :users) do
+      # @param data [Hash] raw JSON response
+      def self.from_json(data)
+        new(
+          board_id: data["board_id"],
+          all_access: data["all_access"],
+          users: data["users"]
         )
       end
     end
@@ -153,25 +257,15 @@ module Fizzy
     end
 
     # @generated
-    Color = Data.define(:name, :value) do
-      # @param data [Hash] raw JSON response
-      def self.from_json(data)
-        new(
-          name: data["name"],
-          value: data["value"]
-        )
-      end
-    end
-
-    # @generated
-    Column = Data.define(:id, :name, :color, :created_at) do
+    Column = Data.define(:id, :name, :color, :created_at, :cards_url) do
       # @param data [Hash] raw JSON response
       def self.from_json(data)
         new(
           id: data["id"],
           name: data["name"],
           color: data["color"],
-          created_at: data["created_at"]
+          created_at: data["created_at"],
+          cards_url: data["cards_url"]
         )
       end
     end
@@ -377,6 +471,9 @@ module Fizzy
     CreateStepResponseContent = Data.define
 
     # @generated
+    CreateUserDataExportResponseContent = Data.define
+
+    # @generated
     CreateWebhookRequestContent = Data.define(:name, :url, :subscribed_actions) do
       # @param data [Hash] raw JSON response
       def self.from_json(data)
@@ -390,6 +487,19 @@ module Fizzy
 
     # @generated
     CreateWebhookResponseContent = Data.define
+
+    # @generated
+    DataExport = Data.define(:id, :status, :created_at, :download_url) do
+      # @param data [Hash] raw JSON response
+      def self.from_json(data)
+        new(
+          id: data["id"],
+          status: data["status"],
+          created_at: data["created_at"],
+          download_url: data["download_url"]
+        )
+      end
+    end
 
     # @generated
     DirectUpload = Data.define(:id, :key, :filename, :content_type, :byte_size, :checksum, :direct_upload) do
@@ -473,6 +583,9 @@ module Fizzy
     GetStepResponseContent = Data.define
 
     # @generated
+    GetUserDataExportResponseContent = Data.define
+
+    # @generated
     GetUserResponseContent = Data.define
 
     # @generated
@@ -502,19 +615,27 @@ module Fizzy
     end
 
     # @generated
-    JoinCode = Data.define(:code, :url, :usage_limit) do
+    JoinCode = Data.define(:code, :url, :usage_count, :usage_limit, :active) do
       # @param data [Hash] raw JSON response
       def self.from_json(data)
         new(
           code: data["code"],
           url: data["url"],
-          usage_limit: data["usage_limit"]
+          usage_count: data["usage_count"],
+          usage_limit: data["usage_limit"],
+          active: data["active"]
         )
       end
     end
 
     # @generated
     ListAccessTokensResponseContent = Data.define
+
+    # @generated
+    ListActivitiesResponseContent = Data.define
+
+    # @generated
+    ListBoardAccessesResponseContent = Data.define
 
     # @generated
     ListBoardsResponseContent = Data.define
@@ -527,6 +648,9 @@ module Fizzy
 
     # @generated
     ListClosedCardsResponseContent = Data.define
+
+    # @generated
+    ListColumnCardsResponseContent = Data.define
 
     # @generated
     ListColumnsResponseContent = Data.define
@@ -557,6 +681,9 @@ module Fizzy
 
     # @generated
     ListUsersResponseContent = Data.define
+
+    # @generated
+    ListWebhookDeliveriesResponseContent = Data.define
 
     # @generated
     ListWebhooksResponseContent = Data.define
@@ -692,6 +819,16 @@ module Fizzy
     end
 
     # @generated
+    RequestEmailAddressChangeRequestContent = Data.define(:email_address) do
+      # @param data [Hash] raw JSON response
+      def self.from_json(data)
+        new(
+          email_address: data["email_address"]
+        )
+      end
+    end
+
+    # @generated
     RichTextBody = Data.define(:plain_text, :html) do
       # @param data [Hash] raw JSON response
       def self.from_json(data)
@@ -727,6 +864,9 @@ module Fizzy
         )
       end
     end
+
+    # @generated
+    StringMap = Data.define
 
     # @generated
     Tag = Data.define(:id, :title, :created_at, :url) do
@@ -979,18 +1119,84 @@ module Fizzy
     end
 
     # @generated
-    Webhook = Data.define(:id, :name, :url, :subscribed_actions, :signing_secret, :active, :created_at, :updated_at) do
+    Webhook = Data.define(:id, :name, :payload_url, :url, :subscribed_actions, :signing_secret, :active, :created_at, :updated_at, :board) do
       # @param data [Hash] raw JSON response
       def self.from_json(data)
         new(
           id: data["id"],
           name: data["name"],
+          payload_url: data["payload_url"],
           url: data["url"],
           subscribed_actions: data["subscribed_actions"],
           signing_secret: data["signing_secret"],
           active: data["active"],
           created_at: data["created_at"],
-          updated_at: data["updated_at"]
+          updated_at: data["updated_at"],
+          board: data["board"]
+        )
+      end
+    end
+
+    # @generated
+    WebhookDelivery = Data.define(:id, :state, :created_at, :updated_at, :request, :response, :event) do
+      # @param data [Hash] raw JSON response
+      def self.from_json(data)
+        new(
+          id: data["id"],
+          state: data["state"],
+          created_at: data["created_at"],
+          updated_at: data["updated_at"],
+          request: data["request"],
+          response: data["response"],
+          event: data["event"]
+        )
+      end
+    end
+
+    # @generated
+    WebhookDeliveryEvent = Data.define(:id, :action, :created_at, :creator, :eventable) do
+      # @param data [Hash] raw JSON response
+      def self.from_json(data)
+        new(
+          id: data["id"],
+          action: data["action"],
+          created_at: data["created_at"],
+          creator: data["creator"],
+          eventable: data["eventable"]
+        )
+      end
+    end
+
+    # @generated
+    WebhookDeliveryEventCreator = Data.define(:id, :name) do
+      # @param data [Hash] raw JSON response
+      def self.from_json(data)
+        new(
+          id: data["id"],
+          name: data["name"]
+        )
+      end
+    end
+
+    # @generated
+    WebhookDeliveryEventEventable = Data.define(:type, :id, :url) do
+      # @param data [Hash] raw JSON response
+      def self.from_json(data)
+        new(
+          type: data["type"],
+          id: data["id"],
+          url: data["url"]
+        )
+      end
+    end
+
+    # @generated
+    WebhookDeliveryResponse = Data.define(:code, :error) do
+      # @param data [Hash] raw JSON response
+      def self.from_json(data)
+        new(
+          code: data["code"],
+          error: data["error"]
         )
       end
     end

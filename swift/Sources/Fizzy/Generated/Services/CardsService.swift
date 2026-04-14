@@ -1,35 +1,73 @@
 // @generated from OpenAPI spec — do not edit directly
 import Foundation
 
+public struct ListActivitiesCardOptions: Sendable {
+    public var creatorIds: [String]?
+    public var boardIds: [String]?
+    public var maxItems: Int?
+
+    public init(creatorIds: [String]? = nil, boardIds: [String]? = nil, maxItems: Int? = nil) {
+        self.creatorIds = creatorIds
+        self.boardIds = boardIds
+        self.maxItems = maxItems
+    }
+}
+
 public struct ListCardOptions: Sendable {
-    public var boardId: String?
-    public var columnId: String?
-    public var assigneeId: String?
-    public var tag: String?
-    public var status: String?
-    public var q: String?
+    public var boardIds: [String]?
+    public var tagIds: [String]?
+    public var assigneeIds: [String]?
+    public var creatorIds: [String]?
+    public var closerIds: [String]?
+    public var cardIds: [String]?
+    public var indexedBy: String?
+    public var sortedBy: String?
+    public var assignmentStatus: String?
+    public var creation: String?
+    public var closure: String?
+    public var terms: [String]?
     public var maxItems: Int?
 
     public init(
-        boardId: String? = nil,
-        columnId: String? = nil,
-        assigneeId: String? = nil,
-        tag: String? = nil,
-        status: String? = nil,
-        q: String? = nil,
+        boardIds: [String]? = nil,
+        tagIds: [String]? = nil,
+        assigneeIds: [String]? = nil,
+        creatorIds: [String]? = nil,
+        closerIds: [String]? = nil,
+        cardIds: [String]? = nil,
+        indexedBy: String? = nil,
+        sortedBy: String? = nil,
+        assignmentStatus: String? = nil,
+        creation: String? = nil,
+        closure: String? = nil,
+        terms: [String]? = nil,
         maxItems: Int? = nil
     ) {
-        self.boardId = boardId
-        self.columnId = columnId
-        self.assigneeId = assigneeId
-        self.tag = tag
-        self.status = status
-        self.q = q
+        self.boardIds = boardIds
+        self.tagIds = tagIds
+        self.assigneeIds = assigneeIds
+        self.creatorIds = creatorIds
+        self.closerIds = closerIds
+        self.cardIds = cardIds
+        self.indexedBy = indexedBy
+        self.sortedBy = sortedBy
+        self.assignmentStatus = assignmentStatus
+        self.creation = creation
+        self.closure = closure
+        self.terms = terms
         self.maxItems = maxItems
     }
 }
 
 public struct ListClosedCardsCardOptions: Sendable {
+    public var maxItems: Int?
+
+    public init(maxItems: Int? = nil) {
+        self.maxItems = maxItems
+    }
+}
+
+public struct ListColumnCardsCardOptions: Sendable {
     public var maxItems: Int?
 
     public init(maxItems: Int? = nil) {
@@ -128,25 +166,78 @@ public final class CardsService: BaseService, @unchecked Sendable {
         )
     }
 
+    public func listActivities(accountId: String, options: ListActivitiesCardOptions? = nil) async throws -> ListResult<Activity> {
+        var queryItems: [URLQueryItem] = []
+        if let creatorIds = options?.creatorIds {
+            for value in creatorIds {
+                queryItems.append(URLQueryItem(name: "creator_ids[]", value: String(value)))
+            }
+        }
+        if let boardIds = options?.boardIds {
+            for value in boardIds {
+                queryItems.append(URLQueryItem(name: "board_ids[]", value: String(value)))
+            }
+        }
+        return try await requestPaginated(
+            OperationInfo(service: "Cards", operation: "ListActivities", resourceType: "activity", isMutation: false),
+            path: "/\(accountId)/activities.json",
+            queryItems: queryItems.isEmpty ? nil : queryItems,
+            paginationOpts: options.flatMap { PaginationOptions(maxItems: $0.maxItems) },
+            retryConfig: Metadata.retryConfig(for: "ListActivities")
+        )
+    }
+
     public func list(accountId: String, options: ListCardOptions? = nil) async throws -> ListResult<Card> {
         var queryItems: [URLQueryItem] = []
-        if let boardId = options?.boardId {
-            queryItems.append(URLQueryItem(name: "board_id", value: boardId))
+        if let boardIds = options?.boardIds {
+            for value in boardIds {
+                queryItems.append(URLQueryItem(name: "board_ids[]", value: String(value)))
+            }
         }
-        if let columnId = options?.columnId {
-            queryItems.append(URLQueryItem(name: "column_id", value: columnId))
+        if let tagIds = options?.tagIds {
+            for value in tagIds {
+                queryItems.append(URLQueryItem(name: "tag_ids[]", value: String(value)))
+            }
         }
-        if let assigneeId = options?.assigneeId {
-            queryItems.append(URLQueryItem(name: "assignee_id", value: assigneeId))
+        if let assigneeIds = options?.assigneeIds {
+            for value in assigneeIds {
+                queryItems.append(URLQueryItem(name: "assignee_ids[]", value: String(value)))
+            }
         }
-        if let tag = options?.tag {
-            queryItems.append(URLQueryItem(name: "tag", value: tag))
+        if let creatorIds = options?.creatorIds {
+            for value in creatorIds {
+                queryItems.append(URLQueryItem(name: "creator_ids[]", value: String(value)))
+            }
         }
-        if let status = options?.status {
-            queryItems.append(URLQueryItem(name: "status", value: status))
+        if let closerIds = options?.closerIds {
+            for value in closerIds {
+                queryItems.append(URLQueryItem(name: "closer_ids[]", value: String(value)))
+            }
         }
-        if let q = options?.q {
-            queryItems.append(URLQueryItem(name: "q", value: q))
+        if let cardIds = options?.cardIds {
+            for value in cardIds {
+                queryItems.append(URLQueryItem(name: "card_ids[]", value: String(value)))
+            }
+        }
+        if let indexedBy = options?.indexedBy {
+            queryItems.append(URLQueryItem(name: "indexed_by", value: indexedBy))
+        }
+        if let sortedBy = options?.sortedBy {
+            queryItems.append(URLQueryItem(name: "sorted_by", value: sortedBy))
+        }
+        if let assignmentStatus = options?.assignmentStatus {
+            queryItems.append(URLQueryItem(name: "assignment_status", value: assignmentStatus))
+        }
+        if let creation = options?.creation {
+            queryItems.append(URLQueryItem(name: "creation", value: creation))
+        }
+        if let closure = options?.closure {
+            queryItems.append(URLQueryItem(name: "closure", value: closure))
+        }
+        if let terms = options?.terms {
+            for value in terms {
+                queryItems.append(URLQueryItem(name: "terms[]", value: String(value)))
+            }
         }
         return try await requestPaginated(
             OperationInfo(service: "Cards", operation: "ListCards", resourceType: "card", isMutation: false),
@@ -163,6 +254,15 @@ public final class CardsService: BaseService, @unchecked Sendable {
             path: "/\(accountId)/boards/\(boardId)/columns/closed.json",
             paginationOpts: options.flatMap { PaginationOptions(maxItems: $0.maxItems) },
             retryConfig: Metadata.retryConfig(for: "ListClosedCards")
+        )
+    }
+
+    public func listColumnCards(accountId: String, boardId: String, columnId: String, options: ListColumnCardsCardOptions? = nil) async throws -> ListResult<Card> {
+        return try await requestPaginated(
+            OperationInfo(service: "Cards", operation: "ListColumnCards", resourceType: "column_card", isMutation: false),
+            path: "/\(accountId)/boards/\(boardId)/columns/\(columnId)/cards.json",
+            paginationOpts: options.flatMap { PaginationOptions(maxItems: $0.maxItems) },
+            retryConfig: Metadata.retryConfig(for: "ListColumnCards")
         )
     }
 

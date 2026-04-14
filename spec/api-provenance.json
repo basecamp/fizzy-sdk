@@ -1,10 +1,12 @@
 {
   "fizzy": {
     "repo": "basecamp/fizzy",
-    "revision": "",
-    "date": "",
+    "revision": "127156e23aab970f8969338d5dfdb748b0ad900d",
+    "date": "2026-04-10",
     "branch": "main",
     "paths": {
+      "api_docs_index": "docs/api/README.md",
+      "api_docs_sections": "docs/api/sections/",
       "routes": "config/routes.rb",
       "controllers": "app/controllers/",
       "views": "app/views/",

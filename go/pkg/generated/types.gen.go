@@ -39,6 +39,60 @@ type AccountSettings struct {
 	Name                     string `json:"name"`
 }
 
+// Activity defines model for Activity.
+type Activity struct {
+	Action        string              `json:"action"`
+	Board         Board               `json:"board"`
+	CreatedAt     string              `json:"created_at"`
+	Creator       User                `json:"creator"`
+	Description   string              `json:"description"`
+	Eventable     ActivityEventable   `json:"eventable"`
+	EventableType string              `json:"eventable_type"`
+	Id            string              `json:"id"`
+	Particulars   ActivityParticulars `json:"particulars"`
+	Url           string              `json:"url"`
+}
+
+// ActivityEventable defines model for ActivityEventable.
+type ActivityEventable struct {
+	Assignees        []User       `json:"assignees,omitempty"`
+	Board            Board        `json:"board,omitempty"`
+	Body             RichTextBody `json:"body,omitempty"`
+	Card             CardRef      `json:"card,omitempty"`
+	Closed           bool         `json:"closed,omitempty"`
+	Column           Column       `json:"column,omitempty"`
+	CommentsUrl      string       `json:"comments_url,omitempty"`
+	CreatedAt        string       `json:"created_at,omitempty"`
+	Creator          User         `json:"creator,omitempty"`
+	Description      string       `json:"description,omitempty"`
+	DescriptionHtml  string       `json:"description_html,omitempty"`
+	Golden           bool         `json:"golden,omitempty"`
+	HasAttachments   bool         `json:"has_attachments,omitempty"`
+	HasMoreAssignees bool         `json:"has_more_assignees,omitempty"`
+	Id               string       `json:"id"`
+	ImageUrl         string       `json:"image_url,omitempty"`
+	LastActiveAt     string       `json:"last_active_at,omitempty"`
+	Number           int32        `json:"number,omitempty"`
+	Postponed        bool         `json:"postponed,omitempty"`
+	ReactionsUrl     string       `json:"reactions_url,omitempty"`
+	Status           string       `json:"status,omitempty"`
+	Steps            []Step       `json:"steps,omitempty"`
+	Tags             []string     `json:"tags,omitempty"`
+	Title            string       `json:"title,omitempty"`
+	UpdatedAt        string       `json:"updated_at,omitempty"`
+	Url              string       `json:"url"`
+}
+
+// ActivityParticulars defines model for ActivityParticulars.
+type ActivityParticulars struct {
+	AssigneeIds []string `json:"assignee_ids,omitempty"`
+	Column      string   `json:"column,omitempty"`
+	NewBoard    string   `json:"new_board,omitempty"`
+	NewTitle    string   `json:"new_title,omitempty"`
+	OldBoard    string   `json:"old_board,omitempty"`
+	OldTitle    string   `json:"old_title,omitempty"`
+}
+
 // AssignCardRequestContent defines model for AssignCardRequestContent.
 type AssignCardRequestContent struct {
 	AssigneeId string `json:"assignee_id"`
@@ -51,13 +105,38 @@ type BadRequestErrorResponseContent struct {
 
 // Board defines model for Board.
 type Board struct {
-	AllAccess                bool   `json:"all_access"`
-	AutoPostponePeriodInDays int32  `json:"auto_postpone_period_in_days,omitempty"`
-	CreatedAt                string `json:"created_at"`
-	Creator                  User   `json:"creator,omitempty"`
-	Id                       string `json:"id"`
-	Name                     string `json:"name"`
-	Url                      string `json:"url"`
+	AllAccess                bool     `json:"all_access"`
+	AutoPostponePeriodInDays int32    `json:"auto_postpone_period_in_days,omitempty"`
+	CreatedAt                string   `json:"created_at"`
+	Creator                  User     `json:"creator,omitempty"`
+	Id                       string   `json:"id"`
+	Name                     string   `json:"name"`
+	PublicDescription        string   `json:"public_description,omitempty"`
+	PublicDescriptionHtml    string   `json:"public_description_html,omitempty"`
+	PublicUrl                string   `json:"public_url,omitempty"`
+	Url                      string   `json:"url"`
+	UserIds                  []string `json:"user_ids,omitempty"`
+}
+
+// BoardAccessUser defines model for BoardAccessUser.
+type BoardAccessUser struct {
+	Active       bool   `json:"active"`
+	AvatarUrl    string `json:"avatar_url,omitempty"`
+	CreatedAt    string `json:"created_at"`
+	EmailAddress string `json:"email_address"`
+	HasAccess    bool   `json:"has_access"`
+	Id           string `json:"id"`
+	Involvement  string `json:"involvement,omitempty"`
+	Name         string `json:"name"`
+	Role         string `json:"role"`
+	Url          string `json:"url"`
+}
+
+// BoardAccesses defines model for BoardAccesses.
+type BoardAccesses struct {
+	AllAccess bool              `json:"all_access"`
+	BoardId   string            `json:"board_id"`
+	Users     []BoardAccessUser `json:"users"`
 }
 
 // BulkReadNotificationsRequestContent defines model for BulkReadNotificationsRequestContent.
@@ -98,15 +177,10 @@ type CardRef struct {
 	Url string `json:"url"`
 }
 
-// Color defines model for Color.
-type Color struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
-}
-
 // Column defines model for Column.
 type Column struct {
-	Color     Color  `json:"color,omitempty"`
+	CardsUrl  string `json:"cards_url,omitempty"`
+	Color     string `json:"color,omitempty"`
 	CreatedAt string `json:"created_at"`
 	Id        string `json:"id"`
 	Name      string `json:"name"`
@@ -242,6 +316,9 @@ type CreateStepRequestContent struct {
 // CreateStepResponseContent defines model for CreateStepResponseContent.
 type CreateStepResponseContent = Step
 
+// CreateUserDataExportResponseContent defines model for CreateUserDataExportResponseContent.
+type CreateUserDataExportResponseContent = DataExport
+
 // CreateWebhookRequestContent defines model for CreateWebhookRequestContent.
 type CreateWebhookRequestContent struct {
 	Name              string   `json:"name"`
@@ -251,6 +328,14 @@ type CreateWebhookRequestContent struct {
 
 // CreateWebhookResponseContent defines model for CreateWebhookResponseContent.
 type CreateWebhookResponseContent = Webhook
+
+// DataExport defines model for DataExport.
+type DataExport struct {
+	CreatedAt   string `json:"created_at"`
+	DownloadUrl string `json:"download_url,omitempty"`
+	Id          string `json:"id"`
+	Status      string `json:"status"`
+}
 
 // DirectUpload defines model for DirectUpload.
 type DirectUpload struct {
@@ -313,6 +398,9 @@ type GetNotificationTrayResponseContent = []Notification
 // GetStepResponseContent defines model for GetStepResponseContent.
 type GetStepResponseContent = Step
 
+// GetUserDataExportResponseContent defines model for GetUserDataExportResponseContent.
+type GetUserDataExportResponseContent = DataExport
+
 // GetUserResponseContent defines model for GetUserResponseContent.
 type GetUserResponseContent = User
 
@@ -322,9 +410,9 @@ type GetWebhookResponseContent = Webhook
 // Identity defines model for Identity.
 type Identity struct {
 	Accounts     []Account `json:"accounts"`
-	EmailAddress string    `json:"email_address"`
+	EmailAddress string    `json:"email_address,omitempty"`
 	Id           string    `json:"id"`
-	Name         string    `json:"name"`
+	Name         string    `json:"name,omitempty"`
 }
 
 // InternalServerErrorResponseContent defines model for InternalServerErrorResponseContent.
@@ -334,13 +422,21 @@ type InternalServerErrorResponseContent struct {
 
 // JoinCode defines model for JoinCode.
 type JoinCode struct {
+	Active     bool   `json:"active,omitempty"`
 	Code       string `json:"code"`
 	Url        string `json:"url"`
+	UsageCount int32  `json:"usage_count,omitempty"`
 	UsageLimit int32  `json:"usage_limit,omitempty"`
 }
 
 // ListAccessTokensResponseContent defines model for ListAccessTokensResponseContent.
 type ListAccessTokensResponseContent = []AccessToken
+
+// ListActivitiesResponseContent defines model for ListActivitiesResponseContent.
+type ListActivitiesResponseContent = []Activity
+
+// ListBoardAccessesResponseContent defines model for ListBoardAccessesResponseContent.
+type ListBoardAccessesResponseContent = BoardAccesses
 
 // ListBoardsResponseContent defines model for ListBoardsResponseContent.
 type ListBoardsResponseContent = []Board
@@ -353,6 +449,9 @@ type ListCardsResponseContent = []Card
 
 // ListClosedCardsResponseContent defines model for ListClosedCardsResponseContent.
 type ListClosedCardsResponseContent = []Card
+
+// ListColumnCardsResponseContent defines model for ListColumnCardsResponseContent.
+type ListColumnCardsResponseContent = []Card
 
 // ListColumnsResponseContent defines model for ListColumnsResponseContent.
 type ListColumnsResponseContent = []Column
@@ -383,6 +482,9 @@ type ListTagsResponseContent = []Tag
 
 // ListUsersResponseContent defines model for ListUsersResponseContent.
 type ListUsersResponseContent = []User
+
+// ListWebhookDeliveriesResponseContent defines model for ListWebhookDeliveriesResponseContent.
+type ListWebhookDeliveriesResponseContent = []WebhookDelivery
 
 // ListWebhooksResponseContent defines model for ListWebhooksResponseContent.
 type ListWebhooksResponseContent = []Webhook
@@ -467,6 +569,11 @@ type RegisterDeviceRequestContent struct {
 	Token    string `json:"token"`
 }
 
+// RequestEmailAddressChangeRequestContent defines model for RequestEmailAddressChangeRequestContent.
+type RequestEmailAddressChangeRequestContent struct {
+	EmailAddress string `json:"email_address"`
+}
+
 // RichTextBody defines model for RichTextBody.
 type RichTextBody struct {
 	Html      string `json:"html"`
@@ -488,6 +595,9 @@ type Step struct {
 	Content   string `json:"content"`
 	Id        string `json:"id"`
 }
+
+// StringMap defines model for StringMap.
+type StringMap map[string]string
 
 // Tag defines model for Tag.
 type Tag struct {
@@ -642,23 +752,86 @@ type ValidationErrorResponseContent struct {
 // Webhook defines model for Webhook.
 type Webhook struct {
 	Active            bool     `json:"active"`
+	Board             Board    `json:"board,omitempty"`
 	CreatedAt         string   `json:"created_at"`
 	Id                string   `json:"id"`
 	Name              string   `json:"name"`
+	PayloadUrl        string   `json:"payload_url"`
 	SigningSecret     string   `json:"signing_secret"`
 	SubscribedActions []string `json:"subscribed_actions"`
-	UpdatedAt         string   `json:"updated_at"`
+	UpdatedAt         string   `json:"updated_at,omitempty"`
 	Url               string   `json:"url"`
+}
+
+// WebhookDelivery defines model for WebhookDelivery.
+type WebhookDelivery struct {
+	CreatedAt string                  `json:"created_at"`
+	Event     WebhookDeliveryEvent    `json:"event,omitempty"`
+	Id        string                  `json:"id"`
+	Request   WebhookDeliveryRequest  `json:"request,omitempty"`
+	Response  WebhookDeliveryResponse `json:"response,omitempty"`
+	State     string                  `json:"state"`
+	UpdatedAt string                  `json:"updated_at"`
+}
+
+// WebhookDeliveryEvent defines model for WebhookDeliveryEvent.
+type WebhookDeliveryEvent struct {
+	Action    string                        `json:"action"`
+	CreatedAt string                        `json:"created_at"`
+	Creator   WebhookDeliveryEventCreator   `json:"creator,omitempty"`
+	Eventable WebhookDeliveryEventEventable `json:"eventable,omitempty"`
+	Id        string                        `json:"id"`
+}
+
+// WebhookDeliveryEventCreator defines model for WebhookDeliveryEventCreator.
+type WebhookDeliveryEventCreator struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// WebhookDeliveryEventEventable defines model for WebhookDeliveryEventEventable.
+type WebhookDeliveryEventEventable struct {
+	Id   string `json:"id"`
+	Type string `json:"type"`
+	Url  string `json:"url"`
+}
+
+// WebhookDeliveryRequest defines model for WebhookDeliveryRequest.
+type WebhookDeliveryRequest struct {
+	Headers StringMap `json:"headers,omitempty"`
+}
+
+// WebhookDeliveryResponse defines model for WebhookDeliveryResponse.
+type WebhookDeliveryResponse struct {
+	Code  int32  `json:"code,omitempty"`
+	Error string `json:"error,omitempty"`
+}
+
+// ListActivitiesParams defines parameters for ListActivities.
+type ListActivitiesParams struct {
+	CreatorIds []string `form:"creator_ids[],omitempty" json:"creator_ids[],omitempty"`
+	BoardIds   []string `form:"board_ids[],omitempty" json:"board_ids[],omitempty"`
+}
+
+// ListBoardAccessesParams defines parameters for ListBoardAccesses.
+type ListBoardAccessesParams struct {
+	Page int32 `form:"page,omitempty" json:"page,omitempty"`
 }
 
 // ListCardsParams defines parameters for ListCards.
 type ListCardsParams struct {
-	BoardId    string `form:"board_id,omitempty" json:"board_id,omitempty"`
-	ColumnId   string `form:"column_id,omitempty" json:"column_id,omitempty"`
-	AssigneeId string `form:"assignee_id,omitempty" json:"assignee_id,omitempty"`
-	Tag        string `form:"tag,omitempty" json:"tag,omitempty"`
-	Status     string `form:"status,omitempty" json:"status,omitempty"`
-	Q          string `form:"q,omitempty" json:"q,omitempty"`
+	BoardIds         []string `form:"board_ids[],omitempty" json:"board_ids[],omitempty"`
+	TagIds           []string `form:"tag_ids[],omitempty" json:"tag_ids[],omitempty"`
+	AssigneeIds      []string `form:"assignee_ids[],omitempty" json:"assignee_ids[],omitempty"`
+	CreatorIds       []string `form:"creator_ids[],omitempty" json:"creator_ids[],omitempty"`
+	CloserIds        []string `form:"closer_ids[],omitempty" json:"closer_ids[],omitempty"`
+	CardIds          []string `form:"card_ids[],omitempty" json:"card_ids[],omitempty"`
+	IndexedBy        string   `form:"indexed_by,omitempty" json:"indexed_by,omitempty"`
+	SortedBy         string   `form:"sorted_by,omitempty" json:"sorted_by,omitempty"`
+	AssignmentStatus string   `form:"assignment_status,omitempty" json:"assignment_status,omitempty"`
+	Creation         string   `form:"creation,omitempty" json:"creation,omitempty"`
+	Closure          string   `form:"closure,omitempty" json:"closure,omitempty"`
+	Terms            []string `form:"terms[],omitempty" json:"terms[],omitempty"`
 }
 
 // ListNotificationsParams defines parameters for ListNotifications.
@@ -774,6 +947,9 @@ type CreateDirectUploadJSONRequestBody = CreateDirectUploadRequestContent
 
 // UpdateUserJSONRequestBody defines body for UpdateUser for application/json ContentType.
 type UpdateUserJSONRequestBody = UpdateUserRequestContent
+
+// RequestEmailAddressChangeJSONRequestBody defines body for RequestEmailAddressChange for application/json ContentType.
+type RequestEmailAddressChangeJSONRequestBody = RequestEmailAddressChangeRequestContent
 
 // CreatePushSubscriptionJSONRequestBody defines body for CreatePushSubscription for application/json ContentType.
 type CreatePushSubscriptionJSONRequestBody = CreatePushSubscriptionRequestContent

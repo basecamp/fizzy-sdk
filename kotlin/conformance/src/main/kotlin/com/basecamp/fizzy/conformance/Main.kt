@@ -324,6 +324,10 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
             )
         )
         "GetBoard" -> account.boards.get(pp.string("boardId"))
+        "ListBoardAccesses" -> account.boards.listBoardAccesses(
+            pp.string("boardId"),
+            ListBoardAccessesOptions(page = qp.longOrNull("page"))
+        )
         "UpdateBoard" -> account.boards.update(
             pp.string("boardId"),
             UpdateBoardBody(
@@ -337,12 +341,18 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
 
         // Cards
         "ListCards" -> account.cards.list(ListCardsOptions(
-            boardId = qp.strOrNull("board_id"),
-            columnId = qp.strOrNull("column_id"),
-            assigneeId = qp.strOrNull("assignee_id"),
-            tag = qp.strOrNull("tag"),
-            status = qp.strOrNull("status"),
-            q = qp.strOrNull("q"),
+            boardIds = qp.stringListOrSingleton("board_ids[]"),
+            tagIds = qp.stringListOrSingleton("tag_ids[]"),
+            assigneeIds = qp.stringListOrSingleton("assignee_ids[]"),
+            creatorIds = qp.stringListOrSingleton("creator_ids[]"),
+            closerIds = qp.stringListOrSingleton("closer_ids[]"),
+            cardIds = qp.stringListOrSingleton("card_ids[]"),
+            indexedBy = qp.strOrNull("indexed_by"),
+            sortedBy = qp.strOrNull("sorted_by"),
+            assignmentStatus = qp.strOrNull("assignment_status"),
+            creation = qp.strOrNull("creation"),
+            closure = qp.strOrNull("closure"),
+            terms = qp.stringListOrSingleton("terms[]"),
         ))
         "CreateCard" -> account.cards.create(
             CreateCardBody(title = body?.str("title") ?: "")
@@ -390,6 +400,11 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
         "ListClosedCards" -> account.cards.listClosedCards(pp.string("boardId"))
         "PublishCard" -> account.cards.publishCard(pp.long("cardNumber"))
         "SearchCards" -> account.cards.search(qp.strOrNull("q") ?: "")
+        "ListActivities" -> account.cards.listActivities(ListActivitiesOptions(
+            creatorIds = qp.stringListOrSingleton("creator_ids[]"),
+            boardIds = qp.stringListOrSingleton("board_ids[]"),
+        ))
+        "ListColumnCards" -> account.cards.listColumnCards(pp.string("boardId"), pp.string("columnId"))
 
         // Columns
         "ListColumns" -> account.columns.list(pp.string("boardId"))
@@ -528,6 +543,16 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
             UpdateUserBody(name = body?.strOrNull("name")),
         )
         "DeactivateUser" -> account.users.deactivate(pp.string("userId"))
+        "RequestEmailAddressChange" -> account.users.requestEmailAddressChange(
+            pp.string("userId"),
+            RequestEmailAddressChangeBody(emailAddress = body?.str("email_address") ?: ""),
+        )
+        "ConfirmEmailAddressChange" -> account.users.confirmEmailAddressChange(
+            pp.string("userId"),
+            pp.string("emailAddressToken"),
+        )
+        "CreateUserDataExport" -> account.users.createUserDataExport(pp.string("userId"))
+        "GetUserDataExport" -> account.users.userDataExport(pp.string("userId"), pp.string("exportId"))
 
         // Webhooks
         "ListWebhooks" -> account.webhooks.list(pp.string("boardId"))
@@ -551,6 +576,7 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
         )
         "DeleteWebhook" -> account.webhooks.delete(pp.string("boardId"), pp.string("webhookId"))
         "ActivateWebhook" -> account.webhooks.activate(pp.string("boardId"), pp.string("webhookId"))
+        "ListWebhookDeliveries" -> account.webhooks.listWebhookDeliveries(pp.string("boardId"), pp.string("webhookId"))
 
         // Miscellaneous — Access Tokens
         "ListAccessTokens" -> account.miscellaneous.listAccessTokens()
@@ -865,6 +891,12 @@ private fun Map<String, JsonElement>.longOrNull(key: String): Long? =
 
 private fun Map<String, JsonElement>.strOrNull(key: String): String? =
     (this[key] as? JsonPrimitive)?.contentOrNull
+
+private fun Map<String, JsonElement>.stringListOrSingleton(key: String): List<String>? = when (val el = this[key]) {
+    is JsonArray -> el.map { it.jsonPrimitive.content }
+    is JsonPrimitive -> el.contentOrNull?.let { listOf(it) }
+    else -> null
+}
 
 private fun Map<String, JsonElement>.boolOrNull(key: String): Boolean? {
     val el = (this[key] as? JsonPrimitive) ?: return null

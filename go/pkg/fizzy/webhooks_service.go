@@ -45,6 +45,22 @@ func (s *WebhooksService) Get(ctx context.Context, boardID string, webhookID str
 	return &result, resp, nil
 }
 
+// ListWebhookDeliveries returns webhook deliveries.
+func (s *WebhooksService) ListWebhookDeliveries(ctx context.Context, boardID string, webhookID string, path string) ([]generated.WebhookDelivery, *Response, error) {
+	if path == "" {
+		path = fmt.Sprintf("/boards/%s/webhooks/%s/deliveries.json", boardID, webhookID)
+	}
+	resp, err := s.client.Get(ctx, path)
+	if err != nil {
+		return nil, nil, err
+	}
+	var result []generated.WebhookDelivery
+	if err := resp.UnmarshalData(&result); err != nil {
+		return nil, resp, err
+	}
+	return result, resp, nil
+}
+
 // List returns webhooks.
 func (s *WebhooksService) List(ctx context.Context, boardID string) ([]generated.Webhook, *Response, error) {
 	resp, err := s.client.Get(ctx, fmt.Sprintf("/boards/%s/webhooks.json", boardID))

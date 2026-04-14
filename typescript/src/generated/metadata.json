@@ -1,7 +1,7 @@
 {
   "$schema": "https://fizzy.do/schemas/sdk-metadata.json",
   "version": "1.0.0",
-  "generated": "2026-03-10T16:45:51.924Z",
+  "generated": "2026-04-13T21:51:18.124Z",
   "operations": {
     "ListAccessTokens": {
       "retry": {
@@ -185,6 +185,22 @@
         "natural": true
       }
     },
+    "ListActivities": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          500,
+          503
+        ]
+      },
+      "pagination": {
+        "style": "link",
+        "pageParam": "page"
+      }
+    },
     "ListBoards": {
       "retry": {
         "maxAttempts": 3,
@@ -246,6 +262,18 @@
       },
       "idempotent": {
         "natural": true
+      }
+    },
+    "ListBoardAccesses": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          500,
+          503
+        ]
       }
     },
     "ListColumns": {
@@ -353,6 +381,22 @@
       },
       "idempotent": {
         "natural": true
+      }
+    },
+    "ListColumnCards": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          500,
+          503
+        ]
+      },
+      "pagination": {
+        "style": "link",
+        "pageParam": "page"
       }
     },
     "UpdateBoardEntropy": {
@@ -487,6 +531,22 @@
       },
       "idempotent": {
         "natural": true
+      }
+    },
+    "ListWebhookDeliveries": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          500,
+          503
+        ]
+      },
+      "pagination": {
+        "style": "link",
+        "pageParam": "page"
       }
     },
     "ListCards": {
@@ -1231,6 +1291,33 @@
       },
       "idempotent": {
         "natural": true
+      }
+    },
+    "CreateUserDataExport": {
+      "retry": {
+        "maxAttempts": 1
+      }
+    },
+    "GetUserDataExport": {
+      "retry": {
+        "maxAttempts": 3,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "retryOn": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
+    "RequestEmailAddressChange": {
+      "retry": {
+        "maxAttempts": 1
+      }
+    },
+    "ConfirmEmailAddressChange": {
+      "retry": {
+        "maxAttempts": 1
       }
     },
     "CreatePushSubscription": {

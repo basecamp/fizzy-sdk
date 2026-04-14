@@ -11,13 +11,24 @@ import type { components } from "../schema.js";
 
 export type Card = components["schemas"]["Card"];
 
+export interface ListActivitiesActivitiesOptions extends PaginationOptions {
+  creatorIds?: string[];
+  boardIds?: string[];
+}
+
 export interface ListCardsOptions extends PaginationOptions {
-  boardId?: string;
-  columnId?: string;
-  assigneeId?: string;
-  tag?: string;
-  status?: string;
-  q?: string;
+  boardIds?: string[];
+  tagIds?: string[];
+  assigneeIds?: string[];
+  creatorIds?: string[];
+  closerIds?: string[];
+  cardIds?: string[];
+  indexedBy?: string;
+  sortedBy?: string;
+  assignmentStatus?: string;
+  creation?: string;
+  closure?: string;
+  terms?: string[];
 }
 
 export interface CreateCardRequest {
@@ -67,6 +78,24 @@ export interface SearchCardsSearchcardsOptions extends PaginationOptions {
 }
 
 export class CardsService extends BaseService {
+
+  /**
+   * ListActivities
+   */
+  async listActivities(options?: ListActivitiesActivitiesOptions): Promise<ListResult<components["schemas"]["Activity"]>> {
+    return this.requestPaginated(
+      {
+        service: "Activities",
+        operation: "ListActivities",
+        resourceType: "activities",
+        isMutation: false,
+      },
+      () => this.client.GET("/activities.json" as never, {
+        params: { query: { "creator_ids[]": options?.creatorIds, "board_ids[]": options?.boardIds } },
+      } as never),
+      options,
+    );
+  }
 
   /**
    * ListClosedCards
@@ -123,6 +152,24 @@ export class CardsService extends BaseService {
   }
 
   /**
+   * ListColumnCards
+   */
+  async listColumnCards(boardId: string, columnId: string, options?: PaginationOptions): Promise<ListResult<Card>> {
+    return this.requestPaginated(
+      {
+        service: "Column cards",
+        operation: "ListColumnCards",
+        resourceType: "column_cards",
+        isMutation: false,
+      },
+      () => this.client.GET("/boards/{boardId}/columns/{columnId}/cards.json" as never, {
+        params: { path: { boardId, columnId } },
+      } as never),
+      options,
+    );
+  }
+
+  /**
    * ListCards
    */
   async list(options?: ListCardsOptions): Promise<ListResult<Card>> {
@@ -134,7 +181,7 @@ export class CardsService extends BaseService {
         isMutation: false,
       },
       () => this.client.GET("/cards.json" as never, {
-        params: { query: { board_id: options?.boardId, column_id: options?.columnId, assignee_id: options?.assigneeId, tag: options?.tag, status: options?.status, q: options?.q } },
+        params: { query: { "board_ids[]": options?.boardIds, "tag_ids[]": options?.tagIds, "assignee_ids[]": options?.assigneeIds, "creator_ids[]": options?.creatorIds, "closer_ids[]": options?.closerIds, "card_ids[]": options?.cardIds, "indexed_by": options?.indexedBy, "sorted_by": options?.sortedBy, "assignment_status": options?.assignmentStatus, "creation": options?.creation, "closure": options?.closure, "terms[]": options?.terms } },
       } as never),
       options,
     );
@@ -514,7 +561,7 @@ export class CardsService extends BaseService {
         isMutation: false,
       },
       () => this.client.GET("/search.json" as never, {
-        params: { query: { q: options?.q } },
+        params: { query: { "q": options?.q } },
       } as never),
       options,
     );

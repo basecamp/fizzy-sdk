@@ -144,6 +144,19 @@
       }
     },
     {
+      "pattern": "/{accountId}/activities",
+      "resource": "unknown",
+      "operations": {
+        "GET": "ListActivities"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        }
+      }
+    },
+    {
       "pattern": "/{accountId}/boards",
       "resource": "unknown",
       "operations": {
@@ -164,6 +177,23 @@
         "DELETE": "DeleteBoard",
         "GET": "GetBoard",
         "PATCH": "UpdateBoard"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        },
+        "boardId": {
+          "role": "resource",
+          "type": "integer"
+        }
+      }
+    },
+    {
+      "pattern": "/{accountId}/boards/{boardId}/accesses",
+      "resource": "unknown",
+      "operations": {
+        "GET": "ListBoardAccesses"
       },
       "params": {
         "accountId": {
@@ -252,6 +282,27 @@
         "DELETE": "DeleteColumn",
         "GET": "GetColumn",
         "PATCH": "UpdateColumn"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        },
+        "boardId": {
+          "role": "resource",
+          "type": "integer"
+        },
+        "columnId": {
+          "role": "resource",
+          "type": "integer"
+        }
+      }
+    },
+    {
+      "pattern": "/{accountId}/boards/{boardId}/columns/{columnId}/cards",
+      "resource": "unknown",
+      "operations": {
+        "GET": "ListColumnCards"
       },
       "params": {
         "accountId": {
@@ -366,6 +417,27 @@
       "resource": "unknown",
       "operations": {
         "POST": "ActivateWebhook"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        },
+        "boardId": {
+          "role": "resource",
+          "type": "integer"
+        },
+        "webhookId": {
+          "role": "resource",
+          "type": "integer"
+        }
+      }
+    },
+    {
+      "pattern": "/{accountId}/boards/{boardId}/webhooks/{webhookId}/deliveries",
+      "resource": "unknown",
+      "operations": {
+        "GET": "ListWebhookDeliveries"
       },
       "params": {
         "accountId": {
@@ -1028,6 +1100,82 @@
           "type": "string"
         },
         "userId": {
+          "role": "resource",
+          "type": "integer"
+        }
+      }
+    },
+    {
+      "pattern": "/{accountId}/users/{userId}/data_exports",
+      "resource": "unknown",
+      "operations": {
+        "POST": "CreateUserDataExport"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        },
+        "userId": {
+          "role": "resource",
+          "type": "integer"
+        }
+      }
+    },
+    {
+      "pattern": "/{accountId}/users/{userId}/data_exports/{exportId}",
+      "resource": "unknown",
+      "operations": {
+        "GET": "GetUserDataExport"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        },
+        "userId": {
+          "role": "resource",
+          "type": "integer"
+        },
+        "exportId": {
+          "role": "resource",
+          "type": "integer"
+        }
+      }
+    },
+    {
+      "pattern": "/{accountId}/users/{userId}/email_addresses",
+      "resource": "unknown",
+      "operations": {
+        "POST": "RequestEmailAddressChange"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        },
+        "userId": {
+          "role": "resource",
+          "type": "integer"
+        }
+      }
+    },
+    {
+      "pattern": "/{accountId}/users/{userId}/email_addresses/{emailAddressToken}/confirmation",
+      "resource": "unknown",
+      "operations": {
+        "POST": "ConfirmEmailAddressChange"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        },
+        "userId": {
+          "role": "resource",
+          "type": "integer"
+        },
+        "emailAddressToken": {
           "role": "resource",
           "type": "integer"
         }

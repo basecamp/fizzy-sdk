@@ -39,6 +39,25 @@ func (s *BoardsService) Get(ctx context.Context, boardID string) (*generated.Boa
 	return &result, resp, nil
 }
 
+// ListBoardAccesses returns board accesses.
+func (s *BoardsService) ListBoardAccesses(ctx context.Context, boardID string, page *int64) (*generated.BoardAccesses, *Response, error) {
+	path := fmt.Sprintf("/boards/%s/accesses.json", boardID)
+	sep := "?"
+	if page != nil {
+		path += fmt.Sprintf("%spage=%d", sep, *page)
+		sep = "&"
+	}
+	resp, err := s.client.Get(ctx, path)
+	if err != nil {
+		return nil, nil, err
+	}
+	var result generated.BoardAccesses
+	if err := resp.UnmarshalData(&result); err != nil {
+		return nil, resp, err
+	}
+	return &result, resp, nil
+}
+
 // List returns boards.
 func (s *BoardsService) List(ctx context.Context, path string) ([]generated.Board, *Response, error) {
 	if path == "" {

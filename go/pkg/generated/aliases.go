@@ -25,6 +25,7 @@ type CreateWebhookRequest = CreateWebhookRequestContent
 type MoveCardRequest = MoveCardRequestContent
 type RedeemMagicLinkRequest = RedeemMagicLinkRequestContent
 type RegisterDeviceRequest = RegisterDeviceRequestContent
+type RequestEmailAddressChangeRequest = RequestEmailAddressChangeRequestContent
 type TagCardRequest = TagCardRequestContent
 type TriageCardRequest = TriageCardRequestContent
 type UpdateAccountEntropyRequest = UpdateAccountEntropyRequestContent

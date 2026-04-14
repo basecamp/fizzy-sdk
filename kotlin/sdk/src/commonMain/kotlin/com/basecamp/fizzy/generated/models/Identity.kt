@@ -13,7 +13,7 @@ import kotlinx.serialization.json.JsonObject
 @Serializable
 data class Identity(
     val id: String,
-    val name: String,
-    @SerialName("email_address") val emailAddress: String,
-    val accounts: List<Account>
+    val accounts: List<Account>,
+    val name: String? = null,
+    @SerialName("email_address") val emailAddress: String? = null
 )

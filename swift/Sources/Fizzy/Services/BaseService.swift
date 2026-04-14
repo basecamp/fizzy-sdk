@@ -1,4 +1,8 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+import CoreFoundation
 
 /// Base class for all Fizzy API services.
 ///

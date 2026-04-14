@@ -124,7 +124,11 @@ private func emitMethod(_ op: ParsedOperation, serviceName: String, schemas: [St
         lines.append("        var queryItems: [URLQueryItem] = []")
         for q in requiredQueryParams {
             let camelName = toCamelCase(q.name)
-            if q.swiftType == "Int" {
+            if q.swiftType.hasPrefix("[") {
+                lines.append("        for value in \(camelName) {")
+                lines.append("            queryItems.append(URLQueryItem(name: \"\(q.name)\", value: String(value)))")
+                lines.append("        }")
+            } else if q.swiftType != "String" {
                 lines.append("        queryItems.append(URLQueryItem(name: \"\(q.name)\", value: String(\(camelName))))")
             } else {
                 lines.append("        queryItems.append(URLQueryItem(name: \"\(q.name)\", value: \(camelName)))")
@@ -133,9 +137,11 @@ private func emitMethod(_ op: ParsedOperation, serviceName: String, schemas: [St
         for q in optionalQueryParams {
             let camelName = toCamelCase(q.name)
             lines.append("        if let \(camelName) = options?.\(camelName) {")
-            if q.swiftType == "Int" {
-                lines.append("            queryItems.append(URLQueryItem(name: \"\(q.name)\", value: String(\(camelName))))")
-            } else if q.swiftType == "Bool" {
+            if q.swiftType.hasPrefix("[") {
+                lines.append("            for value in \(camelName) {")
+                lines.append("                queryItems.append(URLQueryItem(name: \"\(q.name)\", value: String(value)))")
+                lines.append("            }")
+            } else if q.swiftType != "String" {
                 lines.append("            queryItems.append(URLQueryItem(name: \"\(q.name)\", value: String(\(camelName))))")
             } else {
                 lines.append("            queryItems.append(URLQueryItem(name: \"\(q.name)\", value: \(camelName)))")
@@ -148,7 +154,11 @@ private func emitMethod(_ op: ParsedOperation, serviceName: String, schemas: [St
         lines.append("        var queryItems: [URLQueryItem] = []")
         for q in requiredQueryParams {
             let camelName = toCamelCase(q.name)
-            if q.swiftType == "Int" {
+            if q.swiftType.hasPrefix("[") {
+                lines.append("        for value in \(camelName) {")
+                lines.append("            queryItems.append(URLQueryItem(name: \"\(q.name)\", value: String(value)))")
+                lines.append("        }")
+            } else if q.swiftType != "String" {
                 lines.append("        queryItems.append(URLQueryItem(name: \"\(q.name)\", value: String(\(camelName))))")
             } else {
                 lines.append("        queryItems.append(URLQueryItem(name: \"\(q.name)\", value: \(camelName)))")
@@ -157,9 +167,11 @@ private func emitMethod(_ op: ParsedOperation, serviceName: String, schemas: [St
         for q in optionalQueryParams {
             let camelName = toCamelCase(q.name)
             lines.append("        if let \(camelName) = options?.\(camelName) {")
-            if q.swiftType == "Int" {
-                lines.append("            queryItems.append(URLQueryItem(name: \"\(q.name)\", value: String(\(camelName))))")
-            } else if q.swiftType == "Bool" {
+            if q.swiftType.hasPrefix("[") {
+                lines.append("            for value in \(camelName) {")
+                lines.append("                queryItems.append(URLQueryItem(name: \"\(q.name)\", value: String(value)))")
+                lines.append("            }")
+            } else if q.swiftType != "String" {
                 lines.append("            queryItems.append(URLQueryItem(name: \"\(q.name)\", value: String(\(camelName))))")
             } else {
                 lines.append("            queryItems.append(URLQueryItem(name: \"\(q.name)\", value: \(camelName)))")

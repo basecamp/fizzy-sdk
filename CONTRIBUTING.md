@@ -39,6 +39,28 @@ Alternatively, prefix commands with `mise exec --`.
 5. Add conformance tests if the operation has behavioral requirements
 6. Run `make check`
 
+## Syncing to Upstream Fizzy
+
+The SDK generators read the Smithy spec, but the Smithy spec should be maintained against upstream Fizzy API sources:
+
+- [`docs/api/README.md`](https://github.com/basecamp/fizzy/blob/main/docs/api/README.md)
+- [`docs/api/sections/`](https://github.com/basecamp/fizzy/tree/main/docs/api/sections)
+- [`config/routes.rb`](https://github.com/basecamp/fizzy/blob/main/config/routes.rb)
+- [`app/controllers/`](https://github.com/basecamp/fizzy/tree/main/app/controllers)
+- [`app/views/`](https://github.com/basecamp/fizzy/tree/main/app/views)
+- [`app/models/`](https://github.com/basecamp/fizzy/tree/main/app/models)
+
+Recommended sync workflow:
+
+1. Review upstream docs and Rails changes
+2. Update `spec/fizzy.smithy` / `spec/fizzy-traits.smithy`
+3. Run `make smithy-build`
+4. Run language generators
+5. Update tests
+6. Update `spec/api-provenance.json`
+7. Run `make provenance-sync`
+8. Run `make check`
+
 ## Release Process
 
 Releases are managed via `make release VERSION=x.y.z`. See the Makefile for details.

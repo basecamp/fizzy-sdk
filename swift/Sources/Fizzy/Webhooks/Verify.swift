@@ -1,5 +1,5 @@
 import Foundation
-import CommonCrypto
+import Crypto
 
 /// Utilities for verifying Fizzy webhook signatures.
 ///
@@ -45,22 +45,9 @@ public enum WebhookVerifier {
     ///   - secret: The signing secret.
     /// - Returns: The hex-encoded HMAC-SHA256 signature.
     public static func computeSignature(payload: Data, secret: String) -> String {
-        let secretData = Data(secret.utf8)
-
-        var hmac = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
-
-        secretData.withUnsafeBytes { secretBytes in
-            payload.withUnsafeBytes { payloadBytes in
-                CCHmac(
-                    CCHmacAlgorithm(kCCHmacAlgSHA256),
-                    secretBytes.baseAddress, secretData.count,
-                    payloadBytes.baseAddress, payload.count,
-                    &hmac
-                )
-            }
-        }
-
-        return hmac.map { String(format: "%02x", $0) }.joined()
+        let key = SymmetricKey(data: Data(secret.utf8))
+        let mac = HMAC<SHA256>.authenticationCode(for: payload, using: key)
+        return Data(mac).map { String(format: "%02x", $0) }.joined()
     }
 
     // MARK: - Private

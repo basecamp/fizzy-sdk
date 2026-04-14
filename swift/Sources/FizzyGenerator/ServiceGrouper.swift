@@ -50,6 +50,13 @@ private let operationServiceOverrides: [String: String] = [
     "GetNotificationTray": "Notifications",
     "BulkReadNotifications": "Notifications",
     "DeleteCardImage": "Cards",
+    "ListBoardAccesses": "Boards",
+    "ListActivities": "Cards",
+    "RequestEmailAddressChange": "Users",
+    "ConfirmEmailAddressChange": "Users",
+    "CreateUserDataExport": "Users",
+    "GetUserDataExport": "Users",
+    "ListWebhookDeliveries": "Webhooks",
 ]
 
 /// Suffix map for deriving service from operationId (longest match first).

@@ -5,17 +5,20 @@ public struct Column: Codable, Sendable {
     public let createdAt: String
     public let id: String
     public let name: String
-    public var color: Color?
+    public var cardsUrl: String?
+    public var color: String?
 
     public init(
         createdAt: String,
         id: String,
         name: String,
-        color: Color? = nil
+        cardsUrl: String? = nil,
+        color: String? = nil
     ) {
         self.createdAt = createdAt
         self.id = id
         self.name = name
+        self.cardsUrl = cardsUrl
         self.color = color
     }
 }

@@ -34,6 +34,13 @@ private val OPERATION_SERVICE_OVERRIDES = mapOf(
     "GetNotificationTray" to "Notifications",
     "BulkReadNotifications" to "Notifications",
     "DeleteCardImage" to "Cards",
+    "ListBoardAccesses" to "Boards",
+    "ListActivities" to "Cards",
+    "RequestEmailAddressChange" to "Users",
+    "ConfirmEmailAddressChange" to "Users",
+    "CreateUserDataExport" to "Users",
+    "GetUserDataExport" to "Users",
+    "ListWebhookDeliveries" to "Webhooks",
 )
 
 /** Suffix map for deriving service from operationId (longest match first). */
@@ -185,6 +192,10 @@ val TYPE_ALIASES = mapOf(
     "User" to "User",
     "Pin" to "Pin",
     "Webhook" to "Webhook",
+    "Activity" to "Activity",
+    "BoardAccesses" to "BoardAccesses",
+    "DataExport" to "DataExport",
+    "WebhookDelivery" to "WebhookDelivery",
     "Identity" to "Identity",
     "PendingAuthentication" to "PendingAuthentication",
     "SessionAuthorization" to "SessionAuthorization",

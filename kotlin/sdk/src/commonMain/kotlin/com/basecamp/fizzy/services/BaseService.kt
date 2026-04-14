@@ -65,8 +65,12 @@ abstract class BaseService(
      * Null values are omitted. Returns "" if no params, or "?k1=v1&k2=v2".
      */
     protected fun buildQueryString(vararg params: Pair<String, Any?>): String {
-        val parts = params.mapNotNull { (key, value) ->
-            value?.let { "$key=${it.toString().encodeURLParameter()}" }
+        val parts = params.flatMap { (key, value) ->
+            when (value) {
+                null -> emptyList()
+                is Iterable<*> -> value.mapNotNull { item -> item?.let { "$key=${it.toString().encodeURLParameter()}" } }
+                else -> listOf("$key=${value.toString().encodeURLParameter()}")
+            }
         }
         return if (parts.isEmpty()) "" else "?" + parts.joinToString("&")
     }

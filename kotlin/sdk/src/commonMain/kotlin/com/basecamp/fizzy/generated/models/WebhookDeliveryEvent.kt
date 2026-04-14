@@ -6,12 +6,15 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
 /**
- * Color entity from the Fizzy API.
+ * WebhookDeliveryEvent entity from the Fizzy API.
  *
  * @generated from OpenAPI spec -- do not edit directly
  */
 @Serializable
-data class Color(
-    val name: String,
-    val value: String
+data class WebhookDeliveryEvent(
+    val id: String,
+    val action: String,
+    @SerialName("created_at") val createdAt: String,
+    val creator: WebhookDeliveryEventCreator? = null,
+    val eventable: WebhookDeliveryEventEventable? = null
 )

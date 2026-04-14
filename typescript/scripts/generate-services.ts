@@ -175,6 +175,13 @@ function deriveServiceName(operationId: string): string {
     GetNotificationTray: "Notifications",
     BulkReadNotifications: "Notifications",
     DeleteCardImage: "Cards",
+    ListBoardAccesses: "Boards",
+    ListActivities: "Cards",
+    RequestEmailAddressChange: "Users",
+    ConfirmEmailAddressChange: "Users",
+    CreateUserDataExport: "Users",
+    GetUserDataExport: "Users",
+    ListWebhookDeliveries: "Webhooks",
   };
   if (overrides[operationId]) return overrides[operationId]!;
 
@@ -847,7 +854,7 @@ function generateMethodBody(op: ParsedOperation): string {
   // Query params
   if (op.queryParams.length > 0) {
     const queryEntries = op.queryParams
-      .map((q) => `${q.name}: options?.${toCamelCase(q.name)}`)
+      .map((q) => `${JSON.stringify(q.name)}: options?.${toCamelCase(q.name)}`)
       .join(", ");
     const pathPart = op.pathParams.length > 0
       ? `path: { ${op.pathParams.map((p) => toCamelCase(p.name)).join(", ")} }, `
@@ -896,7 +903,8 @@ function capitalize(s: string): string {
 }
 
 function toCamelCase(snakeCase: string): string {
-  return snakeCase.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+  const normalized = snakeCase.replace(/\[\]$/g, "");
+  return normalized.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
 }
 
 function toKebabCase(name: string): string {

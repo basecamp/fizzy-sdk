@@ -65,6 +65,17 @@ module Fizzy
         end
       end
 
+      # list_board_accesses operation
+      # @param account_id [String] account id ID
+      # @param board_id [String] board id ID
+      # @param page [Integer, nil] page
+      # @return [Hash] response data
+      def list_board_accesses(account_id:, board_id:, page: nil)
+        with_operation(service: "boards", operation: "ListBoardAccesses", is_mutation: false, resource_id: board_id) do
+          http_get("/#{account_id}/boards/#{board_id}/accesses.json", params: compact_params(page: page)).json
+        end
+      end
+
       # publish_board operation
       # @param account_id [String] account id ID
       # @param board_id [String] board id ID

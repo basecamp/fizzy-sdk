@@ -130,4 +130,22 @@ export class WebhooksService extends BaseService {
       } as never),
     );
   }
+
+  /**
+   * ListWebhookDeliveries
+   */
+  async listWebhookDeliveries(boardId: string, webhookId: string, options?: PaginationOptions): Promise<ListResult<components["schemas"]["WebhookDelivery"]>> {
+    return this.requestPaginated(
+      {
+        service: "Webhook deliveries",
+        operation: "ListWebhookDeliveries",
+        resourceType: "webhook_deliveries",
+        isMutation: false,
+      },
+      () => this.client.GET("/boards/{boardId}/webhooks/{webhookId}/deliveries.json" as never, {
+        params: { path: { boardId, webhookId } },
+      } as never),
+      options,
+    );
+  }
 }

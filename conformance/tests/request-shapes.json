@@ -109,7 +109,7 @@
       {
         "status": 201,
         "headers": { "Content-Type": "application/json" },
-        "body": { "id": 1, "name": "Test Hook", "url": "https://example.com/hook", "subscribed_actions": [], "signing_secret": "secret", "active": true, "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z" }
+        "body": { "id": 1, "name": "Test Hook", "payload_url": "https://example.com/hook", "url": "https://fizzy.do/999/boards/456/webhooks/1", "subscribed_actions": [], "signing_secret": "secret", "active": true, "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z" }
       }
     ],
     "assertions": [
@@ -134,25 +134,6 @@
     ],
     "assertions": [
       { "type": "requestQueryParam", "path": "include_read", "expected": "true" },
-      { "type": "noError" }
-    ],
-    "tags": ["request-shapes"]
-  },
-  {
-    "name": "ListCards sends board_id filter query param",
-    "operation": "ListCards",
-    "method": "GET",
-    "path": "/cards.json",
-    "queryParams": { "board_id": "5" },
-    "mockResponses": [
-      {
-        "status": 200,
-        "headers": { "Content-Type": "application/json" },
-        "body": []
-      }
-    ],
-    "assertions": [
-      { "type": "requestQueryParam", "path": "board_id", "expected": "5" },
       { "type": "noError" }
     ],
     "tags": ["request-shapes"]
@@ -275,6 +256,86 @@
     ],
     "assertions": [
       { "type": "requestBodyField", "expected": "bundle_email_frequency" },
+      { "type": "noError" }
+    ],
+    "tags": ["request-shapes"]
+  },
+  {
+    "name": "ListBoardAccesses sends page query param",
+    "operation": "ListBoardAccesses",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}/accesses.json",
+    "pathParams": { "accountId": "999", "boardId": "b1" },
+    "queryParams": { "page": "2" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "board_id": "b1", "all_access": false, "users": [] }
+      }
+    ],
+    "assertions": [
+      { "type": "requestQueryParam", "path": "page", "expected": "2" },
+      { "type": "noError" }
+    ],
+    "tags": ["request-shapes"]
+  },
+  {
+    "name": "ListCards sends board_ids[] filter query param",
+    "operation": "ListCards",
+    "method": "GET",
+    "path": "/{accountId}/cards.json",
+    "pathParams": { "accountId": "999" },
+    "queryParams": { "board_ids[]": "b1" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": []
+      }
+    ],
+    "assertions": [
+      { "type": "requestQueryParam", "path": "board_ids[]", "expected": "b1" },
+      { "type": "noError" }
+    ],
+    "tags": ["request-shapes"]
+  },
+  {
+    "name": "ListActivities sends creator_ids[] filter query param",
+    "operation": "ListActivities",
+    "method": "GET",
+    "path": "/{accountId}/activities.json",
+    "pathParams": { "accountId": "999" },
+    "queryParams": { "creator_ids[]": "u1" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": []
+      }
+    ],
+    "assertions": [
+      { "type": "requestQueryParam", "path": "creator_ids[]", "expected": "u1" },
+      { "type": "noError" }
+    ],
+    "tags": ["request-shapes"]
+  },
+  {
+    "name": "RequestEmailAddressChange sends email_address field",
+    "operation": "RequestEmailAddressChange",
+    "method": "POST",
+    "path": "/{accountId}/users/{userId}/email_addresses.json",
+    "pathParams": { "accountId": "999", "userId": "u1" },
+    "requestBody": { "email_address": "new@example.com" },
+    "mockResponses": [
+      {
+        "status": 201,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestBodyField", "expected": "email_address" },
       { "type": "noError" }
     ],
     "tags": ["request-shapes"]

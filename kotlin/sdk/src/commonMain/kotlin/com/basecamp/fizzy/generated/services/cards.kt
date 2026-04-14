@@ -13,6 +13,30 @@ import kotlinx.serialization.json.JsonElement
 class CardsService(client: AccountClient) : BaseService(client) {
 
     /**
+     * listActivities operation
+     * @param options Optional query parameters and pagination control
+     */
+    suspend fun listActivities(options: ListActivitiesOptions? = null): ListResult<Activity> {
+        val info = OperationInfo(
+            service = "Cards",
+            operation = "ListActivities",
+            resourceType = "activity",
+            isMutation = false,
+            boardId = null,
+            resourceId = null,
+        )
+        val qs = buildQueryString(
+            "creator_ids[]" to options?.creatorIds,
+            "board_ids[]" to options?.boardIds,
+        )
+        return requestPaginated(info, options?.toPaginationOptions(), {
+            httpGet("/activities.json" + qs, operationName = info.operation)
+        }) { body ->
+            json.decodeFromString<List<Activity>>(body)
+        }
+    }
+
+    /**
      * listClosedCards operation
      * @param boardId The board ID
      * @param options Optional query parameters and pagination control
@@ -76,6 +100,28 @@ class CardsService(client: AccountClient) : BaseService(client) {
     }
 
     /**
+     * listColumnCards operation
+     * @param boardId The board ID
+     * @param columnId The column ID
+     * @param options Optional query parameters and pagination control
+     */
+    suspend fun listColumnCards(boardId: String, columnId: String, options: PaginationOptions? = null): ListResult<Card> {
+        val info = OperationInfo(
+            service = "Cards",
+            operation = "ListColumnCards",
+            resourceType = "column_card",
+            isMutation = false,
+            boardId = boardId,
+            resourceId = columnId,
+        )
+        return requestPaginated(info, options, {
+            httpGet("/boards/${boardId}/columns/${columnId}/cards.json", operationName = info.operation)
+        }) { body ->
+            json.decodeFromString<List<Card>>(body)
+        }
+    }
+
+    /**
      * list operation
      * @param options Optional query parameters and pagination control
      */
@@ -89,12 +135,18 @@ class CardsService(client: AccountClient) : BaseService(client) {
             resourceId = null,
         )
         val qs = buildQueryString(
-            "board_id" to options?.boardId,
-            "column_id" to options?.columnId,
-            "assignee_id" to options?.assigneeId,
-            "tag" to options?.tag,
-            "status" to options?.status,
-            "q" to options?.q,
+            "board_ids[]" to options?.boardIds,
+            "tag_ids[]" to options?.tagIds,
+            "assignee_ids[]" to options?.assigneeIds,
+            "creator_ids[]" to options?.creatorIds,
+            "closer_ids[]" to options?.closerIds,
+            "card_ids[]" to options?.cardIds,
+            "indexed_by" to options?.indexedBy,
+            "sorted_by" to options?.sortedBy,
+            "assignment_status" to options?.assignmentStatus,
+            "creation" to options?.creation,
+            "closure" to options?.closure,
+            "terms[]" to options?.terms,
         )
         return requestPaginated(info, options?.toPaginationOptions(), {
             httpGet("/cards.json" + qs, operationName = info.operation)

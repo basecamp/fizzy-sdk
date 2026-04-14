@@ -37,7 +37,7 @@ export class NotificationsService extends BaseService {
         isMutation: false,
       },
       () => this.client.GET("/notifications.json" as never, {
-        params: { query: { read: options?.read } },
+        params: { query: { "read": options?.read } },
       } as never),
       options,
     );
@@ -72,7 +72,7 @@ export class NotificationsService extends BaseService {
         isMutation: false,
       },
       () => this.client.GET("/notifications/tray.json" as never, {
-        params: { query: { include_read: options?.includeRead } },
+        params: { query: { "include_read": options?.includeRead } },
       } as never),
     );
   }

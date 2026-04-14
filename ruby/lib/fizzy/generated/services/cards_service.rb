@@ -7,6 +7,18 @@ module Fizzy
     # @generated from OpenAPI spec
     class CardsService < BaseService
 
+      # list_activities operation
+      # @param account_id [String] account id ID
+      # @param creator_ids [Array, nil] creator ids
+      # @param board_ids [Array, nil] board ids
+      # @return [Enumerator<Hash>] paginated results
+      def list_activities(account_id:, creator_ids: nil, board_ids: nil)
+        wrap_paginated(service: "cards", operation: "ListActivities", is_mutation: false, resource_id: account_id) do
+          params = compact_params(creator_ids: creator_ids, board_ids: board_ids)
+          paginate("/#{account_id}/activities.json", params: params)
+        end
+      end
+
       # list_closed_cards operation
       # @param account_id [String] account id ID
       # @param board_id [String] board id ID
@@ -37,18 +49,35 @@ module Fizzy
         end
       end
 
+      # list_column_cards operation
+      # @param account_id [String] account id ID
+      # @param board_id [String] board id ID
+      # @param column_id [String] column id ID
+      # @return [Enumerator<Hash>] paginated results
+      def list_column_cards(account_id:, board_id:, column_id:)
+        wrap_paginated(service: "cards", operation: "ListColumnCards", is_mutation: false, resource_id: column_id) do
+          paginate("/#{account_id}/boards/#{board_id}/columns/#{column_id}/cards.json")
+        end
+      end
+
       # list operation
       # @param account_id [String] account id ID
-      # @param board_id [String, nil] board id
-      # @param column_id [String, nil] column id
-      # @param assignee_id [String, nil] assignee id
-      # @param tag [String, nil] tag
-      # @param status [String, nil] status
-      # @param q [String, nil] q
+      # @param board_ids [Array, nil] board ids
+      # @param tag_ids [Array, nil] tag ids
+      # @param assignee_ids [Array, nil] assignee ids
+      # @param creator_ids [Array, nil] creator ids
+      # @param closer_ids [Array, nil] closer ids
+      # @param card_ids [Array, nil] card ids
+      # @param indexed_by [String, nil] indexed by
+      # @param sorted_by [String, nil] sorted by
+      # @param assignment_status [String, nil] assignment status
+      # @param creation [String, nil] creation
+      # @param closure [String, nil] closure
+      # @param terms [Array, nil] terms
       # @return [Enumerator<Hash>] paginated results
-      def list(account_id:, board_id: nil, column_id: nil, assignee_id: nil, tag: nil, status: nil, q: nil)
+      def list(account_id:, board_ids: nil, tag_ids: nil, assignee_ids: nil, creator_ids: nil, closer_ids: nil, card_ids: nil, indexed_by: nil, sorted_by: nil, assignment_status: nil, creation: nil, closure: nil, terms: nil)
         wrap_paginated(service: "cards", operation: "ListCards", is_mutation: false, resource_id: account_id) do
-          params = compact_params(board_id: board_id, column_id: column_id, assignee_id: assignee_id, tag: tag, status: status, q: q)
+          params = compact_params(board_ids: board_ids, tag_ids: tag_ids, assignee_ids: assignee_ids, creator_ids: creator_ids, closer_ids: closer_ids, card_ids: card_ids, indexed_by: indexed_by, sorted_by: sorted_by, assignment_status: assignment_status, creation: creation, closure: closure, terms: terms)
           paginate("/#{account_id}/cards.json", params: params)
         end
       end

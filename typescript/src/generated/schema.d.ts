@@ -212,6 +212,22 @@ export interface paths {
         patch: operations["UpdateAccountSettings"];
         trace?: never;
     };
+    "/activities.json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListActivities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/boards.json": {
         parameters: {
             query?: never;
@@ -242,6 +258,22 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["UpdateBoard"];
+        trace?: never;
+    };
+    "/boards/{boardId}/accesses.json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListBoardAccesses"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/boards/{boardId}/columns.json": {
@@ -322,6 +354,22 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["UpdateColumn"];
+        trace?: never;
+    };
+    "/boards/{boardId}/columns/{columnId}/cards.json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListColumnCards"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/boards/{boardId}/entropy.json": {
@@ -414,6 +462,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["ActivateWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/boards/{boardId}/webhooks/{webhookId}/deliveries.json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ListWebhookDeliveries"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1028,6 +1092,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/users/{userId}/data_exports.json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CreateUserDataExport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/{userId}/data_exports/{exportId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["GetUserDataExport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/{userId}/email_addresses.json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["RequestEmailAddressChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/{userId}/email_addresses/{emailAddressToken}/confirmation.json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ConfirmEmailAddressChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users/{userId}/push_subscriptions.json": {
         parameters: {
             query?: never;
@@ -1110,6 +1238,55 @@ export interface components {
             /** Format: int32 */
             auto_postpone_period_in_days?: number;
         };
+        Activity: {
+            id: string;
+            action: string;
+            created_at: string;
+            description: string;
+            particulars: components["schemas"]["ActivityParticulars"];
+            url: string;
+            eventable_type: string;
+            eventable: components["schemas"]["ActivityEventable"];
+            board: components["schemas"]["Board"];
+            creator: components["schemas"]["User"];
+        };
+        ActivityEventable: {
+            id: string;
+            /** Format: int32 */
+            number?: number;
+            title?: string;
+            status?: string;
+            description?: string;
+            description_html?: string;
+            image_url?: string;
+            has_attachments?: boolean;
+            tags?: string[];
+            closed?: boolean;
+            postponed?: boolean;
+            golden?: boolean;
+            last_active_at?: string;
+            created_at?: string;
+            updated_at?: string;
+            body?: components["schemas"]["RichTextBody"];
+            creator?: components["schemas"]["User"];
+            card?: components["schemas"]["CardRef"];
+            board?: components["schemas"]["Board"];
+            column?: components["schemas"]["Column"];
+            assignees?: components["schemas"]["User"][];
+            has_more_assignees?: boolean;
+            comments_url?: string;
+            reactions_url?: string;
+            steps?: components["schemas"]["Step"][];
+            url: string;
+        };
+        ActivityParticulars: {
+            assignee_ids?: string[];
+            old_board?: string;
+            new_board?: string;
+            old_title?: string;
+            new_title?: string;
+            column?: string;
+        };
         AssignCardRequestContent: {
             assignee_id: string;
         };
@@ -1123,8 +1300,31 @@ export interface components {
             created_at: string;
             /** Format: int32 */
             auto_postpone_period_in_days?: number;
+            public_description?: string;
+            public_description_html?: string;
+            public_url?: string;
+            user_ids?: string[];
             url: string;
             creator?: components["schemas"]["User"];
+        };
+        BoardAccessUser: {
+            id: string;
+            /** Format: password */
+            name: string;
+            role: string;
+            active: boolean;
+            /** Format: password */
+            email_address: string;
+            created_at: string;
+            url: string;
+            avatar_url?: string;
+            has_access: boolean;
+            involvement?: string;
+        };
+        BoardAccesses: {
+            board_id: string;
+            all_access: boolean;
+            users: components["schemas"]["BoardAccessUser"][];
         };
         BulkReadNotificationsRequestContent: {
             notification_ids?: string[];
@@ -1159,15 +1359,12 @@ export interface components {
             id: string;
             url: string;
         };
-        Color: {
-            name: string;
-            value: string;
-        };
         Column: {
             id: string;
             name: string;
-            color?: components["schemas"]["Color"];
+            color?: string;
             created_at: string;
+            cards_url?: string;
         };
         Comment: {
             id: string;
@@ -1254,12 +1451,19 @@ export interface components {
             completed?: boolean;
         };
         CreateStepResponseContent: components["schemas"]["Step"];
+        CreateUserDataExportResponseContent: components["schemas"]["DataExport"];
         CreateWebhookRequestContent: {
             name: string;
             url: string;
             subscribed_actions?: string[];
         };
         CreateWebhookResponseContent: components["schemas"]["Webhook"];
+        DataExport: {
+            id: string;
+            status: string;
+            created_at: string;
+            download_url?: string;
+        };
         DirectUpload: {
             id: string;
             key: string;
@@ -1292,14 +1496,15 @@ export interface components {
         GetNotificationSettingsResponseContent: components["schemas"]["NotificationSettings"];
         GetNotificationTrayResponseContent: components["schemas"]["Notification"][];
         GetStepResponseContent: components["schemas"]["Step"];
+        GetUserDataExportResponseContent: components["schemas"]["DataExport"];
         GetUserResponseContent: components["schemas"]["User"];
         GetWebhookResponseContent: components["schemas"]["Webhook"];
         Identity: {
             id: string;
             /** Format: password */
-            name: string;
+            name?: string;
             /** Format: password */
-            email_address: string;
+            email_address?: string;
             accounts: components["schemas"]["Account"][];
         };
         InternalServerErrorResponseContent: {
@@ -1309,13 +1514,19 @@ export interface components {
             code: string;
             url: string;
             /** Format: int32 */
+            usage_count?: number;
+            /** Format: int32 */
             usage_limit?: number;
+            active?: boolean;
         };
         ListAccessTokensResponseContent: components["schemas"]["AccessToken"][];
+        ListActivitiesResponseContent: components["schemas"]["Activity"][];
+        ListBoardAccessesResponseContent: components["schemas"]["BoardAccesses"];
         ListBoardsResponseContent: components["schemas"]["Board"][];
         ListCardReactionsResponseContent: components["schemas"]["Reaction"][];
         ListCardsResponseContent: components["schemas"]["Card"][];
         ListClosedCardsResponseContent: components["schemas"]["Card"][];
+        ListColumnCardsResponseContent: components["schemas"]["Card"][];
         ListColumnsResponseContent: components["schemas"]["Column"][];
         ListCommentReactionsResponseContent: components["schemas"]["Reaction"][];
         ListCommentsResponseContent: components["schemas"]["Comment"][];
@@ -1326,6 +1537,7 @@ export interface components {
         ListStreamCardsResponseContent: components["schemas"]["Card"][];
         ListTagsResponseContent: components["schemas"]["Tag"][];
         ListUsersResponseContent: components["schemas"]["User"][];
+        ListWebhookDeliveriesResponseContent: components["schemas"]["WebhookDelivery"][];
         ListWebhooksResponseContent: components["schemas"]["Webhook"][];
         MoveCardRequestContent: {
             board_id: string;
@@ -1385,6 +1597,10 @@ export interface components {
             platform: string;
             name?: string;
         };
+        RequestEmailAddressChangeRequestContent: {
+            /** Format: password */
+            email_address: string;
+        };
         RichTextBody: {
             plain_text: string;
             html: string;
@@ -1398,6 +1614,9 @@ export interface components {
             id: string;
             content: string;
             completed: boolean;
+        };
+        StringMap: {
+            [key: string]: string;
         };
         Tag: {
             id: string;
@@ -1500,12 +1719,48 @@ export interface components {
         Webhook: {
             id: string;
             name: string;
+            payload_url: string;
             url: string;
             subscribed_actions: string[];
             signing_secret: string;
             active: boolean;
             created_at: string;
+            updated_at?: string;
+            board?: components["schemas"]["Board"];
+        };
+        WebhookDelivery: {
+            id: string;
+            state: string;
+            created_at: string;
             updated_at: string;
+            request?: components["schemas"]["WebhookDeliveryRequest"];
+            response?: components["schemas"]["WebhookDeliveryResponse"];
+            event?: components["schemas"]["WebhookDeliveryEvent"];
+        };
+        WebhookDeliveryEvent: {
+            id: string;
+            action: string;
+            created_at: string;
+            creator?: components["schemas"]["WebhookDeliveryEventCreator"];
+            eventable?: components["schemas"]["WebhookDeliveryEventEventable"];
+        };
+        WebhookDeliveryEventCreator: {
+            id: string;
+            /** Format: password */
+            name: string;
+        };
+        WebhookDeliveryEventEventable: {
+            type: string;
+            id: string;
+            url: string;
+        };
+        WebhookDeliveryRequest: {
+            headers?: components["schemas"]["StringMap"];
+        };
+        WebhookDeliveryResponse: {
+            /** Format: int32 */
+            code?: number;
+            error?: string;
         };
     };
     responses: never;
@@ -3032,6 +3287,92 @@ export interface operations {
             };
         };
     };
+    ListActivities: {
+        parameters: {
+            query?: {
+                "creator_ids[]"?: string[];
+                "board_ids[]"?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description ListActivities 200 response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListActivitiesResponseContent"];
+                };
+            };
+            /** @description BadRequestError 400 response */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BadRequestErrorResponseContent"];
+                };
+            };
+            /** @description UnauthorizedError 401 response */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnauthorizedErrorResponseContent"];
+                };
+            };
+            /** @description ForbiddenError 403 response */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForbiddenErrorResponseContent"];
+                };
+            };
+            /** @description NotFoundError 404 response */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotFoundErrorResponseContent"];
+                };
+            };
+            /** @description ValidationError 422 response */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationErrorResponseContent"];
+                };
+            };
+            /** @description RateLimitError 429 response */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RateLimitErrorResponseContent"];
+                };
+            };
+            /** @description InternalServerError 500 response */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalServerErrorResponseContent"];
+                };
+            };
+        };
+    };
     ListBoards: {
         parameters: {
             query?: never;
@@ -3392,6 +3733,93 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UpdateBoardResponseContent"];
+                };
+            };
+            /** @description BadRequestError 400 response */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BadRequestErrorResponseContent"];
+                };
+            };
+            /** @description UnauthorizedError 401 response */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnauthorizedErrorResponseContent"];
+                };
+            };
+            /** @description ForbiddenError 403 response */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForbiddenErrorResponseContent"];
+                };
+            };
+            /** @description NotFoundError 404 response */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotFoundErrorResponseContent"];
+                };
+            };
+            /** @description ValidationError 422 response */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationErrorResponseContent"];
+                };
+            };
+            /** @description RateLimitError 429 response */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RateLimitErrorResponseContent"];
+                };
+            };
+            /** @description InternalServerError 500 response */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalServerErrorResponseContent"];
+                };
+            };
+        };
+    };
+    ListBoardAccesses: {
+        parameters: {
+            query?: {
+                page?: number;
+            };
+            header?: never;
+            path: {
+                boardId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description ListBoardAccesses 200 response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListBoardAccessesResponseContent"];
                 };
             };
             /** @description BadRequestError 400 response */
@@ -4081,6 +4509,92 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UpdateColumnResponseContent"];
+                };
+            };
+            /** @description BadRequestError 400 response */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BadRequestErrorResponseContent"];
+                };
+            };
+            /** @description UnauthorizedError 401 response */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnauthorizedErrorResponseContent"];
+                };
+            };
+            /** @description ForbiddenError 403 response */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForbiddenErrorResponseContent"];
+                };
+            };
+            /** @description NotFoundError 404 response */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotFoundErrorResponseContent"];
+                };
+            };
+            /** @description ValidationError 422 response */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationErrorResponseContent"];
+                };
+            };
+            /** @description RateLimitError 429 response */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RateLimitErrorResponseContent"];
+                };
+            };
+            /** @description InternalServerError 500 response */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalServerErrorResponseContent"];
+                };
+            };
+        };
+    };
+    ListColumnCards: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                boardId: string;
+                columnId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description ListColumnCards 200 response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListColumnCardsResponseContent"];
                 };
             };
             /** @description BadRequestError 400 response */
@@ -5008,15 +5522,107 @@ export interface operations {
             };
         };
     };
+    ListWebhookDeliveries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                boardId: string;
+                webhookId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description ListWebhookDeliveries 200 response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListWebhookDeliveriesResponseContent"];
+                };
+            };
+            /** @description BadRequestError 400 response */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BadRequestErrorResponseContent"];
+                };
+            };
+            /** @description UnauthorizedError 401 response */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnauthorizedErrorResponseContent"];
+                };
+            };
+            /** @description ForbiddenError 403 response */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForbiddenErrorResponseContent"];
+                };
+            };
+            /** @description NotFoundError 404 response */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotFoundErrorResponseContent"];
+                };
+            };
+            /** @description ValidationError 422 response */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationErrorResponseContent"];
+                };
+            };
+            /** @description RateLimitError 429 response */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RateLimitErrorResponseContent"];
+                };
+            };
+            /** @description InternalServerError 500 response */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalServerErrorResponseContent"];
+                };
+            };
+        };
+    };
     ListCards: {
         parameters: {
             query?: {
-                board_id?: string;
-                column_id?: string;
-                assignee_id?: string;
-                tag?: string;
-                status?: string;
-                q?: string;
+                "board_ids[]"?: string[];
+                "tag_ids[]"?: string[];
+                "assignee_ids[]"?: string[];
+                "creator_ids[]"?: string[];
+                "closer_ids[]"?: string[];
+                "card_ids[]"?: string[];
+                indexed_by?: string;
+                sorted_by?: string;
+                assignment_status?: string;
+                creation?: string;
+                closure?: string;
+                "terms[]"?: string[];
             };
             header?: never;
             path?: never;
@@ -9954,6 +10560,348 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description DeleteUserAvatar 200 response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description BadRequestError 400 response */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BadRequestErrorResponseContent"];
+                };
+            };
+            /** @description UnauthorizedError 401 response */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnauthorizedErrorResponseContent"];
+                };
+            };
+            /** @description ForbiddenError 403 response */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForbiddenErrorResponseContent"];
+                };
+            };
+            /** @description NotFoundError 404 response */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotFoundErrorResponseContent"];
+                };
+            };
+            /** @description ValidationError 422 response */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationErrorResponseContent"];
+                };
+            };
+            /** @description RateLimitError 429 response */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RateLimitErrorResponseContent"];
+                };
+            };
+            /** @description InternalServerError 500 response */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalServerErrorResponseContent"];
+                };
+            };
+        };
+    };
+    CreateUserDataExport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CreateUserDataExport 200 response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateUserDataExportResponseContent"];
+                };
+            };
+            /** @description BadRequestError 400 response */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BadRequestErrorResponseContent"];
+                };
+            };
+            /** @description UnauthorizedError 401 response */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnauthorizedErrorResponseContent"];
+                };
+            };
+            /** @description ForbiddenError 403 response */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForbiddenErrorResponseContent"];
+                };
+            };
+            /** @description NotFoundError 404 response */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotFoundErrorResponseContent"];
+                };
+            };
+            /** @description ValidationError 422 response */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationErrorResponseContent"];
+                };
+            };
+            /** @description RateLimitError 429 response */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RateLimitErrorResponseContent"];
+                };
+            };
+            /** @description InternalServerError 500 response */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalServerErrorResponseContent"];
+                };
+            };
+        };
+    };
+    GetUserDataExport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+                exportId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description GetUserDataExport 200 response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetUserDataExportResponseContent"];
+                };
+            };
+            /** @description BadRequestError 400 response */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BadRequestErrorResponseContent"];
+                };
+            };
+            /** @description UnauthorizedError 401 response */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnauthorizedErrorResponseContent"];
+                };
+            };
+            /** @description ForbiddenError 403 response */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForbiddenErrorResponseContent"];
+                };
+            };
+            /** @description NotFoundError 404 response */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotFoundErrorResponseContent"];
+                };
+            };
+            /** @description ValidationError 422 response */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationErrorResponseContent"];
+                };
+            };
+            /** @description RateLimitError 429 response */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RateLimitErrorResponseContent"];
+                };
+            };
+            /** @description InternalServerError 500 response */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalServerErrorResponseContent"];
+                };
+            };
+        };
+    };
+    RequestEmailAddressChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequestEmailAddressChangeRequestContent"];
+            };
+        };
+        responses: {
+            /** @description RequestEmailAddressChange 200 response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description BadRequestError 400 response */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BadRequestErrorResponseContent"];
+                };
+            };
+            /** @description UnauthorizedError 401 response */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnauthorizedErrorResponseContent"];
+                };
+            };
+            /** @description ForbiddenError 403 response */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForbiddenErrorResponseContent"];
+                };
+            };
+            /** @description NotFoundError 404 response */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotFoundErrorResponseContent"];
+                };
+            };
+            /** @description ValidationError 422 response */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationErrorResponseContent"];
+                };
+            };
+            /** @description RateLimitError 429 response */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RateLimitErrorResponseContent"];
+                };
+            };
+            /** @description InternalServerError 500 response */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalServerErrorResponseContent"];
+                };
+            };
+        };
+    };
+    ConfirmEmailAddressChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+                emailAddressToken: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description ConfirmEmailAddressChange 200 response */
             200: {
                 headers: {
                     [name: string]: unknown;

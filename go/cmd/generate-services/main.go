@@ -144,14 +144,22 @@ func responseTypeName(refName string, schemas map[string]json.RawMessage) (goTyp
 // operationServiceOverrides maps operationId to service name for operations
 // whose service cannot be derived from suffix matching.
 var operationServiceOverrides = map[string]string{
-	"GetMyIdentity":         "Identity",
-	"CreateDirectUpload":    "Uploads",
-	"RedeemMagicLink":       "Sessions",
-	"CompleteJoin":          "Sessions",
-	"CompleteSignup":        "Sessions",
-	"GetNotificationTray":   "Notifications",
-	"BulkReadNotifications": "Notifications",
-	"DeleteCardImage":       "Cards",
+	"GetMyIdentity":             "Identity",
+	"CreateDirectUpload":        "Uploads",
+	"RedeemMagicLink":           "Sessions",
+	"CompleteJoin":              "Sessions",
+	"CompleteSignup":            "Sessions",
+	"GetNotificationTray":       "Notifications",
+	"BulkReadNotifications":     "Notifications",
+	"DeleteCardImage":           "Cards",
+	"ListBoardAccesses":         "Boards",
+	"ListColumnCards":           "Cards",
+	"ListActivities":            "Cards",
+	"RequestEmailAddressChange": "Users",
+	"ConfirmEmailAddressChange": "Users",
+	"CreateUserDataExport":      "Users",
+	"GetUserDataExport":         "Users",
+	"ListWebhookDeliveries":     "Webhooks",
 
 	// Access tokens (no account prefix)
 	"ListAccessTokens":  "AccessTokens",
@@ -296,7 +304,8 @@ var methodNameOverrides = map[string]string{
 	"MarkCardUnread": "MarkUnread",
 
 	// Search
-	"SearchCards": "Search",
+	"SearchCards":     "Search",
+	"ListColumnCards": "ListColumnCards",
 
 	// Notification settings
 	"GetNotificationSettings":    "GetSettings",
@@ -687,15 +696,20 @@ func generateDocComment(methodName, serviceName string, op ParsedOp) string {
 	// If the method name has a suffix beyond the verb (e.g. DeleteImage, GetTray),
 	// use that suffix as the resource name for a more specific doc comment.
 	// Skip when:
-	// - the remainder contains the service resource (e.g. GetMyIdentity, CreateDirectUpload)
+	// - the remainder is just the service resource, or only mentions it incidentally
+	//   (e.g. GetMyIdentity, CreateDirectUpload)
 	// - the remainder is a top-level resource name (e.g. CreateCard in ReactionsService
 	//   creates a reaction, not a card)
 	if verb != "" {
 		remainder := strings.TrimPrefix(methodName, verb)
 		svcSingular := strings.TrimSuffix(serviceName, "s")
-		if remainder != "" && !isSimplePlural(remainder, serviceName) &&
-			!strings.Contains(remainder, svcSingular) && !isTopLevelResource(remainder) {
-			resource = camelToWords(remainder)
+		if remainder != "" && !isSimplePlural(remainder, serviceName) && !isTopLevelResource(remainder) {
+			switch {
+			case strings.HasPrefix(remainder, svcSingular) && remainder != svcSingular:
+				resource = camelToWords(remainder)
+			case !strings.Contains(remainder, svcSingular):
+				resource = camelToWords(remainder)
+			}
 		}
 	}
 

@@ -62,10 +62,42 @@ func (s *CardsService) Gold(ctx context.Context, cardNumber string) (*Response, 
 	return resp, err
 }
 
+// ListActivities returns activities.
+func (s *CardsService) ListActivities(ctx context.Context, path string) ([]generated.Activity, *Response, error) {
+	if path == "" {
+		path = "/activities.json"
+	}
+	resp, err := s.client.Get(ctx, path)
+	if err != nil {
+		return nil, nil, err
+	}
+	var result []generated.Activity
+	if err := resp.UnmarshalData(&result); err != nil {
+		return nil, resp, err
+	}
+	return result, resp, nil
+}
+
 // List returns cards.
 func (s *CardsService) List(ctx context.Context, path string) ([]generated.Card, *Response, error) {
 	if path == "" {
 		path = "/cards.json"
+	}
+	resp, err := s.client.Get(ctx, path)
+	if err != nil {
+		return nil, nil, err
+	}
+	var result []generated.Card
+	if err := resp.UnmarshalData(&result); err != nil {
+		return nil, resp, err
+	}
+	return result, resp, nil
+}
+
+// ListColumnCards returns cards.
+func (s *CardsService) ListColumnCards(ctx context.Context, boardID string, columnID string, path string) ([]generated.Card, *Response, error) {
+	if path == "" {
+		path = fmt.Sprintf("/boards/%s/columns/%s/cards.json", boardID, columnID)
 	}
 	resp, err := s.client.Get(ctx, path)
 	if err != nil {

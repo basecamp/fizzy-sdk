@@ -3,19 +3,19 @@ import Foundation
 
 public struct Identity: Codable, Sendable {
     public let accounts: [Account]
-    public let emailAddress: String
     public let id: String
-    public let name: String
+    public var emailAddress: String?
+    public var name: String?
 
     public init(
         accounts: [Account],
-        emailAddress: String,
         id: String,
-        name: String
+        emailAddress: String? = nil,
+        name: String? = nil
     ) {
         self.accounts = accounts
-        self.emailAddress = emailAddress
         self.id = id
+        self.emailAddress = emailAddress
         self.name = name
     }
 }

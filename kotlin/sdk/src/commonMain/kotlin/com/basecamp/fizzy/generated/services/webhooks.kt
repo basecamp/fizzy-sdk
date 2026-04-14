@@ -141,4 +141,26 @@ class WebhooksService(client: AccountClient) : BaseService(client) {
             httpPost("/boards/${boardId}/webhooks/${webhookId}/activation.json", operationName = info.operation)
         }) { Unit }
     }
+
+    /**
+     * listWebhookDeliveries operation
+     * @param boardId The board ID
+     * @param webhookId The webhook ID
+     * @param options Optional query parameters and pagination control
+     */
+    suspend fun listWebhookDeliveries(boardId: String, webhookId: String, options: PaginationOptions? = null): ListResult<WebhookDelivery> {
+        val info = OperationInfo(
+            service = "Webhooks",
+            operation = "ListWebhookDeliveries",
+            resourceType = "webhook_delivery",
+            isMutation = false,
+            boardId = boardId,
+            resourceId = webhookId,
+        )
+        return requestPaginated(info, options, {
+            httpGet("/boards/${boardId}/webhooks/${webhookId}/deliveries.json", operationName = info.operation)
+        }) { body ->
+            json.decodeFromString<List<WebhookDelivery>>(body)
+        }
+    }
 }

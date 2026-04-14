@@ -18,5 +18,9 @@ data class Board(
     @SerialName("created_at") val createdAt: String,
     val url: String,
     @SerialName("auto_postpone_period_in_days") val autoPostponePeriodInDays: Int = 0,
+    @SerialName("public_description") val publicDescription: String? = null,
+    @SerialName("public_description_html") val publicDescriptionHtml: String? = null,
+    @SerialName("public_url") val publicUrl: String? = null,
+    @SerialName("user_ids") val userIds: List<String> = emptyList(),
     val creator: User? = null
 )

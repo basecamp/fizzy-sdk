@@ -67,7 +67,7 @@
       {
         "status": 201,
         "headers": { "Content-Type": "application/json" },
-        "body": { "id": 1, "name": "Test", "url": "https://example.com/hook", "subscribed_actions": [], "signing_secret": "secret", "active": true, "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z" }
+        "body": { "id": 1, "name": "Test", "payload_url": "https://example.com/hook", "url": "https://fizzy.do/999/boards/456/webhooks/1", "subscribed_actions": [], "signing_secret": "secret", "active": true, "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z" }
       }
     ],
     "assertions": [
@@ -164,7 +164,7 @@
       {
         "status": 200,
         "headers": { "Content-Type": "application/json" },
-        "body": { "id": 789, "name": "Test Hook", "url": "https://example.com/hook", "subscribed_actions": [], "signing_secret": "secret", "active": true, "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z" }
+        "body": { "id": 789, "name": "Test Hook", "payload_url": "https://example.com/hook", "url": "https://fizzy.do/999/boards/456/webhooks/789", "subscribed_actions": [], "signing_secret": "secret", "active": true, "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z" }
       }
     ],
     "assertions": [
@@ -936,6 +936,159 @@
     ],
     "assertions": [
       { "type": "requestPath", "expected": "/999/users/5/push_subscriptions/88" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "ListBoardAccesses path",
+    "operation": "ListBoardAccesses",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}/accesses.json",
+    "pathParams": { "accountId": "999", "boardId": "b1" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "board_id": "b1", "all_access": false, "users": [] }
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/boards/b1/accesses.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "ListColumnCards path",
+    "operation": "ListColumnCards",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}/columns/{columnId}/cards.json",
+    "pathParams": { "accountId": "999", "boardId": "b1", "columnId": "c1" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": []
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/boards/b1/columns/c1/cards.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "ListActivities path",
+    "operation": "ListActivities",
+    "method": "GET",
+    "path": "/{accountId}/activities.json",
+    "pathParams": { "accountId": "999" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": []
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/activities.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "RequestEmailAddressChange path",
+    "operation": "RequestEmailAddressChange",
+    "method": "POST",
+    "path": "/{accountId}/users/{userId}/email_addresses.json",
+    "pathParams": { "accountId": "999", "userId": "u1" },
+    "requestBody": { "email_address": "new@example.com" },
+    "mockResponses": [
+      {
+        "status": 201,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/users/u1/email_addresses.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "ConfirmEmailAddressChange path",
+    "operation": "ConfirmEmailAddressChange",
+    "method": "POST",
+    "path": "/{accountId}/users/{userId}/email_addresses/{emailAddressToken}/confirmation.json",
+    "pathParams": { "accountId": "999", "userId": "u1", "emailAddressToken": "tok_123" },
+    "mockResponses": [
+      {
+        "status": 204,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/users/u1/email_addresses/tok_123/confirmation.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "CreateUserDataExport path",
+    "operation": "CreateUserDataExport",
+    "method": "POST",
+    "path": "/{accountId}/users/{userId}/data_exports.json",
+    "pathParams": { "accountId": "999", "userId": "u1" },
+    "mockResponses": [
+      {
+        "status": 201,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "id": "exp_1", "status": "pending", "created_at": "2026-01-01T00:00:00Z" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/users/u1/data_exports.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "GetUserDataExport path",
+    "operation": "GetUserDataExport",
+    "method": "GET",
+    "path": "/{accountId}/users/{userId}/data_exports/{exportId}",
+    "pathParams": { "accountId": "999", "userId": "u1", "exportId": "exp_1" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "id": "exp_1", "status": "completed", "created_at": "2026-01-01T00:00:00Z", "download_url": "https://fizzy.do/downloads/exp_1.zip" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/users/u1/data_exports/exp_1" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "ListWebhookDeliveries path",
+    "operation": "ListWebhookDeliveries",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}/webhooks/{webhookId}/deliveries.json",
+    "pathParams": { "accountId": "999", "boardId": "b1", "webhookId": "w1" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": []
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/boards/b1/webhooks/w1/deliveries.json" },
       { "type": "noError" }
     ],
     "tags": ["paths"]

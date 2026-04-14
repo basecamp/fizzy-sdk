@@ -99,6 +99,7 @@ class OperationParser(private val api: OpenApiParser) {
                 val name = param["name"]!!.jsonPrimitive.content
                 val schema = param["schema"]!!.jsonObject
                 val type = when (schema["type"]?.jsonPrimitive?.content) {
+                    "array" -> api.schemaToKotlinType(schema)
                     "integer" -> "Long"
                     "boolean" -> "Boolean"
                     else -> "String"
@@ -302,7 +303,7 @@ fun String.toKebabCase(): String =
 
 /** "snake_case" -> "camelCase" */
 fun String.snakeToCamelCase(): String =
-    replace(Regex("_([a-z])")) { it.groupValues[1].uppercase() }
+    removeSuffix("[]").replace(Regex("_([a-z])")) { it.groupValues[1].uppercase() }
 
 fun String.capitalize(): String =
     replaceFirstChar { it.uppercase() }

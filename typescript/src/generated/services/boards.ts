@@ -28,6 +28,10 @@ export interface UpdateBoardRequest {
   userIds?: string[];
 }
 
+export interface ListBoardAccessesBoardaccessesOptions extends PaginationOptions {
+  page?: number;
+}
+
 export class BoardsService extends BaseService {
 
   /**
@@ -112,6 +116,23 @@ export class BoardsService extends BaseService {
       () => this.client.PATCH("/boards/{boardId}" as never, {
         params: { path: { boardId } },
         body: { name: body?.name, all_access: body?.allAccess, auto_postpone_period_in_days: body?.autoPostponePeriodInDays, public_description: body?.publicDescription, user_ids: body?.userIds } as never,
+      } as never),
+    );
+  }
+
+  /**
+   * ListBoardAccesses
+   */
+  async listBoardAccesses(boardId: string, options?: ListBoardAccessesBoardaccessesOptions): Promise<components["schemas"]["BoardAccesses"]> {
+    return this.request(
+      {
+        service: "Board accesses",
+        operation: "ListBoardAccesses",
+        resourceType: "board_accesses",
+        isMutation: false,
+      },
+      () => this.client.GET("/boards/{boardId}/accesses.json" as never, {
+        params: { path: { boardId }, query: { "page": options?.page } },
       } as never),
     );
   }

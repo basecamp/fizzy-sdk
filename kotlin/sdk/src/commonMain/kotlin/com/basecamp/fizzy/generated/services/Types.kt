@@ -27,14 +27,35 @@ data class UpdateBoardBody(
     val userIds: List<String>? = null
 )
 
+/** Options for ListBoardAccesses. */
+data class ListBoardAccessesOptions(
+    val page: Long? = null
+) {
+}
+
+/** Options for ListActivities. */
+data class ListActivitiesOptions(
+    val creatorIds: List<String>? = null,
+    val boardIds: List<String>? = null,
+    val maxItems: Int? = null
+) {
+    fun toPaginationOptions(): PaginationOptions = PaginationOptions(maxItems = maxItems)
+}
+
 /** Options for ListCards. */
 data class ListCardsOptions(
-    val boardId: String? = null,
-    val columnId: String? = null,
-    val assigneeId: String? = null,
-    val tag: String? = null,
-    val status: String? = null,
-    val q: String? = null,
+    val boardIds: List<String>? = null,
+    val tagIds: List<String>? = null,
+    val assigneeIds: List<String>? = null,
+    val creatorIds: List<String>? = null,
+    val closerIds: List<String>? = null,
+    val cardIds: List<String>? = null,
+    val indexedBy: String? = null,
+    val sortedBy: String? = null,
+    val assignmentStatus: String? = null,
+    val creation: String? = null,
+    val closure: String? = null,
+    val terms: List<String>? = null,
     val maxItems: Int? = null
 ) {
     fun toPaginationOptions(): PaginationOptions = PaginationOptions(maxItems = maxItems)
@@ -233,6 +254,11 @@ data class CreateDirectUploadBody(
 /** Request body for UpdateUser. */
 data class UpdateUserBody(
     val name: String? = null
+)
+
+/** Request body for RequestEmailAddressChange. */
+data class RequestEmailAddressChangeBody(
+    val emailAddress: String
 )
 
 /** Request body for CreateWebhook. */

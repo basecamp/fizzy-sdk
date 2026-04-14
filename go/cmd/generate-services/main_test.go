@@ -107,6 +107,56 @@ func TestGenerateMethod_QueryParams(t *testing.T) {
 	}
 }
 
+func TestGenerateDocComment_ServiceQualifiedResources(t *testing.T) {
+	tests := []struct {
+		name       string
+		methodName string
+		service    string
+		op         ParsedOp
+		want       string
+	}{
+		{
+			name:       "list board accesses",
+			methodName: "ListBoardAccesses",
+			service:    "Boards",
+			want:       "// ListBoardAccesses returns board accesses.\n",
+		},
+		{
+			name:       "list webhook deliveries",
+			methodName: "ListWebhookDeliveries",
+			service:    "Webhooks",
+			want:       "// ListWebhookDeliveries returns webhook deliveries.\n",
+		},
+		{
+			name:       "create user data export",
+			methodName: "CreateUserDataExport",
+			service:    "Users",
+			want:       "// CreateUserDataExport creates a user data export.\n",
+		},
+		{
+			name:       "get user data export",
+			methodName: "GetUserDataExport",
+			service:    "Users",
+			want:       "// GetUserDataExport returns a user data export.\n",
+		},
+		{
+			name:       "keep top-level resource wording",
+			methodName: "CreateDirectUpload",
+			service:    "Uploads",
+			want:       "// CreateDirectUpload creates an upload.\n",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := generateDocComment(tt.methodName, tt.service, tt.op)
+			if got != tt.want {
+				t.Fatalf("generateDocComment(%q, %q) = %q, want %q", tt.methodName, tt.service, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestSnakeToCamel(t *testing.T) {
 	tests := []struct {
 		in, want string

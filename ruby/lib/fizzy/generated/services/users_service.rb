@@ -47,6 +47,51 @@ module Fizzy
           nil
         end
       end
+
+      # create_user_data_export operation
+      # @param account_id [String] account id ID
+      # @param user_id [String] user id ID
+      # @return [Hash] response data
+      def create_user_data_export(account_id:, user_id:)
+        with_operation(service: "users", operation: "CreateUserDataExport", is_mutation: true, resource_id: user_id) do
+          http_post("/#{account_id}/users/#{user_id}/data_exports.json").json
+        end
+      end
+
+      # get_user_data_export operation
+      # @param account_id [String] account id ID
+      # @param user_id [String] user id ID
+      # @param export_id [String] export id ID
+      # @return [Hash] response data
+      def get_user_data_export(account_id:, user_id:, export_id:)
+        with_operation(service: "users", operation: "GetUserDataExport", is_mutation: false, resource_id: export_id) do
+          http_get("/#{account_id}/users/#{user_id}/data_exports/#{export_id}").json
+        end
+      end
+
+      # request_email_address_change operation
+      # @param account_id [String] account id ID
+      # @param user_id [String] user id ID
+      # @param email_address [String] email address
+      # @return [void]
+      def request_email_address_change(account_id:, user_id:, email_address:)
+        with_operation(service: "users", operation: "RequestEmailAddressChange", is_mutation: true, resource_id: user_id) do
+          http_post("/#{account_id}/users/#{user_id}/email_addresses.json", body: compact_params(email_address: email_address))
+          nil
+        end
+      end
+
+      # confirm_email_address_change operation
+      # @param account_id [String] account id ID
+      # @param user_id [String] user id ID
+      # @param email_address_token [String] email address token ID
+      # @return [void]
+      def confirm_email_address_change(account_id:, user_id:, email_address_token:)
+        with_operation(service: "users", operation: "ConfirmEmailAddressChange", is_mutation: true, resource_id: email_address_token) do
+          http_post("/#{account_id}/users/#{user_id}/email_addresses/#{email_address_token}/confirmation.json")
+          nil
+        end
+      end
     end
   end
 end

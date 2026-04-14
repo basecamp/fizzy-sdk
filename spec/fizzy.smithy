@@ -50,6 +50,7 @@ service Fizzy {
         ListBoards
         CreateBoard
         GetBoard
+        ListBoardAccesses
         UpdateBoard
         DeleteBoard
         PublishBoard
@@ -71,6 +72,7 @@ service Fizzy {
 
         // Cards
         ListCards
+        ListColumnCards
         CreateCard
         GetCard
         UpdateCard
@@ -129,6 +131,9 @@ service Fizzy {
         // Search
         SearchCards
 
+        // Activities
+        ListActivities
+
         // Tags
         ListTags
 
@@ -137,6 +142,10 @@ service Fizzy {
         GetUser
         UpdateUser
         DeactivateUser
+        RequestEmailAddressChange
+        ConfirmEmailAddressChange
+        CreateUserDataExport
+        GetUserDataExport
         UpdateUserRole
         DeleteUserAvatar
         CreatePushSubscription
@@ -155,6 +164,7 @@ service Fizzy {
         UpdateWebhook
         DeleteWebhook
         ActivateWebhook
+        ListWebhookDeliveries
 
         // Sessions
         CreateSession
@@ -292,6 +302,10 @@ structure Board {
     @required
     created_at: ISO8601Timestamp
     auto_postpone_period_in_days: Integer
+    public_description: String
+    public_description_html: String
+    public_url: URL
+    user_ids: StringList
     @required
     url: URL
     creator: User
@@ -309,9 +323,10 @@ structure Column {
     id: ColumnId
     @required
     name: String
-    color: Color
+    color: String
     @required
     created_at: ISO8601Timestamp
+    cards_url: URL
 }
 
 structure Card {
@@ -377,6 +392,41 @@ structure User {
     avatar_url: URL
 }
 
+structure BoardAccessUser {
+    @required
+    id: UserId
+    @required
+    name: PersonName
+    @required
+    role: String
+    @required
+    active: Boolean
+    @fizzySensitive(category: "pii", redact: true)
+    @required
+    email_address: EmailAddress
+    @required
+    created_at: ISO8601Timestamp
+    @required
+    url: URL
+    avatar_url: URL
+    @required
+    has_access: Boolean
+    involvement: String
+}
+
+list BoardAccessUserList {
+    member: BoardAccessUser
+}
+
+structure BoardAccesses {
+    @required
+    board_id: BoardId
+    @required
+    all_access: Boolean
+    @required
+    users: BoardAccessUserList
+}
+
 structure Comment {
     @required
     id: CommentId
@@ -406,6 +456,73 @@ structure CardRef {
     id: String
     @required
     url: URL
+}
+
+structure ActivityParticulars {
+    assignee_ids: StringList
+    old_board: String
+    new_board: String
+    old_title: String
+    new_title: String
+    column: String
+}
+
+structure ActivityEventable {
+    @required
+    id: String
+    number: CardNumber
+    title: String
+    status: String
+    description: String
+    description_html: String
+    image_url: URL
+    has_attachments: Boolean
+    tags: TagNames
+    closed: Boolean
+    postponed: Boolean
+    golden: Boolean
+    last_active_at: ISO8601Timestamp
+    created_at: ISO8601Timestamp
+    updated_at: ISO8601Timestamp
+    body: RichTextBody
+    creator: User
+    card: CardRef
+    board: Board
+    column: Column
+    assignees: UserList
+    has_more_assignees: Boolean
+    comments_url: URL
+    reactions_url: URL
+    steps: StepList
+    @required
+    url: URL
+}
+
+structure Activity {
+    @required
+    id: String
+    @required
+    action: String
+    @required
+    created_at: ISO8601Timestamp
+    @required
+    description: String
+    @required
+    particulars: ActivityParticulars
+    @required
+    url: URL
+    @required
+    eventable_type: String
+    @required
+    eventable: ActivityEventable
+    @required
+    board: Board
+    @required
+    creator: User
+}
+
+list ActivityList {
+    member: Activity
 }
 
 structure Step {
@@ -484,6 +601,8 @@ structure Webhook {
     @required
     name: String
     @required
+    payload_url: URL
+    @required
     url: URL
     @required
     subscribed_actions: WebhookActions
@@ -493,12 +612,71 @@ structure Webhook {
     active: Boolean
     @required
     created_at: ISO8601Timestamp
-    @required
     updated_at: ISO8601Timestamp
+    board: Board
 }
 
 list WebhookActions {
     member: String
+}
+
+map StringMap {
+    key: String
+    value: String
+}
+
+structure WebhookDeliveryRequest {
+    headers: StringMap
+}
+
+structure WebhookDeliveryResponse {
+    code: Integer
+    error: String
+}
+
+structure WebhookDeliveryEventCreator {
+    @required
+    id: UserId
+    @required
+    name: PersonName
+}
+
+structure WebhookDeliveryEventEventable {
+    @required
+    type: String
+    @required
+    id: String
+    @required
+    url: URL
+}
+
+structure WebhookDeliveryEvent {
+    @required
+    id: String
+    @required
+    action: String
+    @required
+    created_at: ISO8601Timestamp
+    creator: WebhookDeliveryEventCreator
+    eventable: WebhookDeliveryEventEventable
+}
+
+structure WebhookDelivery {
+    @required
+    id: String
+    @required
+    state: String
+    @required
+    created_at: ISO8601Timestamp
+    @required
+    updated_at: ISO8601Timestamp
+    request: WebhookDeliveryRequest
+    response: WebhookDeliveryResponse
+    event: WebhookDeliveryEvent
+}
+
+list WebhookDeliveryList {
+    member: WebhookDelivery
 }
 
 structure PendingAuthentication {
@@ -524,10 +702,8 @@ structure DeviceRegistration {
 structure Identity {
     @required
     id: UserId
-    @required
     name: PersonName
     @fizzySensitive(category: "pii", redact: true)
-    @required
     email_address: EmailAddress
     @required
     accounts: AccountList
@@ -598,6 +774,16 @@ structure NotificationSettings {
     bundle_email_frequency: String
 }
 
+structure DataExport {
+    @required
+    id: String
+    @required
+    status: String
+    @required
+    created_at: ISO8601Timestamp
+    download_url: URL
+}
+
 structure AccountSettings {
     @required
     id: AccountId
@@ -615,7 +801,9 @@ structure JoinCode {
     code: String
     @required
     url: URL
+    usage_count: Integer
     usage_limit: Integer
+    active: Boolean
 }
 
 structure AccountExport {
@@ -945,6 +1133,34 @@ operation GetBoard {
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
 }
 
+@readonly
+@http(method: "GET", uri: "/{accountId}/boards/{boardId}/accesses.json")
+@tags(["Boards"])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation ListBoardAccesses {
+    input: ListBoardAccessesInput
+    output: ListBoardAccessesOutput
+    errors: [UnauthorizedError, ForbiddenError, NotFoundError]
+}
+
+structure ListBoardAccessesInput {
+    @required
+    @httpLabel
+    accountId: AccountId
+
+    @required
+    @httpLabel
+    boardId: BoardId
+
+    @httpQuery("page")
+    page: Integer
+}
+
+structure ListBoardAccessesOutput {
+    @required
+    accesses: BoardAccesses
+}
+
 structure GetBoardInput {
     @required
     @httpLabel
@@ -1171,6 +1387,36 @@ structure ListColumnsOutput {
     columns: ColumnList
 }
 
+@readonly
+@http(method: "GET", uri: "/{accountId}/boards/{boardId}/columns/{columnId}/cards.json")
+@tags(["Cards"])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+@fizzyPagination(style: "link", pageParam: "page")
+operation ListColumnCards {
+    input: ListColumnCardsInput
+    output: ListColumnCardsOutput
+    errors: [UnauthorizedError, ForbiddenError, NotFoundError]
+}
+
+structure ListColumnCardsInput {
+    @required
+    @httpLabel
+    accountId: AccountId
+
+    @required
+    @httpLabel
+    boardId: BoardId
+
+    @required
+    @httpLabel
+    columnId: ColumnId
+}
+
+structure ListColumnCardsOutput {
+    @required
+    cards: CardList
+}
+
 @http(method: "POST", uri: "/{accountId}/boards/{boardId}/columns.json")
 @tags(["Columns"])
 @fizzyRetry(maxAttempts: 1)
@@ -1334,23 +1580,41 @@ structure ListCardsInput {
     @httpLabel
     accountId: AccountId
 
-    @httpQuery("board_id")
-    board_id: String
+    @httpQuery("board_ids[]")
+    board_ids: StringList
 
-    @httpQuery("column_id")
-    column_id: String
+    @httpQuery("tag_ids[]")
+    tag_ids: StringList
 
-    @httpQuery("assignee_id")
-    assignee_id: String
+    @httpQuery("assignee_ids[]")
+    assignee_ids: StringList
 
-    @httpQuery("tag")
-    tag: String
+    @httpQuery("creator_ids[]")
+    creator_ids: StringList
 
-    @httpQuery("status")
-    status: String
+    @httpQuery("closer_ids[]")
+    closer_ids: StringList
 
-    @httpQuery("q")
-    q: String
+    @httpQuery("card_ids[]")
+    card_ids: StringList
+
+    @httpQuery("indexed_by")
+    indexed_by: String
+
+    @httpQuery("sorted_by")
+    sorted_by: String
+
+    @httpQuery("assignment_status")
+    assignment_status: String
+
+    @httpQuery("creation")
+    creation: String
+
+    @httpQuery("closure")
+    closure: String
+
+    @httpQuery("terms[]")
+    terms: StringList
 }
 
 structure ListCardsOutput {
@@ -2348,6 +2612,38 @@ structure SearchCardsOutput {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Activities
+// ═══════════════════════════════════════════════════════════════════════════
+
+@readonly
+@http(method: "GET", uri: "/{accountId}/activities.json")
+@tags(["Activities"])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+@fizzyPagination(style: "link", pageParam: "page")
+operation ListActivities {
+    input: ListActivitiesInput
+    output: ListActivitiesOutput
+    errors: [UnauthorizedError, ForbiddenError]
+}
+
+structure ListActivitiesInput {
+    @required
+    @httpLabel
+    accountId: AccountId
+
+    @httpQuery("creator_ids[]")
+    creator_ids: StringList
+
+    @httpQuery("board_ids[]")
+    board_ids: StringList
+}
+
+structure ListActivitiesOutput {
+    @required
+    activities: ActivityList
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Tags
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -2459,6 +2755,103 @@ structure UpdateUserOutput {
 operation DeactivateUser {
     input: DeactivateUserInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
+}
+
+@http(method: "POST", uri: "/{accountId}/users/{userId}/email_addresses.json")
+@tags(["Users"])
+@fizzyRetry(maxAttempts: 1)
+operation RequestEmailAddressChange {
+    input: RequestEmailAddressChangeInput
+    errors: [UnauthorizedError, ForbiddenError, NotFoundError, BadRequestError, ValidationError, RateLimitError]
+}
+
+structure RequestEmailAddressChangeInput {
+    @required
+    @httpLabel
+    accountId: AccountId
+
+    @required
+    @httpLabel
+    userId: UserId
+
+    @fizzySensitive(category: "pii", redact: true)
+    @required
+    email_address: EmailAddress
+}
+
+@http(method: "POST", uri: "/{accountId}/users/{userId}/email_addresses/{emailAddressToken}/confirmation.json")
+@tags(["Users"])
+@fizzyRetry(maxAttempts: 1)
+operation ConfirmEmailAddressChange {
+    input: ConfirmEmailAddressChangeInput
+    errors: [NotFoundError, ValidationError, RateLimitError]
+}
+
+structure ConfirmEmailAddressChangeInput {
+    @required
+    @httpLabel
+    accountId: AccountId
+
+    @required
+    @httpLabel
+    userId: UserId
+
+    @required
+    @httpLabel
+    emailAddressToken: String
+}
+
+@http(method: "POST", uri: "/{accountId}/users/{userId}/data_exports.json")
+@tags(["Users"])
+@fizzyRetry(maxAttempts: 1)
+operation CreateUserDataExport {
+    input: CreateUserDataExportInput
+    output: CreateUserDataExportOutput
+    errors: [UnauthorizedError, ForbiddenError, NotFoundError, RateLimitError]
+}
+
+structure CreateUserDataExportInput {
+    @required
+    @httpLabel
+    accountId: AccountId
+
+    @required
+    @httpLabel
+    userId: UserId
+}
+
+structure CreateUserDataExportOutput {
+    @required
+    export: DataExport
+}
+
+@readonly
+@http(method: "GET", uri: "/{accountId}/users/{userId}/data_exports/{exportId}")
+@tags(["Users"])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation GetUserDataExport {
+    input: GetUserDataExportInput
+    output: GetUserDataExportOutput
+    errors: [UnauthorizedError, ForbiddenError, NotFoundError]
+}
+
+structure GetUserDataExportInput {
+    @required
+    @httpLabel
+    accountId: AccountId
+
+    @required
+    @httpLabel
+    userId: UserId
+
+    @required
+    @httpLabel
+    exportId: ExportId
+}
+
+structure GetUserDataExportOutput {
+    @required
+    export: DataExport
 }
 
 structure DeactivateUserInput {
@@ -2788,6 +3181,36 @@ structure ActivateWebhookInput {
     @required
     @httpLabel
     webhookId: WebhookId
+}
+
+@readonly
+@http(method: "GET", uri: "/{accountId}/boards/{boardId}/webhooks/{webhookId}/deliveries.json")
+@tags(["Webhooks"])
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+@fizzyPagination(style: "link", pageParam: "page")
+operation ListWebhookDeliveries {
+    input: ListWebhookDeliveriesInput
+    output: ListWebhookDeliveriesOutput
+    errors: [UnauthorizedError, ForbiddenError, NotFoundError]
+}
+
+structure ListWebhookDeliveriesInput {
+    @required
+    @httpLabel
+    accountId: AccountId
+
+    @required
+    @httpLabel
+    boardId: BoardId
+
+    @required
+    @httpLabel
+    webhookId: WebhookId
+}
+
+structure ListWebhookDeliveriesOutput {
+    @required
+    deliveries: WebhookDeliveryList
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

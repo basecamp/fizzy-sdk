@@ -109,14 +109,16 @@ provenance-check:
 	@echo "  Provenance is in sync"
 
 sync-status:
-	@REV=$$(jq -r '.fizzy.revision' spec/api-provenance.json); \
-	if [ -z "$$REV" ] || [ "$$REV" = "null" ] || [ "$$REV" = "" ]; then \
-		echo "No revision recorded in api-provenance.json. Run provenance-sync after setting revision."; \
+	@REV=$$(jq -r '.fizzy.revision // empty' spec/api-provenance.json); \
+	if [ -z "$$REV" ]; then \
+		echo "==> fizzy: no baseline revision set"; \
 		exit 0; \
 	fi; \
-	echo "==> Checking for upstream changes since $$REV..."; \
-	gh api "repos/basecamp/fizzy/compare/$$REV...main" --jq '.ahead_by' 2>/dev/null | xargs -I{} echo "  {} commits ahead" || \
-		echo "  Could not query upstream (check gh auth)"
+	command -v gh > /dev/null 2>&1 || { echo "ERROR: gh CLI not found. Install: https://cli.github.com"; exit 1; }; \
+	gh auth status > /dev/null 2>&1 || { echo "ERROR: gh not authenticated. Run: gh auth login"; exit 1; }; \
+	echo "==> Upstream Fizzy API-related changes since $$(echo $$REV | cut -c1-7):"; \
+	gh api "repos/basecamp/fizzy/compare/$$REV...main" \
+		--jq '[.files[] | select((.filename == "docs/api/README.md") or (.filename | startswith("docs/api/sections/")) or (.filename == "config/routes.rb") or (.filename | startswith("app/controllers/")) or (.filename | startswith("app/views/")) or (.filename | startswith("app/models/")))] | if length == 0 then "  (no API-doc/app-surface changes detected)" else .[] | "  " + .status[:1] + " " + .filename end'
 
 #---
 # Go SDK (delegates to go/Makefile)

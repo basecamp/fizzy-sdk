@@ -1771,6 +1771,133 @@
         }
       }
     },
+    "/activities.json": {
+      "get": {
+        "operationId": "ListActivities",
+        "parameters": [
+          {
+            "name": "creator_ids[]",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "explode": true
+          },
+          {
+            "name": "board_ids[]",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ListActivities 200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListActivitiesResponseContent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BadRequestError 400 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestErrorResponseContent"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UnauthorizedError 401 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorResponseContent"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "ForbiddenError 403 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenErrorResponseContent"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NotFoundError 404 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundErrorResponseContent"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "ValidationError 422 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponseContent"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RateLimitError 429 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitErrorResponseContent"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "InternalServerError 500 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseContent"
+                }
+              }
+            }
+          }
+        },
+        "x-fizzy-pagination": {
+          "style": "link",
+          "pageParam": "page"
+        },
+        "x-fizzy-retry": {
+          "maxAttempts": 3,
+          "baseDelayMs": 1000,
+          "backoff": "exponential",
+          "retryOn": [
+            429,
+            500,
+            503
+          ]
+        }
+      }
+    },
     "/boards.json": {
       "get": {
         "operationId": "ListBoards",
@@ -2284,6 +2411,121 @@
         },
         "x-fizzy-idempotent": {
           "natural": true
+        },
+        "x-fizzy-retry": {
+          "maxAttempts": 3,
+          "baseDelayMs": 1000,
+          "backoff": "exponential",
+          "retryOn": [
+            429,
+            500,
+            503
+          ]
+        }
+      }
+    },
+    "/boards/{boardId}/accesses.json": {
+      "get": {
+        "operationId": "ListBoardAccesses",
+        "parameters": [
+          {
+            "name": "boardId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ListBoardAccesses 200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListBoardAccessesResponseContent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BadRequestError 400 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestErrorResponseContent"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UnauthorizedError 401 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorResponseContent"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "ForbiddenError 403 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenErrorResponseContent"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NotFoundError 404 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundErrorResponseContent"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "ValidationError 422 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponseContent"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RateLimitError 429 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitErrorResponseContent"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "InternalServerError 500 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseContent"
+                }
+              }
+            }
+          }
         },
         "x-fizzy-retry": {
           "maxAttempts": 3,
@@ -3181,6 +3423,125 @@
         },
         "x-fizzy-idempotent": {
           "natural": true
+        },
+        "x-fizzy-retry": {
+          "maxAttempts": 3,
+          "baseDelayMs": 1000,
+          "backoff": "exponential",
+          "retryOn": [
+            429,
+            500,
+            503
+          ]
+        }
+      }
+    },
+    "/boards/{boardId}/columns/{columnId}/cards.json": {
+      "get": {
+        "operationId": "ListColumnCards",
+        "parameters": [
+          {
+            "name": "boardId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "columnId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ListColumnCards 200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListColumnCardsResponseContent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BadRequestError 400 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestErrorResponseContent"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UnauthorizedError 401 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorResponseContent"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "ForbiddenError 403 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenErrorResponseContent"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NotFoundError 404 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundErrorResponseContent"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "ValidationError 422 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponseContent"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RateLimitError 429 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitErrorResponseContent"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "InternalServerError 500 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseContent"
+                }
+              }
+            }
+          }
+        },
+        "x-fizzy-pagination": {
+          "style": "link",
+          "pageParam": "page"
         },
         "x-fizzy-retry": {
           "maxAttempts": 3,
@@ -4304,51 +4665,247 @@
         }
       }
     },
+    "/boards/{boardId}/webhooks/{webhookId}/deliveries.json": {
+      "get": {
+        "operationId": "ListWebhookDeliveries",
+        "parameters": [
+          {
+            "name": "boardId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "webhookId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ListWebhookDeliveries 200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListWebhookDeliveriesResponseContent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BadRequestError 400 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestErrorResponseContent"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UnauthorizedError 401 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorResponseContent"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "ForbiddenError 403 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenErrorResponseContent"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NotFoundError 404 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundErrorResponseContent"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "ValidationError 422 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponseContent"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RateLimitError 429 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitErrorResponseContent"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "InternalServerError 500 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseContent"
+                }
+              }
+            }
+          }
+        },
+        "x-fizzy-pagination": {
+          "style": "link",
+          "pageParam": "page"
+        },
+        "x-fizzy-retry": {
+          "maxAttempts": 3,
+          "baseDelayMs": 1000,
+          "backoff": "exponential",
+          "retryOn": [
+            429,
+            500,
+            503
+          ]
+        }
+      }
+    },
     "/cards.json": {
       "get": {
         "operationId": "ListCards",
         "parameters": [
           {
-            "name": "board_id",
+            "name": "board_ids[]",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "explode": true
+          },
+          {
+            "name": "tag_ids[]",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "explode": true
+          },
+          {
+            "name": "assignee_ids[]",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "explode": true
+          },
+          {
+            "name": "creator_ids[]",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "explode": true
+          },
+          {
+            "name": "closer_ids[]",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "explode": true
+          },
+          {
+            "name": "card_ids[]",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "explode": true
+          },
+          {
+            "name": "indexed_by",
             "in": "query",
             "schema": {
               "type": "string"
             }
           },
           {
-            "name": "column_id",
+            "name": "sorted_by",
             "in": "query",
             "schema": {
               "type": "string"
             }
           },
           {
-            "name": "assignee_id",
+            "name": "assignment_status",
             "in": "query",
             "schema": {
               "type": "string"
             }
           },
           {
-            "name": "tag",
+            "name": "creation",
             "in": "query",
             "schema": {
               "type": "string"
             }
           },
           {
-            "name": "status",
+            "name": "closure",
             "in": "query",
             "schema": {
               "type": "string"
             }
           },
           {
-            "name": "q",
+            "name": "terms[]",
             "in": "query",
+            "style": "form",
             "schema": {
-              "type": "string"
-            }
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "explode": true
           }
         ],
         "responses": {
@@ -10630,6 +11187,425 @@
         }
       }
     },
+    "/users/{userId}/data_exports.json": {
+      "post": {
+        "operationId": "CreateUserDataExport",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CreateUserDataExport 200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateUserDataExportResponseContent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BadRequestError 400 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestErrorResponseContent"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UnauthorizedError 401 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorResponseContent"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "ForbiddenError 403 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenErrorResponseContent"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NotFoundError 404 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundErrorResponseContent"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "ValidationError 422 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponseContent"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RateLimitError 429 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitErrorResponseContent"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "InternalServerError 500 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseContent"
+                }
+              }
+            }
+          }
+        },
+        "x-fizzy-retry": {
+          "maxAttempts": 1
+        }
+      }
+    },
+    "/users/{userId}/data_exports/{exportId}": {
+      "get": {
+        "operationId": "GetUserDataExport",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "exportId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GetUserDataExport 200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetUserDataExportResponseContent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BadRequestError 400 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestErrorResponseContent"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UnauthorizedError 401 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorResponseContent"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "ForbiddenError 403 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenErrorResponseContent"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NotFoundError 404 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundErrorResponseContent"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "ValidationError 422 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponseContent"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RateLimitError 429 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitErrorResponseContent"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "InternalServerError 500 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseContent"
+                }
+              }
+            }
+          }
+        },
+        "x-fizzy-retry": {
+          "maxAttempts": 3,
+          "baseDelayMs": 1000,
+          "backoff": "exponential",
+          "retryOn": [
+            429,
+            500,
+            503
+          ]
+        }
+      }
+    },
+    "/users/{userId}/email_addresses.json": {
+      "post": {
+        "operationId": "RequestEmailAddressChange",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestEmailAddressChangeRequestContent"
+              }
+            }
+          },
+          "required": true
+        },
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "RequestEmailAddressChange 200 response"
+          },
+          "400": {
+            "description": "BadRequestError 400 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestErrorResponseContent"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UnauthorizedError 401 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorResponseContent"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "ForbiddenError 403 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenErrorResponseContent"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NotFoundError 404 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundErrorResponseContent"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "ValidationError 422 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponseContent"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RateLimitError 429 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitErrorResponseContent"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "InternalServerError 500 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseContent"
+                }
+              }
+            }
+          }
+        },
+        "x-fizzy-retry": {
+          "maxAttempts": 1
+        }
+      }
+    },
+    "/users/{userId}/email_addresses/{emailAddressToken}/confirmation.json": {
+      "post": {
+        "operationId": "ConfirmEmailAddressChange",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "emailAddressToken",
+            "in": "path",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ConfirmEmailAddressChange 200 response"
+          },
+          "400": {
+            "description": "BadRequestError 400 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequestErrorResponseContent"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UnauthorizedError 401 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorResponseContent"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "ForbiddenError 403 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForbiddenErrorResponseContent"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NotFoundError 404 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundErrorResponseContent"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "ValidationError 422 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponseContent"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RateLimitError 429 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimitErrorResponseContent"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "InternalServerError 500 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalServerErrorResponseContent"
+                }
+              }
+            }
+          }
+        },
+        "x-fizzy-retry": {
+          "maxAttempts": 1
+        }
+      }
+    },
     "/users/{userId}/push_subscriptions.json": {
       "post": {
         "operationId": "CreatePushSubscription",
@@ -11066,6 +12042,176 @@
           "name"
         ]
       },
+      "Activity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "particulars": {
+            "$ref": "#/components/schemas/ActivityParticulars"
+          },
+          "url": {
+            "type": "string"
+          },
+          "eventable_type": {
+            "type": "string"
+          },
+          "eventable": {
+            "$ref": "#/components/schemas/ActivityEventable"
+          },
+          "board": {
+            "$ref": "#/components/schemas/Board"
+          },
+          "creator": {
+            "$ref": "#/components/schemas/User"
+          }
+        },
+        "required": [
+          "action",
+          "board",
+          "created_at",
+          "creator",
+          "description",
+          "eventable",
+          "eventable_type",
+          "id",
+          "particulars",
+          "url"
+        ]
+      },
+      "ActivityEventable": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "description_html": {
+            "type": "string"
+          },
+          "image_url": {
+            "type": "string"
+          },
+          "has_attachments": {
+            "type": "boolean"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "closed": {
+            "type": "boolean"
+          },
+          "postponed": {
+            "type": "boolean"
+          },
+          "golden": {
+            "type": "boolean"
+          },
+          "last_active_at": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          },
+          "body": {
+            "$ref": "#/components/schemas/RichTextBody"
+          },
+          "creator": {
+            "$ref": "#/components/schemas/User"
+          },
+          "card": {
+            "$ref": "#/components/schemas/CardRef"
+          },
+          "board": {
+            "$ref": "#/components/schemas/Board"
+          },
+          "column": {
+            "$ref": "#/components/schemas/Column"
+          },
+          "assignees": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/User"
+            }
+          },
+          "has_more_assignees": {
+            "type": "boolean"
+          },
+          "comments_url": {
+            "type": "string"
+          },
+          "reactions_url": {
+            "type": "string"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Step"
+            }
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "url"
+        ]
+      },
+      "ActivityParticulars": {
+        "type": "object",
+        "properties": {
+          "assignee_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "old_board": {
+            "type": "string"
+          },
+          "new_board": {
+            "type": "string"
+          },
+          "old_title": {
+            "type": "string"
+          },
+          "new_title": {
+            "type": "string"
+          },
+          "column": {
+            "type": "string"
+          }
+        }
+      },
       "AssignCardRequestContent": {
         "type": "object",
         "properties": {
@@ -11107,6 +12253,21 @@
             "type": "integer",
             "format": "int32"
           },
+          "public_description": {
+            "type": "string"
+          },
+          "public_description_html": {
+            "type": "string"
+          },
+          "public_url": {
+            "type": "string"
+          },
+          "user_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "url": {
             "type": "string"
           },
@@ -11120,6 +12281,79 @@
           "id",
           "name",
           "url"
+        ]
+      },
+      "BoardAccessUser": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "format": "password"
+          },
+          "role": {
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "email_address": {
+            "type": "string",
+            "format": "password",
+            "x-fizzy-sensitive": {
+              "category": "pii",
+              "redact": true
+            }
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "avatar_url": {
+            "type": "string"
+          },
+          "has_access": {
+            "type": "boolean"
+          },
+          "involvement": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "active",
+          "created_at",
+          "email_address",
+          "has_access",
+          "id",
+          "name",
+          "role",
+          "url"
+        ]
+      },
+      "BoardAccesses": {
+        "type": "object",
+        "properties": {
+          "board_id": {
+            "type": "string"
+          },
+          "all_access": {
+            "type": "boolean"
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BoardAccessUser"
+            }
+          }
+        },
+        "required": [
+          "all_access",
+          "board_id",
+          "users"
         ]
       },
       "BulkReadNotificationsRequestContent": {
@@ -11244,21 +12478,6 @@
           "url"
         ]
       },
-      "Color": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "value": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "name",
-          "value"
-        ]
-      },
       "Column": {
         "type": "object",
         "properties": {
@@ -11269,9 +12488,12 @@
             "type": "string"
           },
           "color": {
-            "$ref": "#/components/schemas/Color"
+            "type": "string"
           },
           "created_at": {
+            "type": "string"
+          },
+          "cards_url": {
             "type": "string"
           }
         },
@@ -11575,6 +12797,9 @@
       "CreateStepResponseContent": {
         "$ref": "#/components/schemas/Step"
       },
+      "CreateUserDataExportResponseContent": {
+        "$ref": "#/components/schemas/DataExport"
+      },
       "CreateWebhookRequestContent": {
         "type": "object",
         "properties": {
@@ -11598,6 +12823,28 @@
       },
       "CreateWebhookResponseContent": {
         "$ref": "#/components/schemas/Webhook"
+      },
+      "DataExport": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "download_url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "created_at",
+          "id",
+          "status"
+        ]
       },
       "DirectUpload": {
         "type": "object",
@@ -11711,6 +12958,9 @@
       "GetStepResponseContent": {
         "$ref": "#/components/schemas/Step"
       },
+      "GetUserDataExportResponseContent": {
+        "$ref": "#/components/schemas/DataExport"
+      },
       "GetUserResponseContent": {
         "$ref": "#/components/schemas/User"
       },
@@ -11744,9 +12994,7 @@
         },
         "required": [
           "accounts",
-          "email_address",
-          "id",
-          "name"
+          "id"
         ]
       },
       "InternalServerErrorResponseContent": {
@@ -11769,9 +13017,16 @@
           "url": {
             "type": "string"
           },
+          "usage_count": {
+            "type": "integer",
+            "format": "int32"
+          },
           "usage_limit": {
             "type": "integer",
             "format": "int32"
+          },
+          "active": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -11784,6 +13039,15 @@
         "items": {
           "$ref": "#/components/schemas/AccessToken"
         }
+      },
+      "ListActivitiesResponseContent": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Activity"
+        }
+      },
+      "ListBoardAccessesResponseContent": {
+        "$ref": "#/components/schemas/BoardAccesses"
       },
       "ListBoardsResponseContent": {
         "type": "array",
@@ -11804,6 +13068,12 @@
         }
       },
       "ListClosedCardsResponseContent": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Card"
+        }
+      },
+      "ListColumnCardsResponseContent": {
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/Card"
@@ -11867,6 +13137,12 @@
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/User"
+        }
+      },
+      "ListWebhookDeliveriesResponseContent": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/WebhookDelivery"
         }
       },
       "ListWebhooksResponseContent": {
@@ -12081,6 +13357,22 @@
           "token"
         ]
       },
+      "RequestEmailAddressChangeRequestContent": {
+        "type": "object",
+        "properties": {
+          "email_address": {
+            "type": "string",
+            "format": "password",
+            "x-fizzy-sensitive": {
+              "category": "pii",
+              "redact": true
+            }
+          }
+        },
+        "required": [
+          "email_address"
+        ]
+      },
       "RichTextBody": {
         "type": "object",
         "properties": {
@@ -12135,6 +13427,15 @@
           "content",
           "id"
         ]
+      },
+      "StringMap": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        },
+        "propertyNames": {
+          "type": "string"
+        }
       },
       "Tag": {
         "type": "object",
@@ -12449,6 +13750,9 @@
           "name": {
             "type": "string"
           },
+          "payload_url": {
+            "type": "string"
+          },
           "url": {
             "type": "string"
           },
@@ -12469,6 +13773,9 @@
           },
           "updated_at": {
             "type": "string"
+          },
+          "board": {
+            "$ref": "#/components/schemas/Board"
           }
         },
         "required": [
@@ -12476,11 +13783,123 @@
           "created_at",
           "id",
           "name",
+          "payload_url",
           "signing_secret",
           "subscribed_actions",
-          "updated_at",
           "url"
         ]
+      },
+      "WebhookDelivery": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          },
+          "request": {
+            "$ref": "#/components/schemas/WebhookDeliveryRequest"
+          },
+          "response": {
+            "$ref": "#/components/schemas/WebhookDeliveryResponse"
+          },
+          "event": {
+            "$ref": "#/components/schemas/WebhookDeliveryEvent"
+          }
+        },
+        "required": [
+          "created_at",
+          "id",
+          "state",
+          "updated_at"
+        ]
+      },
+      "WebhookDeliveryEvent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "creator": {
+            "$ref": "#/components/schemas/WebhookDeliveryEventCreator"
+          },
+          "eventable": {
+            "$ref": "#/components/schemas/WebhookDeliveryEventEventable"
+          }
+        },
+        "required": [
+          "action",
+          "created_at",
+          "id"
+        ]
+      },
+      "WebhookDeliveryEventCreator": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "format": "password"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "WebhookDeliveryEventEventable": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "url"
+        ]
+      },
+      "WebhookDeliveryRequest": {
+        "type": "object",
+        "properties": {
+          "headers": {
+            "$ref": "#/components/schemas/StringMap"
+          }
+        }
+      },
+      "WebhookDeliveryResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
       }
     }
   }

@@ -61,6 +61,14 @@
         "retry_on": null
       }
     },
+    "ConfirmEmailAddressChange": {
+      "retry": {
+        "max": 1,
+        "base_delay_ms": null,
+        "backoff": null,
+        "retry_on": null
+      }
+    },
     "CreateAccessToken": {
       "retry": {
         "max": 1,
@@ -150,6 +158,14 @@
       }
     },
     "CreateStep": {
+      "retry": {
+        "max": 1,
+        "base_delay_ms": null,
+        "backoff": null,
+        "retry_on": null
+      }
+    },
+    "CreateUserDataExport": {
       "retry": {
         "max": 1,
         "base_delay_ms": null,
@@ -499,6 +515,19 @@
         ]
       }
     },
+    "GetUserDataExport": {
+      "readonly": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
     "GetWebhook": {
       "readonly": true,
       "retry": {
@@ -526,6 +555,37 @@
       }
     },
     "ListAccessTokens": {
+      "readonly": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
+    "ListActivities": {
+      "readonly": true,
+      "pagination": {
+        "style": "link",
+        "page_param": "page",
+        "max_page_size": null
+      },
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
+    "ListBoardAccesses": {
       "readonly": true,
       "retry": {
         "max": 3,
@@ -588,6 +648,24 @@
       }
     },
     "ListClosedCards": {
+      "readonly": true,
+      "pagination": {
+        "style": "link",
+        "page_param": "page",
+        "max_page_size": null
+      },
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
+    "ListColumnCards": {
       "readonly": true,
       "pagination": {
         "style": "link",
@@ -748,6 +826,24 @@
       }
     },
     "ListUsers": {
+      "readonly": true,
+      "pagination": {
+        "style": "link",
+        "page_param": "page",
+        "max_page_size": null
+      },
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
+    "ListWebhookDeliveries": {
       "readonly": true,
       "pagination": {
         "style": "link",
@@ -930,6 +1026,14 @@
           500,
           503
         ]
+      }
+    },
+    "RequestEmailAddressChange": {
+      "retry": {
+        "max": 1,
+        "base_delay_ms": null,
+        "backoff": null,
+        "retry_on": null
       }
     },
     "ResetJoinCode": {
@@ -1280,6 +1384,13 @@
     }
   },
   "redaction": {
+    "BoardAccessUser": [
+      {
+        "path": "$.email_address",
+        "category": "pii",
+        "redact": true
+      }
+    ],
     "CreateSessionInput": [
       {
         "path": "$.email_address",
@@ -1288,6 +1399,13 @@
       }
     ],
     "Identity": [
+      {
+        "path": "$.email_address",
+        "category": "pii",
+        "redact": true
+      }
+    ],
+    "RequestEmailAddressChangeInput": [
       {
         "path": "$.email_address",
         "category": "pii",

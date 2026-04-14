@@ -221,11 +221,5 @@ private func extractBodyProperties(schemaName: String, schemas: [String: Any]) -
 }
 
 private func mapQueryParamType(_ schema: [String: Any]) -> String {
-    let type = schema["type"] as? String ?? "string"
-    switch type {
-    case "integer": return "Int"
-    case "boolean": return "Bool"
-    case "number": return "Double"
-    default: return "String"
-    }
+    schemaToSwiftType(schema)
 }

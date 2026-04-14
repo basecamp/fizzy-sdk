@@ -78,6 +78,17 @@ module Fizzy
           nil
         end
       end
+
+      # list_webhook_deliveries operation
+      # @param account_id [String] account id ID
+      # @param board_id [String] board id ID
+      # @param webhook_id [String] webhook id ID
+      # @return [Enumerator<Hash>] paginated results
+      def list_webhook_deliveries(account_id:, board_id:, webhook_id:)
+        wrap_paginated(service: "webhooks", operation: "ListWebhookDeliveries", is_mutation: false, resource_id: webhook_id) do
+          paginate("/#{account_id}/boards/#{board_id}/webhooks/#{webhook_id}/deliveries.json")
+        end
+      end
     end
   end
 end

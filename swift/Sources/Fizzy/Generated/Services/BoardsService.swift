@@ -1,6 +1,14 @@
 // @generated from OpenAPI spec — do not edit directly
 import Foundation
 
+public struct ListBoardAccessesBoardOptions: Sendable {
+    public var page: Int32?
+
+    public init(page: Int32? = nil) {
+        self.page = page
+    }
+}
+
 public struct ListBoardOptions: Sendable {
     public var maxItems: Int?
 
@@ -36,6 +44,19 @@ public final class BoardsService: BaseService, @unchecked Sendable {
             method: "GET",
             path: "/\(accountId)/boards/\(boardId)",
             retryConfig: Metadata.retryConfig(for: "GetBoard")
+        )
+    }
+
+    public func listBoardAccesses(accountId: String, boardId: String, options: ListBoardAccessesBoardOptions? = nil) async throws -> BoardAccesses {
+        var queryItems: [URLQueryItem] = []
+        if let page = options?.page {
+            queryItems.append(URLQueryItem(name: "page", value: String(page)))
+        }
+        return try await request(
+            OperationInfo(service: "Boards", operation: "ListBoardAccesses", resourceType: "board_access", isMutation: false),
+            method: "GET",
+            path: "/\(accountId)/boards/\(boardId)/accesses.json" + queryString(queryItems),
+            retryConfig: Metadata.retryConfig(for: "ListBoardAccesses")
         )
     }
 

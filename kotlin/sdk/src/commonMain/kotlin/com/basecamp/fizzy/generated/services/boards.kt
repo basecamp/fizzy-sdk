@@ -123,6 +123,30 @@ class BoardsService(client: AccountClient) : BaseService(client) {
     }
 
     /**
+     * listBoardAccesses operation
+     * @param boardId The board ID
+     * @param options Optional query parameters and pagination control
+     */
+    suspend fun listBoardAccesses(boardId: String, options: ListBoardAccessesOptions? = null): BoardAccesses {
+        val info = OperationInfo(
+            service = "Boards",
+            operation = "ListBoardAccesses",
+            resourceType = "board_access",
+            isMutation = false,
+            boardId = boardId,
+            resourceId = null,
+        )
+        val qs = buildQueryString(
+            "page" to options?.page,
+        )
+        return request(info, {
+            httpGet("/boards/${boardId}/accesses.json" + qs, operationName = info.operation)
+        }) { body ->
+            json.decodeFromString<BoardAccesses>(body)
+        }
+    }
+
+    /**
      * publishBoard operation
      * @param boardId The board ID
      */

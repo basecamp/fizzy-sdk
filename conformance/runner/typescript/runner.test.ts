@@ -91,6 +91,12 @@ afterAll(() => server.close());
 // Operation dispatcher
 // ---------------------------------------------------------------------------
 
+function stringArray(value: unknown): string[] | undefined {
+  if (Array.isArray(value)) return value.map(String);
+  if (value === undefined || value === null || value === "") return undefined;
+  return [String(value)];
+}
+
 async function dispatch(
   client: FizzyClient,
   tc: TestCase,
@@ -112,6 +118,13 @@ async function dispatch(
       case "GetBoard":
         data = await (client as any).boards.get(p.boardId as number);
         break;
+      case "ListBoardAccesses": {
+        const qb = tc.queryParams ?? {};
+        data = await (client as any).boards.listBoardAccesses(String(p.boardId), {
+          page: qb.page ? Number(qb.page) : undefined,
+        });
+        break;
+      }
       case "UpdateBoard":
         data = await (client as any).boards.update(p.boardId as number, body);
         break;
@@ -129,12 +142,18 @@ async function dispatch(
       case "ListCards": {
         const qc = tc.queryParams ?? {};
         data = await (client as any).cards.list({
-          boardId: qc.board_id ? Number(qc.board_id) : undefined,
-          columnId: qc.column_id ? Number(qc.column_id) : undefined,
-          assigneeId: qc.assignee_id ? Number(qc.assignee_id) : undefined,
-          tag: qc.tag,
-          status: qc.status,
-          q: qc.q,
+          boardIds: stringArray(qc["board_ids[]"]),
+          tagIds: stringArray(qc["tag_ids[]"]),
+          assigneeIds: stringArray(qc["assignee_ids[]"]),
+          creatorIds: stringArray(qc["creator_ids[]"]),
+          closerIds: stringArray(qc["closer_ids[]"]),
+          cardIds: stringArray(qc["card_ids[]"]),
+          indexedBy: qc.indexed_by as string | undefined,
+          sortedBy: qc.sorted_by as string | undefined,
+          assignmentStatus: qc.assignment_status as string | undefined,
+          creation: qc.creation as string | undefined,
+          closure: qc.closure as string | undefined,
+          terms: stringArray(qc["terms[]"]),
         });
         break;
       }
@@ -182,6 +201,17 @@ async function dispatch(
         data = await (client as any).cards.searchCards({ q: qs.q });
         break;
       }
+      case "ListActivities": {
+        const qa = tc.queryParams ?? {};
+        data = await (client as any).cards.listActivities({
+          creatorIds: stringArray(qa["creator_ids[]"]),
+          boardIds: stringArray(qa["board_ids[]"]),
+        });
+        break;
+      }
+      case "ListColumnCards":
+        data = await (client as any).cards.listColumnCards(p.boardId as number, p.columnId as number);
+        break;
 
       // Comments
       case "ListComments":
@@ -237,6 +267,23 @@ async function dispatch(
         data = await (client as any).steps.delete(p.cardNumber as number, p.stepId as number);
         break;
 
+      // Columns
+      case "ListColumns":
+        data = await (client as any).columns.list(p.boardId as number);
+        break;
+      case "CreateColumn":
+        data = await (client as any).columns.create(p.boardId as number, body);
+        break;
+      case "GetColumn":
+        data = await (client as any).columns.get(p.boardId as number, p.columnId as number);
+        break;
+      case "UpdateColumn":
+        data = await (client as any).columns.update(p.boardId as number, p.columnId as number, body);
+        break;
+      case "DeleteColumn":
+        data = await (client as any).columns.delete(p.boardId as number, p.columnId as number);
+        break;
+
       // Webhooks
       case "ListWebhooks":
         data = await (client as any).webhooks.list(p.boardId as number);
@@ -252,6 +299,12 @@ async function dispatch(
         break;
       case "DeleteWebhook":
         data = await (client as any).webhooks.delete(p.boardId as number, p.webhookId as number);
+        break;
+      case "ActivateWebhook":
+        data = await (client as any).webhooks.activate(p.boardId as number, p.webhookId as number);
+        break;
+      case "ListWebhookDeliveries":
+        data = await (client as any).webhooks.listWebhookDeliveries(String(p.boardId), String(p.webhookId));
         break;
 
       // Sessions
@@ -299,6 +352,32 @@ async function dispatch(
         break;
       case "UnreadNotification":
         data = await (client as any).notifications.unread(p.notificationId as number);
+        break;
+
+      // Users
+      case "ListUsers":
+        data = await (client as any).users.list();
+        break;
+      case "GetUser":
+        data = await (client as any).users.get(String(p.userId));
+        break;
+      case "UpdateUser":
+        data = await (client as any).users.update(String(p.userId), body);
+        break;
+      case "DeactivateUser":
+        data = await (client as any).users.deactivate(String(p.userId));
+        break;
+      case "RequestEmailAddressChange":
+        data = await (client as any).users.requestEmailAddressChange(String(p.userId), { emailAddress: body.email_address });
+        break;
+      case "ConfirmEmailAddressChange":
+        data = await (client as any).users.confirmEmailAddressChange(String(p.userId), String(p.emailAddressToken));
+        break;
+      case "CreateUserDataExport":
+        data = await (client as any).users.createUserDataExport(String(p.userId));
+        break;
+      case "GetUserDataExport":
+        data = await (client as any).users.userDataExport(String(p.userId), String(p.exportId));
         break;
 
       // Pins

@@ -192,7 +192,14 @@ class ServiceGenerator
     'CompleteSignup' => 'Sessions',
     'GetNotificationTray' => 'Notifications',
     'BulkReadNotifications' => 'Notifications',
-    'DeleteCardImage' => 'Cards'
+    'DeleteCardImage' => 'Cards',
+    'ListBoardAccesses' => 'Boards',
+    'ListActivities' => 'Cards',
+    'RequestEmailAddressChange' => 'Users',
+    'ConfirmEmailAddressChange' => 'Users',
+    'CreateUserDataExport' => 'Users',
+    'GetUserDataExport' => 'Users',
+    'ListWebhookDeliveries' => 'Webhooks'
   }.freeze
 
   SERVICE_SUFFIXES = [
@@ -392,7 +399,8 @@ class ServiceGenerator
   end
 
   def to_snake_case(str)
-    str.gsub(/([a-z\d])([A-Z])/, '\1_\2')
+    str.gsub(/\[\]\z/, '')
+       .gsub(/([a-z\d])([A-Z])/, '\1_\2')
        .gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
        .downcase
   end

@@ -144,6 +144,8 @@ class ConformanceRunner
       dispatch_list(enum, tc)
     when "GetBoard"
       client.boards.get(account_id: account_id, board_id: pp["boardId"])
+    when "ListBoardAccesses"
+      client.boards.list_board_accesses(account_id: account_id, board_id: pp["boardId"], **symbolize_body(tc["queryParams"] || {}))
     when "CreateBoard"
       client.boards.create(account_id: account_id, **symbolize_body(body))
     when "UpdateBoard"
@@ -214,10 +216,16 @@ class ConformanceRunner
       qp = tc["queryParams"] || {}
       enum = client.cards.search_cards(account_id: account_id, q: qp["q"])
       dispatch_list(enum, tc)
+    when "ListActivities"
+      enum = client.cards.list_activities(account_id: account_id, **symbolize_body(tc["queryParams"] || {}))
+      dispatch_list(enum, tc)
 
     # Columns
     when "ListColumns"
       client.columns.list(account_id: account_id, board_id: pp["boardId"])
+    when "ListColumnCards"
+      enum = client.cards.list_column_cards(account_id: account_id, board_id: pp["boardId"], column_id: pp["columnId"])
+      dispatch_list(enum, tc)
     when "GetColumn"
       client.columns.get(account_id: account_id, board_id: pp["boardId"], column_id: pp["columnId"])
     when "CreateColumn"
@@ -290,6 +298,14 @@ class ConformanceRunner
       client.users.update(account_id: account_id, user_id: pp["userId"], **symbolize_body(body))
     when "DeactivateUser"
       client.users.deactivate(account_id: account_id, user_id: pp["userId"])
+    when "RequestEmailAddressChange"
+      client.users.request_email_address_change(account_id: account_id, user_id: pp["userId"], **symbolize_body(body))
+    when "ConfirmEmailAddressChange"
+      client.users.confirm_email_address_change(account_id: account_id, user_id: pp["userId"], email_address_token: pp["emailAddressToken"])
+    when "CreateUserDataExport"
+      client.users.create_user_data_export(account_id: account_id, user_id: pp["userId"])
+    when "GetUserDataExport"
+      client.users.get_user_data_export(account_id: account_id, user_id: pp["userId"], export_id: pp["exportId"])
 
     # Pins
     when "ListPins"
@@ -312,6 +328,9 @@ class ConformanceRunner
       client.webhooks.delete(account_id: account_id, board_id: pp["boardId"], webhook_id: pp["webhookId"])
     when "ActivateWebhook"
       client.webhooks.activate(account_id: account_id, board_id: pp["boardId"], webhook_id: pp["webhookId"])
+    when "ListWebhookDeliveries"
+      enum = client.webhooks.list_webhook_deliveries(account_id: account_id, board_id: pp["boardId"], webhook_id: pp["webhookId"])
+      dispatch_list(enum, tc)
 
     # Sessions (account-independent)
     when "CreateSession"
@@ -401,7 +420,12 @@ class ConformanceRunner
   end
 
   def symbolize_body(body)
-    body.transform_keys(&:to_sym)
+    body.each_with_object({}) do |(key, value), acc|
+      raw = key.to_s
+      normalized_key = raw.delete_suffix("[]").to_sym
+      normalized_value = raw.end_with?("[]") && !value.is_a?(Array) ? [value] : value
+      acc[normalized_key] = normalized_value
+    end
   end
 
   def check_assertions(tc, log, result, error, name)

@@ -1,4 +1,8 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+import CoreFoundation
 
 /// Internal HTTP client that wraps a `Transport` with authentication,
 /// retry with exponential backoff, ETag caching, and hooks lifecycle.

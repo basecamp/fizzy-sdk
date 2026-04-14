@@ -1,6 +1,15 @@
 // @generated from OpenAPI spec — do not edit directly
 import Foundation
 
+public struct ListWebhookDeliveriesWebhookOptions: Sendable {
+    public var maxItems: Int?
+
+    public init(maxItems: Int? = nil) {
+        self.maxItems = maxItems
+    }
+}
+
+
 public final class WebhooksService: BaseService, @unchecked Sendable {
     public func activate(accountId: String, boardId: String, webhookId: String) async throws {
         try await requestVoid(
@@ -36,6 +45,15 @@ public final class WebhooksService: BaseService, @unchecked Sendable {
             method: "GET",
             path: "/\(accountId)/boards/\(boardId)/webhooks/\(webhookId)",
             retryConfig: Metadata.retryConfig(for: "GetWebhook")
+        )
+    }
+
+    public func listWebhookDeliveries(accountId: String, boardId: String, webhookId: String, options: ListWebhookDeliveriesWebhookOptions? = nil) async throws -> ListResult<WebhookDelivery> {
+        return try await requestPaginated(
+            OperationInfo(service: "Webhooks", operation: "ListWebhookDeliveries", resourceType: "webhook_delivery", isMutation: false),
+            path: "/\(accountId)/boards/\(boardId)/webhooks/\(webhookId)/deliveries.json",
+            paginationOpts: options.flatMap { PaginationOptions(maxItems: $0.maxItems) },
+            retryConfig: Metadata.retryConfig(for: "ListWebhookDeliveries")
         )
     }
 
