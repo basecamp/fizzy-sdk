@@ -77,6 +77,7 @@ If docs and behavior disagree, verify against routes/controllers/views/models an
    - Add unit tests for each affected language
    - Add/update conformance tests for behavioral changes
    - If a new operation was added, make sure tests cover request/response behavior and any special semantics
+   - **Thread new query/body params through the hand-written conformance dispatchers.** The Go (`conformance/runner/go/main.go`) and Ruby (`conformance/runner/ruby/runner.rb`) runners are generic pass-through — Go appends `queryParams` straight to the URL and Ruby splats via `symbolize_body` — so they pick up new params automatically. The **TypeScript** (`conformance/runner/typescript/runner.test.ts`) and **Kotlin** (`kotlin/conformance/src/main/kotlin/com/basecamp/fizzy/conformance/Main.kt`) runners have per-operation dispatchers that map fixture keys to typed SDK options (e.g. `boardIds = stringArray(qc["board_ids[]"])`). Any new param on an existing operation must be added to **both** TS and Kotlin dispatchers, or those clients will silently drop it and the conformance tests will fail with `expected "x", got null`.
 
 7. **Update provenance**
    - Update `spec/api-provenance.json` with the new upstream revision/date
