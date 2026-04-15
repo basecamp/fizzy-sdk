@@ -347,6 +347,7 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
             creatorIds = qp.stringListOrSingleton("creator_ids[]"),
             closerIds = qp.stringListOrSingleton("closer_ids[]"),
             cardIds = qp.stringListOrSingleton("card_ids[]"),
+            columnIds = qp.stringListOrSingleton("column_ids[]"),
             indexedBy = qp.strOrNull("indexed_by"),
             sortedBy = qp.strOrNull("sorted_by"),
             assignmentStatus = qp.strOrNull("assignment_status"),
@@ -847,17 +848,27 @@ fun checkAssertion(
 
         "requestQueryParam" -> {
             val paramName = a.path ?: ""
-            val expected = a.expected.asString()
             if (records.isEmpty()) {
                 println("    ASSERT FAIL [requestQueryParam]: no requests recorded")
                 return AssertResult.FAIL
             }
             val last = records.last()
             val parsedUrl = Url(last.url)
-            val actual = parsedUrl.parameters[paramName]
-            if (actual != expected) {
-                println("    ASSERT FAIL [requestQueryParam]: param \"$paramName\" expected \"$expected\", got \"$actual\"")
-                return AssertResult.FAIL
+            val expectedEl = a.expected
+            if (expectedEl is JsonArray) {
+                val expected = expectedEl.map { it.jsonPrimitive.content }
+                val actual = parsedUrl.parameters.getAll(paramName) ?: emptyList()
+                if (actual != expected) {
+                    println("    ASSERT FAIL [requestQueryParam]: param \"$paramName\" expected $expected, got $actual")
+                    return AssertResult.FAIL
+                }
+            } else {
+                val expected = expectedEl.asString()
+                val actual = parsedUrl.parameters[paramName]
+                if (actual != expected) {
+                    println("    ASSERT FAIL [requestQueryParam]: param \"$paramName\" expected \"$expected\", got \"$actual\"")
+                    return AssertResult.FAIL
+                }
             }
             return AssertResult.PASS
         }
