@@ -23,6 +23,7 @@ export interface ListCardsOptions extends PaginationOptions {
   creatorIds?: string[];
   closerIds?: string[];
   cardIds?: string[];
+  columnIds?: string[];
   indexedBy?: string;
   sortedBy?: string;
   assignmentStatus?: string;
@@ -181,7 +182,7 @@ export class CardsService extends BaseService {
         isMutation: false,
       },
       () => this.client.GET("/cards.json" as never, {
-        params: { query: { "board_ids[]": options?.boardIds, "tag_ids[]": options?.tagIds, "assignee_ids[]": options?.assigneeIds, "creator_ids[]": options?.creatorIds, "closer_ids[]": options?.closerIds, "card_ids[]": options?.cardIds, "indexed_by": options?.indexedBy, "sorted_by": options?.sortedBy, "assignment_status": options?.assignmentStatus, "creation": options?.creation, "closure": options?.closure, "terms[]": options?.terms } },
+        params: { query: { "board_ids[]": options?.boardIds, "tag_ids[]": options?.tagIds, "assignee_ids[]": options?.assigneeIds, "creator_ids[]": options?.creatorIds, "closer_ids[]": options?.closerIds, "card_ids[]": options?.cardIds, "column_ids[]": options?.columnIds, "indexed_by": options?.indexedBy, "sorted_by": options?.sortedBy, "assignment_status": options?.assignmentStatus, "creation": options?.creation, "closure": options?.closure, "terms[]": options?.terms } },
       } as never),
       options,
     );

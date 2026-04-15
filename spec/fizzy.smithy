@@ -1598,6 +1598,9 @@ structure ListCardsInput {
     @httpQuery("card_ids[]")
     card_ids: StringList
 
+    @httpQuery("column_ids[]")
+    column_ids: StringList
+
     @httpQuery("indexed_by")
     indexed_by: String
 

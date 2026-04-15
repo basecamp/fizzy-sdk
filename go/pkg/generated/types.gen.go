@@ -826,6 +826,7 @@ type ListCardsParams struct {
 	CreatorIds       []string `form:"creator_ids[],omitempty" json:"creator_ids[],omitempty"`
 	CloserIds        []string `form:"closer_ids[],omitempty" json:"closer_ids[],omitempty"`
 	CardIds          []string `form:"card_ids[],omitempty" json:"card_ids[],omitempty"`
+	ColumnIds        []string `form:"column_ids[],omitempty" json:"column_ids[],omitempty"`
 	IndexedBy        string   `form:"indexed_by,omitempty" json:"indexed_by,omitempty"`
 	SortedBy         string   `form:"sorted_by,omitempty" json:"sorted_by,omitempty"`
 	AssignmentStatus string   `form:"assignment_status,omitempty" json:"assignment_status,omitempty"`

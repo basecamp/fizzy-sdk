@@ -20,6 +20,7 @@ public struct ListCardOptions: Sendable {
     public var creatorIds: [String]?
     public var closerIds: [String]?
     public var cardIds: [String]?
+    public var columnIds: [String]?
     public var indexedBy: String?
     public var sortedBy: String?
     public var assignmentStatus: String?
@@ -35,6 +36,7 @@ public struct ListCardOptions: Sendable {
         creatorIds: [String]? = nil,
         closerIds: [String]? = nil,
         cardIds: [String]? = nil,
+        columnIds: [String]? = nil,
         indexedBy: String? = nil,
         sortedBy: String? = nil,
         assignmentStatus: String? = nil,
@@ -49,6 +51,7 @@ public struct ListCardOptions: Sendable {
         self.creatorIds = creatorIds
         self.closerIds = closerIds
         self.cardIds = cardIds
+        self.columnIds = columnIds
         self.indexedBy = indexedBy
         self.sortedBy = sortedBy
         self.assignmentStatus = assignmentStatus
@@ -217,6 +220,11 @@ public final class CardsService: BaseService, @unchecked Sendable {
         if let cardIds = options?.cardIds {
             for value in cardIds {
                 queryItems.append(URLQueryItem(name: "card_ids[]", value: String(value)))
+            }
+        }
+        if let columnIds = options?.columnIds {
+            for value in columnIds {
+                queryItems.append(URLQueryItem(name: "column_ids[]", value: String(value)))
             }
         }
         if let indexedBy = options?.indexedBy {

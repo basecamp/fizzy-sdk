@@ -68,6 +68,7 @@ module Fizzy
       # @param creator_ids [Array, nil] creator ids
       # @param closer_ids [Array, nil] closer ids
       # @param card_ids [Array, nil] card ids
+      # @param column_ids [Array, nil] column ids
       # @param indexed_by [String, nil] indexed by
       # @param sorted_by [String, nil] sorted by
       # @param assignment_status [String, nil] assignment status
@@ -75,9 +76,9 @@ module Fizzy
       # @param closure [String, nil] closure
       # @param terms [Array, nil] terms
       # @return [Enumerator<Hash>] paginated results
-      def list(account_id:, board_ids: nil, tag_ids: nil, assignee_ids: nil, creator_ids: nil, closer_ids: nil, card_ids: nil, indexed_by: nil, sorted_by: nil, assignment_status: nil, creation: nil, closure: nil, terms: nil)
+      def list(account_id:, board_ids: nil, tag_ids: nil, assignee_ids: nil, creator_ids: nil, closer_ids: nil, card_ids: nil, column_ids: nil, indexed_by: nil, sorted_by: nil, assignment_status: nil, creation: nil, closure: nil, terms: nil)
         wrap_paginated(service: "cards", operation: "ListCards", is_mutation: false, resource_id: account_id) do
-          params = compact_params(board_ids: board_ids, tag_ids: tag_ids, assignee_ids: assignee_ids, creator_ids: creator_ids, closer_ids: closer_ids, card_ids: card_ids, indexed_by: indexed_by, sorted_by: sorted_by, assignment_status: assignment_status, creation: creation, closure: closure, terms: terms)
+          params = compact_params(board_ids: board_ids, tag_ids: tag_ids, assignee_ids: assignee_ids, creator_ids: creator_ids, closer_ids: closer_ids, card_ids: card_ids, column_ids: column_ids, indexed_by: indexed_by, sorted_by: sorted_by, assignment_status: assignment_status, creation: creation, closure: closure, terms: terms)
           paginate("/#{account_id}/cards.json", params: params)
         end
       end

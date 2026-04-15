@@ -4861,6 +4861,18 @@
             "explode": true
           },
           {
+            "name": "column_ids[]",
+            "in": "query",
+            "style": "form",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "explode": true
+          },
+          {
             "name": "indexed_by",
             "in": "query",
             "schema": {

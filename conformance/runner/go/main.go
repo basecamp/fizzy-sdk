@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -21,18 +22,18 @@ import (
 
 // TestCase represents a single conformance test case.
 type TestCase struct {
-	Name            string            `json:"name"`
-	Description     string            `json:"description"`
-	Operation       string            `json:"operation"`
-	Method          string            `json:"method"`
-	Path            string            `json:"path"`
-	PathParams      map[string]any    `json:"pathParams"`
-	QueryParams     map[string]any    `json:"queryParams"`
-	RequestBody     map[string]any    `json:"requestBody"`
-	ConfigOverrides *ConfigOverrides  `json:"configOverrides"`
-	MockResponses   []MockResponse    `json:"mockResponses"`
-	Assertions      []Assertion       `json:"assertions"`
-	Tags            []string          `json:"tags"`
+	Name            string           `json:"name"`
+	Description     string           `json:"description"`
+	Operation       string           `json:"operation"`
+	Method          string           `json:"method"`
+	Path            string           `json:"path"`
+	PathParams      map[string]any   `json:"pathParams"`
+	QueryParams     map[string]any   `json:"queryParams"`
+	RequestBody     map[string]any   `json:"requestBody"`
+	ConfigOverrides *ConfigOverrides `json:"configOverrides"`
+	MockResponses   []MockResponse   `json:"mockResponses"`
+	Assertions      []Assertion      `json:"assertions"`
+	Tags            []string         `json:"tags"`
 }
 
 // ConfigOverrides allows test cases to override client configuration.
@@ -458,7 +459,13 @@ func executeOperation(tc TestCase, serverURL string) *ExecResult {
 	if len(tc.QueryParams) > 0 {
 		qv := url.Values{}
 		for k, v := range tc.QueryParams {
-			qv.Set(k, paramStr(v))
+			if arr, ok := v.([]any); ok {
+				for _, item := range arr {
+					qv.Add(k, paramStr(item))
+				}
+			} else {
+				qv.Set(k, paramStr(v))
+			}
 		}
 		path += "?" + qv.Encode()
 	}
@@ -774,13 +781,25 @@ func checkAssertion(tc TestCase, a Assertion, result *ExecResult, records []Requ
 
 	case "requestQueryParam":
 		paramName := a.Path
-		expected := fmt.Sprint(a.Expected)
 		if len(records) == 0 {
 			fmt.Printf("    ASSERT FAIL [requestQueryParam]: no requests recorded\n")
 			return assertFail
 		}
 		first := records[0]
 		vals, _ := url.ParseQuery(first.RawQuery)
+		if arr, ok := a.Expected.([]any); ok {
+			expected := make([]string, len(arr))
+			for i, item := range arr {
+				expected[i] = fmt.Sprint(item)
+			}
+			actual := vals[paramName]
+			if !slices.Equal(actual, expected) {
+				fmt.Printf("    ASSERT FAIL [requestQueryParam]: param %q expected %v, got %v\n", paramName, expected, actual)
+				return assertFail
+			}
+			return assertPass
+		}
+		expected := fmt.Sprint(a.Expected)
 		actual := vals.Get(paramName)
 		if actual != expected {
 			fmt.Printf("    ASSERT FAIL [requestQueryParam]: param %q expected %q, got %q\n", paramName, expected, actual)

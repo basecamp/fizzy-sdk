@@ -624,14 +624,25 @@ class ConformanceRunner
           false
         else
           last = log[:records].last
-          params = URI.decode_www_form(last[:query] || "").to_h
+          pairs = URI.decode_www_form(last[:query] || "")
           param_name = path
-          actual = params[param_name]
-          if actual == expected.to_s
-            true
+          if expected.is_a?(Array)
+            actual = pairs.each_with_object([]) { |(k, v), acc| acc << v if k == param_name }
+            expected_strs = expected.map(&:to_s)
+            if actual == expected_strs
+              true
+            else
+              puts "    ASSERT FAIL [requestQueryParam]: param #{param_name.inspect} expected #{expected_strs.inspect}, got #{actual.inspect}"
+              false
+            end
           else
-            puts "    ASSERT FAIL [requestQueryParam]: param #{param_name.inspect} expected #{expected.inspect}, got #{actual.inspect}"
-            false
+            actual = pairs.to_h[param_name]
+            if actual == expected.to_s
+              true
+            else
+              puts "    ASSERT FAIL [requestQueryParam]: param #{param_name.inspect} expected #{expected.inspect}, got #{actual.inspect}"
+              false
+            end
           end
         end
 
