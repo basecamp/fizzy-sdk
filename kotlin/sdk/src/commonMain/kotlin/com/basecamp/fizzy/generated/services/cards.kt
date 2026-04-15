@@ -141,6 +141,7 @@ class CardsService(client: AccountClient) : BaseService(client) {
             "creator_ids[]" to options?.creatorIds,
             "closer_ids[]" to options?.closerIds,
             "card_ids[]" to options?.cardIds,
+            "column_ids[]" to options?.columnIds,
             "indexed_by" to options?.indexedBy,
             "sorted_by" to options?.sortedBy,
             "assignment_status" to options?.assignmentStatus,

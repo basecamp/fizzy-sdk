@@ -301,6 +301,46 @@
     "tags": ["request-shapes"]
   },
   {
+    "name": "ListCards sends column_ids[] filter query param",
+    "operation": "ListCards",
+    "method": "GET",
+    "path": "/{accountId}/cards.json",
+    "pathParams": { "accountId": "999" },
+    "queryParams": { "column_ids[]": "c1" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": []
+      }
+    ],
+    "assertions": [
+      { "type": "requestQueryParam", "path": "column_ids[]", "expected": "c1" },
+      { "type": "noError" }
+    ],
+    "tags": ["request-shapes"]
+  },
+  {
+    "name": "ListCards sends indexed_by=maybe filter query param",
+    "operation": "ListCards",
+    "method": "GET",
+    "path": "/{accountId}/cards.json",
+    "pathParams": { "accountId": "999" },
+    "queryParams": { "indexed_by": "maybe" },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": []
+      }
+    ],
+    "assertions": [
+      { "type": "requestQueryParam", "path": "indexed_by", "expected": "maybe" },
+      { "type": "noError" }
+    ],
+    "tags": ["request-shapes"]
+  },
+  {
     "name": "ListActivities sends creator_ids[] filter query param",
     "operation": "ListActivities",
     "method": "GET",

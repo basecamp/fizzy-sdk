@@ -5617,6 +5617,7 @@ export interface operations {
                 "creator_ids[]"?: string[];
                 "closer_ids[]"?: string[];
                 "card_ids[]"?: string[];
+                "column_ids[]"?: string[];
                 indexed_by?: string;
                 sorted_by?: string;
                 assignment_status?: string;

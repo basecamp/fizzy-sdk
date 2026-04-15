@@ -50,6 +50,7 @@ data class ListCardsOptions(
     val creatorIds: List<String>? = null,
     val closerIds: List<String>? = null,
     val cardIds: List<String>? = null,
+    val columnIds: List<String>? = null,
     val indexedBy: String? = null,
     val sortedBy: String? = null,
     val assignmentStatus: String? = null,

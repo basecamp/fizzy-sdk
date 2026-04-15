@@ -148,6 +148,7 @@ async function dispatch(
           creatorIds: stringArray(qc["creator_ids[]"]),
           closerIds: stringArray(qc["closer_ids[]"]),
           cardIds: stringArray(qc["card_ids[]"]),
+          columnIds: stringArray(qc["column_ids[]"]),
           indexedBy: qc.indexed_by as string | undefined,
           sortedBy: qc.sorted_by as string | undefined,
           assignmentStatus: qc.assignment_status as string | undefined,
