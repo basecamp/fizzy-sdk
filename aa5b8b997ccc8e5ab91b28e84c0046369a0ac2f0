@@ -1,0 +1,23 @@
+typescript/package.json
+  cba0efc07f801730 46
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "aa5b8b997ccc8e5ab91b28e84c0046369a0ac2f0",
+  "prompts": {
+    "cba0efc07f801730": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "69fc7cdf-c225-4dd4-9ffe-a8340a1cd379",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Jeremy Daer",
+      "messages": [],
+      "total_additions": 10,
+      "total_deletions": 54,
+      "accepted_lines": 10,
+      "overriden_lines": 0
+    }
+  }
+}
