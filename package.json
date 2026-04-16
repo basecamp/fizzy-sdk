@@ -1,6 +1,6 @@
 {
   "name": "@basecamp/fizzy",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": true,
   "description": "TypeScript SDK for the Fizzy API",
   "engines": { "node": ">=18.0.0" },

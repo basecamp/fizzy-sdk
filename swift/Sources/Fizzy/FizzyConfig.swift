@@ -28,7 +28,7 @@ public struct FizzyConfig: Sendable {
     public let allowInsecure: Bool
 
     /// SDK version string.
-    public static let sdkVersion = "0.1.2"
+    public static let sdkVersion = "0.1.3"
 
     /// Fizzy API version this SDK targets.
     public static let apiVersion = "2026-03-01"

@@ -91,7 +91,7 @@ export interface FizzyClientOptions {
   hooks?: FizzyHooks;
 }
 
-export const VERSION = "0.1.2";
+export const VERSION = "0.1.3";
 export const API_VERSION = "2026-03-01";
 const DEFAULT_BASE_URL = "https://fizzy.do";
 const DEFAULT_USER_AGENT = `fizzy-sdk-ts/${VERSION} (api:${API_VERSION})`;
