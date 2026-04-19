@@ -19,6 +19,11 @@ updates:
         patterns: ["*"]
     cooldown:
       default-days: 10
+    ignore:
+      # TEMPORARY: openapi-typescript peer dep still pins typescript ^5.x.
+      # Remove once openapi-typescript ships TS 6 support (tracking openapi-ts/openapi-typescript#2774).
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: bundler
     directory: /ruby
