@@ -1,0 +1,27 @@
+.github/workflows/release-ruby.yml
+  3b8001072374d54a 33,69
+.github/workflows/release-github.yml
+  3b8001072374d54a 184
+.github/workflows/release-go.yml
+  3b8001072374d54a 39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "260145a544ca5bb032f44e1e08027df4123019cf",
+  "prompts": {
+    "3b8001072374d54a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "911a9c69-af37-41c3-bcea-f09d9acc5484",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Jeremy Daer",
+      "messages": [],
+      "total_additions": 21,
+      "total_deletions": 21,
+      "accepted_lines": 12,
+      "overriden_lines": 0
+    }
+  }
+}
