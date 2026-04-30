@@ -660,7 +660,7 @@ class FizzyColumnColorTypeTest < Minitest::Test
     assert_equal "var(--color-card-1)", color.value
   end
 
-  def test_column_from_json_carries_color_object
+  def test_column_from_json_carries_typed_color_object
     column = Fizzy::Types::Column.from_json(
       "id" => "abc123",
       "name" => "In Progress",
@@ -668,7 +668,8 @@ class FizzyColumnColorTypeTest < Minitest::Test
       "created_at" => "2026-04-30T00:00:00Z",
       "cards_url" => "https://example.com/cards"
     )
-    assert_equal "Blue", column.color["name"]
-    assert_equal "var(--color-card-1)", column.color["value"]
+    assert_instance_of Fizzy::Types::Color, column.color
+    assert_equal "Blue", column.color.name
+    assert_equal "var(--color-card-1)", column.color.value
   end
 end

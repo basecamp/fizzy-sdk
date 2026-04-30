@@ -74,7 +74,7 @@ class TypeGenerator
       ruby_type = schema_to_ruby_type(field_schema)
       required = required_fields.include?(field_name)
       { name: ruby_name, json_name: field_name, type: ruby_type, required: required, \
-        description: field_schema["description"] }
+        description: field_schema["description"], schema: field_schema }
     end
 
     if fields.empty?
@@ -92,7 +92,8 @@ class TypeGenerator
     fields.each_with_index do |f, i|
       comma = i < fields.length - 1 ? "," : ""
       accessor = "data[\"#{f[:json_name]}\"]"
-      lines << "      #{f[:name]}: #{accessor}#{comma}"
+      value = json_value_expression(f[:schema], accessor)
+      lines << "      #{f[:name]}: #{value}#{comma}"
     end
 
     lines << "    )"
@@ -102,13 +103,29 @@ class TypeGenerator
     lines
   end
 
+  def json_value_expression(schema, accessor)
+    ref_name = schema_ref_name(schema)
+    return "#{accessor} && #{ref_name}.from_json(#{accessor})" if ref_name
+
+    if schema["type"] == "array"
+      item_ref_name = schema_ref_name(schema["items"])
+      return "#{accessor}&.map { |item| #{item_ref_name}.from_json(item) }" if item_ref_name
+    end
+
+    accessor
+  end
+
+  def schema_ref_name(schema)
+    return nil unless schema && schema["$ref"]
+
+    schema["$ref"].split("/").last
+  end
+
   def schema_to_ruby_type(schema)
     return "Object" unless schema
 
-    if schema["$ref"]
-      ref_name = schema["$ref"].split("/").last
-      return ref_name
-    end
+    ref_name = schema_ref_name(schema)
+    return ref_name if ref_name
 
     case schema["type"]
     when "integer" then "Integer"

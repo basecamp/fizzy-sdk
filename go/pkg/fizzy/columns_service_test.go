@@ -2,9 +2,13 @@ package fizzy
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+
+	"github.com/basecamp/fizzy-sdk/go/pkg/generated"
 )
 
 // TestGetColumnDecodesColorObject pins the Column.color schema as a structured
@@ -32,11 +36,31 @@ func TestGetColumnDecodesColorObject(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Get: %v", err)
 	}
+	if col.Color == nil {
+		t.Fatal("Color is nil, want decoded Color object")
+	}
 	if col.Color.Name != "Blue" {
 		t.Errorf("Color.Name = %q, want Blue", col.Color.Name)
 	}
 	if col.Color.Value != "var(--color-card-1)" {
 		t.Errorf("Color.Value = %q, want var(--color-card-1)", col.Color.Value)
+	}
+}
+
+func TestColumnColorOptionalPointerOmitsAbsentColor(t *testing.T) {
+	var col generated.Column
+	if err := json.Unmarshal([]byte(`{"id":"abc123","name":"No Color","created_at":"2026-04-30T00:00:00Z"}`), &col); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
+	if col.Color != nil {
+		t.Fatalf("Color = %+v, want nil for absent optional field", col.Color)
+	}
+	encoded, err := json.Marshal(col)
+	if err != nil {
+		t.Fatalf("Marshal: %v", err)
+	}
+	if strings.Contains(string(encoded), `"color"`) {
+		t.Fatalf("encoded Column contains absent color: %s", encoded)
 	}
 }
 
@@ -61,6 +85,9 @@ func TestListColumnsDecodesColorObject(t *testing.T) {
 	}
 	if len(cols) != 2 {
 		t.Fatalf("len(cols) = %d, want 2", len(cols))
+	}
+	if cols[0].Color == nil || cols[1].Color == nil {
+		t.Fatalf("colors = %+v / %+v, want decoded Color objects", cols[0].Color, cols[1].Color)
 	}
 	if cols[0].Color.Name != "Gray" || cols[1].Color.Value != "var(--color-card-4)" {
 		t.Errorf("unexpected colors: %+v / %+v", cols[0].Color, cols[1].Color)

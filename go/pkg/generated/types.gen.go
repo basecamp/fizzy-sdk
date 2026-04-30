@@ -186,7 +186,7 @@ type Color struct {
 // Column defines model for Column.
 type Column struct {
 	CardsUrl  string `json:"cards_url,omitempty"`
-	Color     Color  `json:"color,omitempty"`
+	Color     *Color `json:"color,omitempty"`
 	CreatedAt string `json:"created_at"`
 	Id        string `json:"id"`
 	Name      string `json:"name"`

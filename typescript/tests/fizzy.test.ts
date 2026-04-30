@@ -901,7 +901,7 @@ describe("client integration", () => {
       baseUrl: `${BASE_URL}/999`,
       enableRetry: false,
     });
-    const column = await (client as any).columns.get("board1", "abc123");
+    const column = await client.columns.get("board1", "abc123");
     expect(column.color).toEqual({ name: "Blue", value: "var(--color-card-1)" });
   });
 
@@ -930,7 +930,7 @@ describe("client integration", () => {
       baseUrl: `${BASE_URL}/999`,
       enableRetry: false,
     });
-    const columns = await (client as any).columns.list("board1");
+    const columns = await client.columns.list("board1");
     expect(columns).toHaveLength(2);
     expect(columns[0].color.name).toBe("Gray");
     expect(columns[1].color.value).toBe("var(--color-card-4)");

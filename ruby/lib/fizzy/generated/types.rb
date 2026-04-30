@@ -31,7 +31,7 @@ module Fizzy
           slug: data["slug"],
           created_at: data["created_at"],
           url: data["url"],
-          user: data["user"]
+          user: data["user"] && User.from_json(data["user"])
         )
       end
     end
@@ -72,12 +72,12 @@ module Fizzy
           action: data["action"],
           created_at: data["created_at"],
           description: data["description"],
-          particulars: data["particulars"],
+          particulars: data["particulars"] && ActivityParticulars.from_json(data["particulars"]),
           url: data["url"],
           eventable_type: data["eventable_type"],
-          eventable: data["eventable"],
-          board: data["board"],
-          creator: data["creator"]
+          eventable: data["eventable"] && ActivityEventable.from_json(data["eventable"]),
+          board: data["board"] && Board.from_json(data["board"]),
+          creator: data["creator"] && User.from_json(data["creator"])
         )
       end
     end
@@ -102,16 +102,16 @@ module Fizzy
           last_active_at: data["last_active_at"],
           created_at: data["created_at"],
           updated_at: data["updated_at"],
-          body: data["body"],
-          creator: data["creator"],
-          card: data["card"],
-          board: data["board"],
-          column: data["column"],
-          assignees: data["assignees"],
+          body: data["body"] && RichTextBody.from_json(data["body"]),
+          creator: data["creator"] && User.from_json(data["creator"]),
+          card: data["card"] && CardRef.from_json(data["card"]),
+          board: data["board"] && Board.from_json(data["board"]),
+          column: data["column"] && Column.from_json(data["column"]),
+          assignees: data["assignees"]&.map { |item| User.from_json(item) },
           has_more_assignees: data["has_more_assignees"],
           comments_url: data["comments_url"],
           reactions_url: data["reactions_url"],
-          steps: data["steps"],
+          steps: data["steps"]&.map { |item| Step.from_json(item) },
           url: data["url"]
         )
       end
@@ -167,7 +167,7 @@ module Fizzy
           public_url: data["public_url"],
           user_ids: data["user_ids"],
           url: data["url"],
-          creator: data["creator"]
+          creator: data["creator"] && User.from_json(data["creator"])
         )
       end
     end
@@ -198,7 +198,7 @@ module Fizzy
         new(
           board_id: data["board_id"],
           all_access: data["all_access"],
-          users: data["users"]
+          users: data["users"]&.map { |item| BoardAccessUser.from_json(item) }
         )
       end
     end
@@ -233,14 +233,14 @@ module Fizzy
           last_active_at: data["last_active_at"],
           created_at: data["created_at"],
           url: data["url"],
-          board: data["board"],
-          column: data["column"],
-          creator: data["creator"],
-          assignees: data["assignees"],
+          board: data["board"] && Board.from_json(data["board"]),
+          column: data["column"] && Column.from_json(data["column"]),
+          creator: data["creator"] && User.from_json(data["creator"]),
+          assignees: data["assignees"]&.map { |item| User.from_json(item) },
           has_more_assignees: data["has_more_assignees"],
           comments_url: data["comments_url"],
           reactions_url: data["reactions_url"],
-          steps: data["steps"]
+          steps: data["steps"]&.map { |item| Step.from_json(item) }
         )
       end
     end
@@ -274,7 +274,7 @@ module Fizzy
         new(
           id: data["id"],
           name: data["name"],
-          color: data["color"],
+          color: data["color"] && Color.from_json(data["color"]),
           created_at: data["created_at"],
           cards_url: data["cards_url"]
         )
@@ -289,9 +289,9 @@ module Fizzy
           id: data["id"],
           created_at: data["created_at"],
           updated_at: data["updated_at"],
-          body: data["body"],
-          creator: data["creator"],
-          card: data["card"],
+          body: data["body"] && RichTextBody.from_json(data["body"]),
+          creator: data["creator"] && User.from_json(data["creator"]),
+          card: data["card"] && CardRef.from_json(data["card"]),
           reactions_url: data["reactions_url"],
           url: data["url"]
         )
@@ -523,7 +523,7 @@ module Fizzy
           content_type: data["content_type"],
           byte_size: data["byte_size"],
           checksum: data["checksum"],
-          direct_upload: data["direct_upload"]
+          direct_upload: data["direct_upload"] && DirectUploadMetadata.from_json(data["direct_upload"])
         )
       end
     end
@@ -545,7 +545,7 @@ module Fizzy
       def self.from_json(data)
         new(
           url: data["url"],
-          headers: data["headers"]
+          headers: data["headers"] && DirectUploadHeaders.from_json(data["headers"])
         )
       end
     end
@@ -610,7 +610,7 @@ module Fizzy
           id: data["id"],
           name: data["name"],
           email_address: data["email_address"],
-          accounts: data["accounts"]
+          accounts: data["accounts"]&.map { |item| Account.from_json(item) }
         )
       end
     end
@@ -736,8 +736,8 @@ module Fizzy
           source_type: data["source_type"],
           title: data["title"],
           body: data["body"],
-          creator: data["creator"],
-          card: data["card"],
+          creator: data["creator"] && User.from_json(data["creator"]),
+          card: data["card"] && NotificationCard.from_json(data["card"]),
           url: data["url"]
         )
       end
@@ -756,7 +756,7 @@ module Fizzy
           closed: data["closed"],
           postponed: data["postponed"],
           url: data["url"],
-          column: data["column"]
+          column: data["column"] && Column.from_json(data["column"])
         )
       end
     end
@@ -798,7 +798,7 @@ module Fizzy
         new(
           id: data["id"],
           content: data["content"],
-          reacter: data["reacter"],
+          reacter: data["reacter"] && User.from_json(data["reacter"]),
           url: data["url"]
         )
       end
@@ -1143,7 +1143,7 @@ module Fizzy
           active: data["active"],
           created_at: data["created_at"],
           updated_at: data["updated_at"],
-          board: data["board"]
+          board: data["board"] && Board.from_json(data["board"])
         )
       end
     end
@@ -1157,9 +1157,9 @@ module Fizzy
           state: data["state"],
           created_at: data["created_at"],
           updated_at: data["updated_at"],
-          request: data["request"],
-          response: data["response"],
-          event: data["event"]
+          request: data["request"] && WebhookDeliveryRequest.from_json(data["request"]),
+          response: data["response"] && WebhookDeliveryResponse.from_json(data["response"]),
+          event: data["event"] && WebhookDeliveryEvent.from_json(data["event"])
         )
       end
     end
@@ -1172,8 +1172,8 @@ module Fizzy
           id: data["id"],
           action: data["action"],
           created_at: data["created_at"],
-          creator: data["creator"],
-          eventable: data["eventable"]
+          creator: data["creator"] && WebhookDeliveryEventCreator.from_json(data["creator"]),
+          eventable: data["eventable"] && WebhookDeliveryEventEventable.from_json(data["eventable"])
         )
       end
     end
