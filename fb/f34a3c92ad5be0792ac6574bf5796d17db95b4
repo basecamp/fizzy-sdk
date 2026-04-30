@@ -1,0 +1,23 @@
+.github/workflows/release-typescript.yml
+  03613c195f038ae9 85-96
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "fbf34a3c92ad5be0792ac6574bf5796d17db95b4",
+  "prompts": {
+    "03613c195f038ae9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "38ced9b9-5926-46ce-9e09-e79a1feb8fc7",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Jeremy Daer",
+      "messages": [],
+      "total_additions": 13,
+      "total_deletions": 4,
+      "accepted_lines": 490,
+      "overriden_lines": 0
+    }
+  }
+}
