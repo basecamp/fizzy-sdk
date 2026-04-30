@@ -82,11 +82,17 @@ jobs:
           cache: 'npm'
           cache-dependency-path: typescript/package-lock.json
 
-      - name: Verify npm provenance support
+      - name: Upgrade npm for OIDC trusted publishing
+        run: npm install -g npm@latest
+
+      - name: Verify npm version supports trusted publishing
         run: |
-          echo "npm version: $(npm --version)"
-          npm publish --help | grep -q -- '--provenance' || \
-            { echo "::error::npm does not support publish --provenance"; exit 1; }
+          INSTALLED=$(npm --version)
+          echo "npm version: $INSTALLED"
+          node -e 'const [M,m,p]=process.argv[1].split(".").map(Number); process.exit(M > 11 || (M === 11 && (m > 5 || (m === 5 && p >= 1))) ? 0 : 1)' "$INSTALLED" || {
+            echo "::error::npm $INSTALLED is too old for trusted publishing (need 11.5.1+)"
+            exit 1
+          }
 
       - name: Install dependencies
         run: npm ci
