@@ -1,0 +1,14 @@
+overlay: 1.0.0
+info:
+  title: Fizzy Go codegen overrides
+  version: 0.0.0
+actions:
+  - target: $.components.schemas.Column.properties.color['$ref']
+    description: Replace Column.color ref with allOf so oapi-codegen honors field extensions.
+    remove: true
+  - target: $.components.schemas.Column.properties.color
+    description: Preserve optional pointer semantics for Column.color.
+    update:
+      allOf:
+        - $ref: '#/components/schemas/Color'
+      x-go-type-skip-optional-pointer: false

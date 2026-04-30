@@ -26,22 +26,6 @@ class ModelEmitter(private val api: OpenApiParser) {
             ?.toSet()
             ?: emptySet()
 
-        val lines = mutableListOf<String>()
-        lines += "package com.basecamp.fizzy.generated.models"
-        lines += ""
-        lines += "import kotlinx.serialization.SerialName"
-        lines += "import kotlinx.serialization.Serializable"
-        lines += "import kotlinx.serialization.json.JsonElement"
-        lines += "import kotlinx.serialization.json.JsonObject"
-        lines += ""
-        lines += "/**"
-        lines += " * $typeName entity from the Fizzy API."
-        lines += " *"
-        lines += " * @generated from OpenAPI spec -- do not edit directly"
-        lines += " */"
-        lines += "@Serializable"
-        lines += "data class $typeName("
-
         // Required fields first (no defaults), then optional fields (with defaults)
         val requiredProps = mutableListOf<Pair<String, JsonObject>>()
         val optionalProps = mutableListOf<Pair<String, JsonObject>>()
@@ -54,11 +38,17 @@ class ModelEmitter(private val api: OpenApiParser) {
         }
 
         val propLines = mutableListOf<String>()
+        var usesSerialName = false
+        var usesJsonElement = false
+        var usesJsonObject = false
         for ((propName, propObj) in requiredProps + optionalProps) {
             val isRequired = propName in requiredFields
             val kotlinType = resolvePropertyType(propObj, isRequired)
             val camelName = propName.snakeToCamelCase()
             val needsSerialName = camelName != propName
+            usesSerialName = usesSerialName || needsSerialName
+            usesJsonElement = usesJsonElement || kotlinType.contains("JsonElement")
+            usesJsonObject = usesJsonObject || kotlinType.contains("JsonObject")
 
             val propLine = buildString {
                 if (needsSerialName) {
@@ -74,6 +64,21 @@ class ModelEmitter(private val api: OpenApiParser) {
             propLines += propLine
         }
 
+        val lines = mutableListOf<String>()
+        lines += "package com.basecamp.fizzy.generated.models"
+        lines += ""
+        if (usesSerialName) lines += "import kotlinx.serialization.SerialName"
+        lines += "import kotlinx.serialization.Serializable"
+        if (usesJsonElement) lines += "import kotlinx.serialization.json.JsonElement"
+        if (usesJsonObject) lines += "import kotlinx.serialization.json.JsonObject"
+        lines += ""
+        lines += "/**"
+        lines += " * $typeName entity from the Fizzy API."
+        lines += " *"
+        lines += " * @generated from OpenAPI spec -- do not edit directly"
+        lines += " */"
+        lines += "@Serializable"
+        lines += "data class $typeName("
         lines += propLines.joinToString(",\n")
         lines += ")"
 

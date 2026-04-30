@@ -12490,6 +12490,21 @@
           "url"
         ]
       },
+      "Color": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "value"
+        ]
+      },
       "Column": {
         "type": "object",
         "properties": {
@@ -12500,7 +12515,7 @@
             "type": "string"
           },
           "color": {
-            "type": "string"
+            "$ref": "#/components/schemas/Color"
           },
           "created_at": {
             "type": "string"

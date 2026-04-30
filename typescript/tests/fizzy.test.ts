@@ -879,4 +879,60 @@ describe("client integration", () => {
     await (client as any).boards.list();
     expect(capturedAuth).toBe("Bearer dynamic-token");
   });
+
+  // Pins Column.color as a structured {name, value} object. The live API
+  // returns color this way; an earlier schema typed it as a string and crashed
+  // the CLI's getSDK().Columns().Get unmarshal path.
+  it("decodes Column.color as a structured object on get", async () => {
+    server.use(
+      http.get(`${BASE_URL}/999/boards/board1/columns/abc123`, () => {
+        return HttpResponse.json({
+          id: "abc123",
+          name: "In Progress",
+          color: { name: "Blue", value: "var(--color-card-1)" },
+          created_at: "2026-04-30T00:00:00Z",
+          cards_url: "https://example.com/cards",
+        });
+      }),
+    );
+
+    const client = createFizzyClient({
+      accessToken: "token",
+      baseUrl: `${BASE_URL}/999`,
+      enableRetry: false,
+    });
+    const column = await client.columns.get("board1", "abc123");
+    expect(column.color).toEqual({ name: "Blue", value: "var(--color-card-1)" });
+  });
+
+  it("decodes Column.color as a structured object on list", async () => {
+    server.use(
+      http.get(`${BASE_URL}/999/boards/board1/columns.json`, () => {
+        return HttpResponse.json([
+          {
+            id: "c1",
+            name: "Triage",
+            color: { name: "Gray", value: "var(--color-card-1)" },
+            created_at: "2026-04-30T00:00:00Z",
+          },
+          {
+            id: "c2",
+            name: "Done",
+            color: { name: "Lime", value: "var(--color-card-4)" },
+            created_at: "2026-04-30T00:00:00Z",
+          },
+        ]);
+      }),
+    );
+
+    const client = createFizzyClient({
+      accessToken: "token",
+      baseUrl: `${BASE_URL}/999`,
+      enableRetry: false,
+    });
+    const columns = await client.columns.list("board1");
+    expect(columns).toHaveLength(2);
+    expect(columns[0].color.name).toBe("Gray");
+    expect(columns[1].color.value).toBe("var(--color-card-4)");
+  });
 });

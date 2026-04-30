@@ -323,7 +323,7 @@ structure Column {
     id: ColumnId
     @required
     name: String
-    color: String
+    color: Color
     @required
     created_at: ISO8601Timestamp
     cards_url: URL

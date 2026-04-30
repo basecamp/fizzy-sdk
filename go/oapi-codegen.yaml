@@ -13,3 +13,5 @@ output-options:
   skip-fmt: false
   skip-prune: false
   prefer-skip-optional-pointer: true
+  overlay:
+    path: oapi-overlay.yaml

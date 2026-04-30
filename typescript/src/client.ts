@@ -58,8 +58,22 @@ export interface FizzyClient extends RawClient {
    */
   forAccount(accountId: string): FizzyClient;
 
-  // Service accessors — generated services will be bound here by the factory.
-  // The actual service types are added via defineService in createFizzyClient.
+  readonly boards: BoardsService;
+  readonly cards: CardsService;
+  readonly columns: ColumnsService;
+  readonly comments: CommentsService;
+  readonly devices: DevicesService;
+  readonly identity: IdentityService;
+  readonly notifications: NotificationsService;
+  readonly pins: PinsService;
+  readonly reactions: ReactionsService;
+  readonly sessions: SessionsService;
+  readonly steps: StepsService;
+  readonly tags: TagsService;
+  readonly uploads: UploadsService;
+  readonly users: UsersService;
+  readonly webhooks: WebhooksService;
+  readonly miscellaneous: MiscellaneousService;
 }
 
 /**

@@ -2,8 +2,6 @@ package com.basecamp.fizzy.generated.models
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
 
 /**
  * Comment entity from the Fizzy API.

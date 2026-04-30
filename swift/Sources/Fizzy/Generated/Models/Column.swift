@@ -6,14 +6,14 @@ public struct Column: Codable, Sendable {
     public let id: String
     public let name: String
     public var cardsUrl: String?
-    public var color: String?
+    public var color: Color?
 
     public init(
         createdAt: String,
         id: String,
         name: String,
         cardsUrl: String? = nil,
-        color: String? = nil
+        color: Color? = nil
     ) {
         self.createdAt = createdAt
         self.id = id

@@ -1,6 +1,7 @@
 package com.basecamp.fizzy
 
 import com.basecamp.fizzy.generated.boards
+import com.basecamp.fizzy.generated.columns
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import kotlinx.coroutines.test.runTest
@@ -312,5 +313,32 @@ class FizzyTest {
     @Test
     fun testParseRetryAfterZero() {
         assertEquals(null, parseRetryAfter("0"))
+    }
+
+    // Pins Column.color as a structured {name, value} object. The live API
+    // returns color this way; an earlier schema typed it as a string and broke
+    // typed Column decoding.
+    @Test
+    fun testColumnGetDecodesColorObject() = runTest {
+        val mockEngine = MockEngine { _ ->
+            respond(
+                content = """{"id":"abc123","name":"In Progress","color":{"name":"Blue","value":"var(--color-card-1)"},"created_at":"2026-04-30T00:00:00Z","cards_url":"https://example.com/cards"}""",
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType to listOf("application/json")),
+            )
+        }
+
+        val client = FizzyClient(
+            authStrategy = BearerAuth(StaticTokenProvider("test-token")),
+            config = FizzyConfig(baseUrl = "https://fizzy.do", userAgent = "test/1.0"),
+            hooks = NoopHooks,
+            engine = mockEngine,
+            externalHttpClient = null,
+        )
+
+        val column = client.forAccount("999").columns.get("board1", "abc123")
+        assertEquals("Blue", column.color?.name)
+        assertEquals("var(--color-card-1)", column.color?.value)
+        client.close()
     }
 }
