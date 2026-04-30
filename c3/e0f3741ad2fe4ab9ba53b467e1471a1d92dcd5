@@ -1,0 +1,25 @@
+.github/workflows/release-typescript.yml
+  fba53e0910a6ab7a 33,78
+.github/workflows/release-ruby.yml
+  fba53e0910a6ab7a 33,69
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "c3e0f3741ad2fe4ab9ba53b467e1471a1d92dcd5",
+  "prompts": {
+    "fba53e0910a6ab7a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "047930d8-edec-4f05-8076-ca7899fa28e3",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Jeremy Daer",
+      "messages": [],
+      "total_additions": 4,
+      "total_deletions": 4,
+      "accepted_lines": 4,
+      "overriden_lines": 0
+    }
+  }
+}
