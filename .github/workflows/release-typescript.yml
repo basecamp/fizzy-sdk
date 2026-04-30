@@ -77,27 +77,18 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0 # zizmor: ignore[cache-poisoning] -- cache is branch-isolated; fork PRs cannot write to this cache
         with:
-          node-version: '22'
+          # Node 24 ships npm 11.12.1, which clears the 11.5.1 floor for OIDC
+          # trusted publishing. Node 22's bundled npm 10.9.7 does not, and its
+          # `npm install -g npm@latest` self-upgrade is currently broken.
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
           cache: 'npm'
           cache-dependency-path: typescript/package-lock.json
 
-      - name: Install npm 11+ for OIDC trusted publishing
-        # `npm install -g npm@latest` crashes on Node 22's bundled npm 10.9.7
-        # (arborist depends on a missing promise-retry). Replace the bundled
-        # npm in-place with the tarball to bypass the broken installer.
-        run: |
-          NPM_VERSION=$(curl -fsSL https://registry.npmjs.org/npm/latest | node -e 'let s=""; process.stdin.on("data", d => s += d).on("end", () => console.log(JSON.parse(s).version))')
-          echo "Installing npm@$NPM_VERSION (was $(npm --version))"
-          NPM_DIR="$(node -e 'console.log(require("path").dirname(require("path").dirname(process.execPath)))')/lib/node_modules/npm"
-          rm -rf "$NPM_DIR"
-          mkdir -p "$NPM_DIR"
-          curl -fsSL "https://registry.npmjs.org/npm/-/npm-${NPM_VERSION}.tgz" | tar -xz -C "$NPM_DIR" --strip-components=1
-          echo "npm version: $(npm --version)"
-
       - name: Verify npm version supports trusted publishing
         run: |
           INSTALLED=$(npm --version)
+          echo "npm version: $INSTALLED"
           node -e 'const [M,m,p]=process.argv[1].split(".").map(Number); process.exit(M > 11 || (M === 11 && (m > 5 || (m === 5 && p >= 1))) ? 0 : 1)' "$INSTALLED" || {
             echo "::error::npm $INSTALLED is too old for trusted publishing (need 11.5.1+)"
             exit 1
