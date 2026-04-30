@@ -82,13 +82,22 @@ jobs:
           cache: 'npm'
           cache-dependency-path: typescript/package-lock.json
 
-      - name: Upgrade npm for OIDC trusted publishing
-        run: npm install -g npm@latest
+      - name: Install npm 11+ for OIDC trusted publishing
+        # `npm install -g npm@latest` crashes on Node 22's bundled npm 10.9.7
+        # (arborist depends on a missing promise-retry). Replace the bundled
+        # npm in-place with the tarball to bypass the broken installer.
+        run: |
+          NPM_VERSION=$(curl -fsSL https://registry.npmjs.org/npm/latest | node -e 'let s=""; process.stdin.on("data", d => s += d).on("end", () => console.log(JSON.parse(s).version))')
+          echo "Installing npm@$NPM_VERSION (was $(npm --version))"
+          NPM_DIR="$(node -e 'console.log(require("path").dirname(require("path").dirname(process.execPath)))')/lib/node_modules/npm"
+          rm -rf "$NPM_DIR"
+          mkdir -p "$NPM_DIR"
+          curl -fsSL "https://registry.npmjs.org/npm/-/npm-${NPM_VERSION}.tgz" | tar -xz -C "$NPM_DIR" --strip-components=1
+          echo "npm version: $(npm --version)"
 
       - name: Verify npm version supports trusted publishing
         run: |
           INSTALLED=$(npm --version)
-          echo "npm version: $INSTALLED"
           node -e 'const [M,m,p]=process.argv[1].split(".").map(Number); process.exit(M > 11 || (M === 11 && (m > 5 || (m === 5 && p >= 1))) ? 0 : 1)' "$INSTALLED" || {
             echo "::error::npm $INSTALLED is too old for trusted publishing (need 11.5.1+)"
             exit 1
