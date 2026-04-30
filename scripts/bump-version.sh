@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Bump SDK version across all 8 files.
+# Bump SDK version across SDK source, manifests, and version assertions.
 # Usage: ./scripts/bump-version.sh x.y.z
 
 VERSION="${1:?Usage: bump-version.sh VERSION}"
@@ -13,7 +13,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib.sh"
 
 # 1. Go — version.go
-sedi "s/Version = \"[^\"]*\"/Version = \"$VERSION\"/" go/pkg/fizzy/version.go
+sedi "s/^const Version = \"[^\"]*\"/const Version = \"$VERSION\"/" go/pkg/fizzy/version.go
 
 # 2. TypeScript — package.json
 sedi "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" typescript/package.json
@@ -22,7 +22,7 @@ sedi "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" typescript/package.j
 sedi "s/export const VERSION = \"[^\"]*\"/export const VERSION = \"$VERSION\"/" typescript/src/client.ts
 
 # 4. Ruby — version.rb
-sedi "s/VERSION = \"[^\"]*\"/VERSION = \"$VERSION\"/" ruby/lib/fizzy/version.rb
+sedi "s/^  VERSION = \"[^\"]*\"/  VERSION = \"$VERSION\"/" ruby/lib/fizzy/version.rb
 
 # 5. Swift — FizzyConfig.swift
 sedi "s/sdkVersion = \"[^\"]*\"/sdkVersion = \"$VERSION\"/" swift/Sources/Fizzy/FizzyConfig.swift
@@ -35,6 +35,9 @@ sedi "s/const val VERSION = \"[^\"]*\"/const val VERSION = \"$VERSION\"/" kotlin
 
 # 8. Root — package.json
 sedi "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" package.json
+
+# 9. Swift — version assertion
+sedi "s/FizzyConfig.sdkVersion == \"[^\"]*\"/FizzyConfig.sdkVersion == \"$VERSION\"/" swift/Tests/FizzyTests/FizzyTests.swift
 
 # Sync lockfiles
 echo "Syncing TypeScript lockfile..."
