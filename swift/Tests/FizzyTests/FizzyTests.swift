@@ -332,3 +332,40 @@ struct FizzyClientServiceBridgeTests {
         #expect(boards1 === boards2)
     }
 }
+
+// Pins Column.color as a structured {name, value} object. The live API returns
+// color this way; an earlier schema typed it as a String and broke decoding.
+@Suite("Column Color Schema Tests")
+struct ColumnColorSchemaTests {
+    @Test("Column decodes color as a Color object")
+    func decodesColorObject() throws {
+        let json = """
+        {
+            "id": "abc123",
+            "name": "In Progress",
+            "color": {"name": "Blue", "value": "var(--color-card-1)"},
+            "created_at": "2026-04-30T00:00:00Z",
+            "cards_url": "https://example.com/cards"
+        }
+        """.data(using: .utf8)!
+
+        let column = try BaseService.decoder.decode(Column.self, from: json)
+        #expect(column.color?.name == "Blue")
+        #expect(column.color?.value == "var(--color-card-1)")
+    }
+
+    @Test("Column decodes a list of columns with color objects")
+    func decodesListOfColumns() throws {
+        let json = """
+        [
+            {"id": "c1", "name": "Triage", "color": {"name": "Gray", "value": "var(--color-card-1)"}, "created_at": "2026-04-30T00:00:00Z"},
+            {"id": "c2", "name": "Done",   "color": {"name": "Lime", "value": "var(--color-card-4)"}, "created_at": "2026-04-30T00:00:00Z"}
+        ]
+        """.data(using: .utf8)!
+
+        let columns = try BaseService.decoder.decode([Column].self, from: json)
+        #expect(columns.count == 2)
+        #expect(columns[0].color?.name == "Gray")
+        #expect(columns[1].color?.value == "var(--color-card-4)")
+    }
+}

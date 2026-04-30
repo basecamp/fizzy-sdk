@@ -177,10 +177,16 @@ type CardRef struct {
 	Url string `json:"url"`
 }
 
+// Color defines model for Color.
+type Color struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
 // Column defines model for Column.
 type Column struct {
 	CardsUrl  string `json:"cards_url,omitempty"`
-	Color     string `json:"color,omitempty"`
+	Color     Color  `json:"color,omitempty"`
 	CreatedAt string `json:"created_at"`
 	Id        string `json:"id"`
 	Name      string `json:"name"`

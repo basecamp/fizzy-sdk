@@ -6,15 +6,12 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
 /**
- * Column entity from the Fizzy API.
+ * Color entity from the Fizzy API.
  *
  * @generated from OpenAPI spec -- do not edit directly
  */
 @Serializable
-data class Column(
-    val id: String,
+data class Color(
     val name: String,
-    @SerialName("created_at") val createdAt: String,
-    val color: Color? = null,
-    @SerialName("cards_url") val cardsUrl: String? = null
+    val value: String
 )

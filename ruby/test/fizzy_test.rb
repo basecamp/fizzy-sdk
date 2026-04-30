@@ -649,3 +649,26 @@ class FizzyErrorCodeConstantsTest < Minitest::Test
     assert_equal 9, Fizzy::ExitCode::VALIDATION
   end
 end
+
+# Pins Column.color as a structured {name, value} object. The live API returns
+# color this way; an earlier schema typed it as a string and crashed clients
+# that decoded into a typed Column.
+class FizzyColumnColorTypeTest < Minitest::Test
+  def test_color_type_has_name_and_value_fields
+    color = Fizzy::Types::Color.from_json("name" => "Blue", "value" => "var(--color-card-1)")
+    assert_equal "Blue", color.name
+    assert_equal "var(--color-card-1)", color.value
+  end
+
+  def test_column_from_json_carries_color_object
+    column = Fizzy::Types::Column.from_json(
+      "id" => "abc123",
+      "name" => "In Progress",
+      "color" => { "name" => "Blue", "value" => "var(--color-card-1)" },
+      "created_at" => "2026-04-30T00:00:00Z",
+      "cards_url" => "https://example.com/cards"
+    )
+    assert_equal "Blue", column.color["name"]
+    assert_equal "var(--color-card-1)", column.color["value"]
+  end
+end

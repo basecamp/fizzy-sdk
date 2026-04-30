@@ -1359,10 +1359,14 @@ export interface components {
             id: string;
             url: string;
         };
+        Color: {
+            name: string;
+            value: string;
+        };
         Column: {
             id: string;
             name: string;
-            color?: string;
+            color?: components["schemas"]["Color"];
             created_at: string;
             cards_url?: string;
         };

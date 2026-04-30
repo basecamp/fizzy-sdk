@@ -257,6 +257,17 @@ module Fizzy
     end
 
     # @generated
+    Color = Data.define(:name, :value) do
+      # @param data [Hash] raw JSON response
+      def self.from_json(data)
+        new(
+          name: data["name"],
+          value: data["value"]
+        )
+      end
+    end
+
+    # @generated
     Column = Data.define(:id, :name, :color, :created_at, :cards_url) do
       # @param data [Hash] raw JSON response
       def self.from_json(data)
