@@ -45,10 +45,9 @@ jobs:
   publish:
     name: Publish to GitHub Packages
     needs: [smithy, test]
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    # No environment gate on workflow_dispatch — that path is dry-run only.
-    environment:
-      name: ${{ github.event_name == 'push' && 'release-github-packages' || '' }}
+    environment: release-github-packages
     permissions:
       contents: read
       packages: write
@@ -62,7 +61,6 @@ jobs:
           persist-credentials: false
 
       - name: Verify tag is on main
-        if: github.event_name == 'push'
         run: |
           git fetch origin main
           git merge-base --is-ancestor "$GITHUB_SHA" origin/main
@@ -73,29 +71,17 @@ jobs:
           distribution: corretto
           java-version: '17'
 
-      - name: Extract version
-        id: version
-        env:
-          EVENT_NAME: ${{ github.event_name }}
+      - name: Verify version matches tag
         run: |
-          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
-            VERSION=$(grep '^version' sdk/build.gradle.kts | sed 's/version = "\(.*\)"/\1/')
-            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-            echo "Rehearsal for version: $VERSION"
-          else
-            # Tag trigger: extract from tag (v0.2.1 → 0.2.1)
-            VERSION="${GITHUB_REF#refs/tags/v}"
-            GRADLE_VERSION=$(grep '^version' sdk/build.gradle.kts | sed 's/version = "\(.*\)"/\1/')
-            if [ "$GRADLE_VERSION" != "$VERSION" ]; then
-              echo "::error::Gradle version ($GRADLE_VERSION) does not match tag version ($VERSION)"
-              exit 1
-            fi
-            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-            echo "Releasing version: $VERSION"
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          GRADLE_VERSION=$(grep '^version' sdk/build.gradle.kts | sed 's/version = "\(.*\)"/\1/')
+          if [ "$GRADLE_VERSION" != "$VERSION" ]; then
+            echo "::error::Gradle version ($GRADLE_VERSION) does not match tag version ($VERSION)"
+            exit 1
           fi
+          echo "Releasing version: $VERSION"
 
       - name: Publish to GitHub Packages
-        if: github.event_name == 'push'
         shell: bash
         run: |
           set +e
@@ -114,8 +100,28 @@ jobs:
           GITHUB_USER: x-access-token
           GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Dry-run build
-        if: github.event_name == 'workflow_dispatch'
+  dry-run:
+    name: Dry-run build (rehearsal)
+    needs: [smithy, test]
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: kotlin
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+        with:
+          distribution: corretto
+          java-version: '17'
+
+      - name: Build SDK
         run: |
           ./gradlew :fizzy-sdk:build
           echo "::notice::Dry run mode - not actually publishing"
