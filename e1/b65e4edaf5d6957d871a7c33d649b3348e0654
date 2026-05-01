@@ -1,0 +1,23 @@
+conformance/runner/go/main.go
+  1273b8247499520d 797
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "e1b65e4edaf5d6957d871a7c33d649b3348e0654",
+  "prompts": {
+    "1273b8247499520d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2abad1ae-74ef-479e-9cec-08a0574d00d9",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Jeremy Daer",
+      "messages": [],
+      "total_additions": 919,
+      "total_deletions": 1,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
