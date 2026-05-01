@@ -1,0 +1,23 @@
+.github/workflows/release-kotlin.yml
+  03613c195f038ae9 48,50,74,76-80,82,103-124
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "0a14e163f1b6dee7b0e82f386b8db808c7decfd8",
+  "prompts": {
+    "03613c195f038ae9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "38ced9b9-5926-46ce-9e09-e79a1feb8fc7",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Jeremy Daer",
+      "messages": [],
+      "total_additions": 31,
+      "total_deletions": 25,
+      "accepted_lines": 509,
+      "overriden_lines": 0
+    }
+  }
+}
