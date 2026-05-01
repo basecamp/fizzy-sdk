@@ -1,0 +1,40 @@
+name: Sync Action version comments
+
+on:
+  push:
+    branches: ["dependabot/github_actions/**"]
+    paths:
+      - ".github/workflows/*.yml"
+      - ".github/workflows/*.yaml"
+
+permissions: {}
+
+jobs:
+  sync:
+    name: Sync version comments
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 # zizmor: ignore[artipacked] -- credentials needed for git push
+
+      - name: Install zizmor
+        env:
+          ZIZMOR_VERSION: 1.24.1
+        run: |
+          curl -fsSL \
+            "https://github.com/zizmorcore/zizmor/releases/download/v${ZIZMOR_VERSION}/zizmor-x86_64-unknown-linux-gnu.tar.gz" \
+            | sudo tar xz -C /usr/local/bin
+
+      - name: Apply safe fixes (e.g. ref-version-mismatch)
+        run: zizmor --fix=safe .github/workflows
+
+      - name: Commit and push fixups
+        run: |
+          git add .github/workflows
+          if ! git diff --cached --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git commit -m "Sync version comments after Dependabot Actions bump"
+            git push
+          fi
