@@ -32,7 +32,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0 # zizmor: ignore[cache-poisoning] -- cached deps are for testing, not release artifact generation
         with:
-          node-version: '22'
+          # Match the publish job so the build/test runtime equals the release runtime.
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: typescript/package-lock.json
 
