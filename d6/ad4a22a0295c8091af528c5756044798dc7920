@@ -1,0 +1,23 @@
+go/pkg/fizzy/auth_strategy.go
+  fba53e0910a6ab7a 47-51
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "d6ad4a22a0295c8091af528c5756044798dc7920",
+  "prompts": {
+    "fba53e0910a6ab7a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "047930d8-edec-4f05-8076-ca7899fa28e3",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Jeremy Daer",
+      "messages": [],
+      "total_additions": 5,
+      "total_deletions": 1,
+      "accepted_lines": 5,
+      "overriden_lines": 0
+    }
+  }
+}
