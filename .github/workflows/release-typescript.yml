@@ -32,7 +32,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0 # zizmor: ignore[cache-poisoning] -- cached deps are for testing, not release artifact generation
         with:
-          node-version: '22'
+          # Match the publish job so the build/test runtime equals the release runtime.
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: typescript/package-lock.json
 
@@ -77,16 +78,25 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0 # zizmor: ignore[cache-poisoning] -- cache is branch-isolated; fork PRs cannot write to this cache
         with:
-          node-version: '22'
+          # Node 24 ships npm 11.12.1, which clears the 11.5.1 floor for OIDC
+          # trusted publishing. Node 22's bundled npm 10.9.7 does not, and its
+          # `npm install -g npm@latest` self-upgrade is currently broken.
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
           cache: 'npm'
           cache-dependency-path: typescript/package-lock.json
 
-      - name: Verify npm provenance support
+      - name: Verify npm version supports trusted publishing
         run: |
-          echo "npm version: $(npm --version)"
-          npm publish --help | grep -q -- '--provenance' || \
-            { echo "::error::npm does not support publish --provenance"; exit 1; }
+          INSTALLED=$(npm --version)
+          echo "npm version: $INSTALLED"
+          NPM_VERSION="$INSTALLED" node -e '
+            const [M, m, p] = (process.env.NPM_VERSION || "").split(".").map(Number);
+            process.exit(M > 11 || (M === 11 && (m > 5 || (m === 5 && p >= 1))) ? 0 : 1);
+          ' || {
+            echo "::error::npm $INSTALLED is too old for trusted publishing (need 11.5.1+)"
+            exit 1
+          }
 
       - name: Install dependencies
         run: npm ci
