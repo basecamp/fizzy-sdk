@@ -48,6 +48,6 @@ func (c *CookieAuth) Authenticate(ctx context.Context, req *http.Request) error 
 	// Secure/HttpOnly/SameSite are Set-Cookie response attributes and are not
 	// written into outgoing Cookie request headers. Setting them here would be
 	// dead code, so suppress G124 instead.
-	req.AddCookie(&http.Cookie{Name: "session_token", Value: token}) //nolint:gosec // G124 false positive: outgoing request cookie
+	req.AddCookie(&http.Cookie{Name: "session_token", Value: token}) // #nosec G124 -- false positive: outgoing request cookie only sends name=value
 	return nil
 }
