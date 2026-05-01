@@ -794,7 +794,7 @@ func checkAssertion(tc TestCase, a Assertion, result *ExecResult, records []Requ
 			}
 			actual := vals[paramName]
 			if !slices.Equal(actual, expected) {
-				fmt.Printf("    ASSERT FAIL [requestQueryParam]: param %q expected %v, got %v\n", paramName, expected, actual)
+				fmt.Printf("    ASSERT FAIL [requestQueryParam]: param %q expected %q, got %q\n", paramName, expected, actual)
 				return assertFail
 			}
 			return assertPass
