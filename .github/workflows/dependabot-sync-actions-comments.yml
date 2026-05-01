@@ -15,21 +15,29 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 # zizmor: ignore[artipacked] -- credentials needed for git push
 
       - name: Install zizmor
         env:
           ZIZMOR_VERSION: 1.24.1
+          ZIZMOR_SHA256: a8000f3c683319a523d3b20df0e75457ba591f049cfcbfa98966631b56733c03
         run: |
-          curl -fsSL \
-            "https://github.com/zizmorcore/zizmor/releases/download/v${ZIZMOR_VERSION}/zizmor-x86_64-unknown-linux-gnu.tar.gz" \
-            | sudo tar xz -C /usr/local/bin
+          cd "$RUNNER_TEMP"
+          curl -fsSL -o zizmor.tar.gz \
+            "https://github.com/zizmorcore/zizmor/releases/download/v${ZIZMOR_VERSION}/zizmor-x86_64-unknown-linux-gnu.tar.gz"
+          echo "${ZIZMOR_SHA256}  zizmor.tar.gz" | sha256sum --check --status
+          mkdir -p zizmor-bin
+          tar xz --no-same-owner --no-same-permissions -C zizmor-bin -f zizmor.tar.gz
+          echo "${RUNNER_TEMP}/zizmor-bin" >> "$GITHUB_PATH"
 
       - name: Apply safe fixes (e.g. ref-version-mismatch)
         run: zizmor --fix=safe .github/workflows
 
-      - name: Commit and push fixups
+      - name: Commit, push, and re-trigger CI
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git add .github/workflows
           if ! git diff --cached --quiet; then
@@ -37,4 +45,9 @@ jobs:
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git commit -m "Sync version comments after Dependabot Actions bump"
             git push
+
+            # GITHUB_TOKEN-authored pushes don't trigger workflow runs, except
+            # for workflow_dispatch / repository_dispatch. Re-dispatch test.yml
+            # on the new HEAD so the audit check appears on the PR.
+            gh workflow run test.yml --ref "$GITHUB_REF_NAME"
           fi
