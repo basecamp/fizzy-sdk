@@ -46,6 +46,7 @@ jobs:
     name: Publish to GitHub Packages
     needs: [smithy, test]
     runs-on: ubuntu-latest
+    environment: release-github-packages
     permissions:
       contents: read
       packages: write

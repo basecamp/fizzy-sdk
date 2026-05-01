@@ -69,6 +69,7 @@ jobs:
     needs: [smithy, test]
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    environment: release-go
     permissions:
       contents: write
     steps:
