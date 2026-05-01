@@ -89,7 +89,10 @@ jobs:
         run: |
           INSTALLED=$(npm --version)
           echo "npm version: $INSTALLED"
-          node -e 'const [M,m,p]=process.argv[1].split(".").map(Number); process.exit(M > 11 || (M === 11 && (m > 5 || (m === 5 && p >= 1))) ? 0 : 1)' "$INSTALLED" || {
+          NPM_VERSION="$INSTALLED" node -e '
+            const [M, m, p] = (process.env.NPM_VERSION || "").split(".").map(Number);
+            process.exit(M > 11 || (M === 11 && (m > 5 || (m === 5 && p >= 1))) ? 0 : 1);
+          ' || {
             echo "::error::npm $INSTALLED is too old for trusted publishing (need 11.5.1+)"
             exit 1
           }
