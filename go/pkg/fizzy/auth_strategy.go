@@ -44,6 +44,10 @@ func (c *CookieAuth) Authenticate(ctx context.Context, req *http.Request) error 
 	if err != nil {
 		return err
 	}
-	req.AddCookie(&http.Cookie{Name: "session_token", Value: token})
+	// Per RFC 6265 §5.4 and net/http docs, AddCookie only transmits name=value;
+	// Secure/HttpOnly/SameSite are Set-Cookie response attributes and are not
+	// written into outgoing Cookie request headers. Setting them here would be
+	// dead code, so suppress G124 instead.
+	req.AddCookie(&http.Cookie{Name: "session_token", Value: token}) //nolint:gosec // G124 false positive: outgoing request cookie
 	return nil
 }
