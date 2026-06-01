@@ -135,6 +135,11 @@ data class RegisterDeviceBody(
     val name: String? = null
 )
 
+/** Request body for UpdateMyTimezone. */
+data class UpdateMyTimezoneBody(
+    val timezoneName: String
+)
+
 /** Request body for CreateAccessToken. */
 data class CreateAccessTokenBody(
     val description: String,

@@ -27,6 +27,7 @@ val TAG_TO_SERVICE = mapOf(
 /** Explicit overrides for operations that don't follow suffix patterns. */
 private val OPERATION_SERVICE_OVERRIDES = mapOf(
     "GetMyIdentity" to "Identity",
+    "UpdateMyTimezone" to "Identity",
     "CreateDirectUpload" to "Uploads",
     "RedeemMagicLink" to "Sessions",
     "CompleteSignup" to "Sessions",
@@ -139,6 +140,7 @@ val VERB_PATTERNS = listOf(
  */
 val METHOD_NAME_OVERRIDES = mapOf(
     "GetMyIdentity" to "me",
+    "UpdateMyTimezone" to "updateTimezone",
     "CloseCard" to "close",
     "ReopenCard" to "reopen",
     "PostponeCard" to "postpone",

@@ -2,9 +2,12 @@ package com.basecamp.fizzy
 
 import com.basecamp.fizzy.generated.boards
 import com.basecamp.fizzy.generated.columns
+import com.basecamp.fizzy.generated.identity
+import com.basecamp.fizzy.generated.pins
+import com.basecamp.fizzy.generated.services.UpdateMyTimezoneBody
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -267,7 +270,7 @@ class FizzyTest {
     }
 
     @Test
-    fun testCrossOriginPaginationThrows() = runTest {
+    fun testCrossOriginPaginationThrows() = runBlocking {
         // MockEngine returns a valid first page with a cross-origin Link header.
         // The real requestPaginated code in BaseService must reject it.
         val mockEngine = MockEngine { request ->
@@ -315,11 +318,64 @@ class FizzyTest {
         assertEquals(null, parseRetryAfter("0"))
     }
 
+    @Test
+    fun testPinsListUsesAccountScopedPath() = runBlocking {
+        val requestedUrls = mutableListOf<String>()
+        val mockEngine = MockEngine { request ->
+            requestedUrls += request.url.toString()
+            respond(
+                content = "[]",
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType to listOf("application/json")),
+            )
+        }
+
+        val client = FizzyClient(
+            authStrategy = BearerAuth(StaticTokenProvider("test-token")),
+            config = FizzyConfig(baseUrl = "https://fizzy.do", userAgent = "test/1.0"),
+            hooks = NoopHooks,
+            engine = mockEngine,
+            externalHttpClient = null,
+        )
+
+        client.forAccount("999").pins.list()
+        assertEquals("https://fizzy.do/999/my/pins.json", requestedUrls.single())
+        client.close()
+    }
+
+    @Test
+    fun testUpdateTimezoneUsesAccountScopedPath() = runBlocking {
+        val requestedUrls = mutableListOf<String>()
+        val requestBodies = mutableListOf<String>()
+        val mockEngine = MockEngine { request ->
+            requestedUrls += request.url.toString()
+            requestBodies += request.body.toByteArray().decodeToString()
+            respond(
+                content = "",
+                status = HttpStatusCode.NoContent,
+                headers = headersOf(HttpHeaders.ContentType to listOf("application/json")),
+            )
+        }
+
+        val client = FizzyClient(
+            authStrategy = BearerAuth(StaticTokenProvider("test-token")),
+            config = FizzyConfig(baseUrl = "https://fizzy.do", userAgent = "test/1.0"),
+            hooks = NoopHooks,
+            engine = mockEngine,
+            externalHttpClient = null,
+        )
+
+        client.forAccount("999").identity.updateTimezone(UpdateMyTimezoneBody(timezoneName = "America/New_York"))
+        assertEquals("https://fizzy.do/999/my/timezone.json", requestedUrls.single())
+        assertTrue(requestBodies.single().contains("\"timezone_name\":\"America/New_York\""))
+        client.close()
+    }
+
     // Pins Column.color as a structured {name, value} object. The live API
     // returns color this way; an earlier schema typed it as a string and broke
     // typed Column decoding.
     @Test
-    fun testColumnGetDecodesColorObject() = runTest {
+    fun testColumnGetDecodesColorObject() = runBlocking {
         val mockEngine = MockEngine { _ ->
             respond(
                 content = """{"id":"abc123","name":"In Progress","color":{"name":"Blue","value":"var(--color-card-1)"},"created_at":"2026-04-30T00:00:00Z","cards_url":"https://example.com/cards"}""",

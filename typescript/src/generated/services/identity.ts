@@ -10,6 +10,10 @@ import type { components } from "../schema.js";
 
 export type Identity = components["schemas"]["Identity"];
 
+export interface UpdateMyTimezoneRequest {
+  timezoneName: string;
+}
+
 export class IdentityService extends BaseService {
 
   /**
@@ -24,6 +28,23 @@ export class IdentityService extends BaseService {
         isMutation: false,
       },
       () => this.client.GET("/my/identity.json" as never, {
+      } as never),
+    );
+  }
+
+  /**
+   * UpdateMyTimezone
+   */
+  async updateTimezone(body: UpdateMyTimezoneRequest): Promise<void> {
+    return this.request(
+      {
+        service: "My timezone",
+        operation: "UpdateMyTimezone",
+        resourceType: "my_timezone",
+        isMutation: true,
+      },
+      () => this.client.PATCH("/my/timezone.json" as never, {
+        body: { timezone_name: body.timezoneName } as never,
       } as never),
     );
   }

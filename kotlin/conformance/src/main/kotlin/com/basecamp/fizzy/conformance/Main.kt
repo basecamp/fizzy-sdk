@@ -453,6 +453,9 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
 
         // Identity
         "GetMyIdentity" -> account.identity.me()
+        "UpdateMyTimezone" -> account.identity.updateTimezone(
+            UpdateMyTimezoneBody(timezoneName = body?.string("timezone_name") ?: error("timezone_name is required"))
+        )
 
         // Notifications
         "ListNotifications" -> account.notifications.list()

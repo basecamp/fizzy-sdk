@@ -211,10 +211,11 @@
     "tags": ["paths"]
   },
   {
-    "name": "ListPins has no account prefix",
+    "name": "ListPins uses account-scoped my path",
     "operation": "ListPins",
     "method": "GET",
-    "path": "/my/pins.json",
+    "path": "/{accountId}/my/pins.json",
+    "pathParams": { "accountId": "999" },
     "mockResponses": [
       {
         "status": 200,
@@ -223,7 +224,27 @@
       }
     ],
     "assertions": [
-      { "type": "requestPath", "expected": "/my/pins.json" },
+      { "type": "requestPath", "expected": "/999/my/pins.json" },
+      { "type": "noError" }
+    ],
+    "tags": ["paths"]
+  },
+  {
+    "name": "UpdateMyTimezone uses account-scoped my path",
+    "operation": "UpdateMyTimezone",
+    "method": "PATCH",
+    "path": "/{accountId}/my/timezone.json",
+    "pathParams": { "accountId": "999" },
+    "requestBody": { "timezone_name": "America/New_York" },
+    "mockResponses": [
+      {
+        "status": 204,
+        "headers": {},
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestPath", "expected": "/999/my/timezone.json" },
       { "type": "noError" }
     ],
     "tags": ["paths"]

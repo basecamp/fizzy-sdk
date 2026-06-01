@@ -579,6 +579,42 @@ class FizzyClientTest < Minitest::Test
   end
 end
 
+class FizzyGeneratedServicePathTest < Minitest::Test
+  FakeServiceClient = Struct.new(:calls, keyword_init: true) do
+    def hooks = Fizzy::NoopHooks.new
+
+    Response = Struct.new(:payload, keyword_init: true) do
+      def json = payload
+    end
+
+    def get(path, params: {})
+      calls << [ :get, path, params ]
+      Response.new(payload: [])
+    end
+
+    def patch(path, body: nil)
+      calls << [ :patch, path, body ]
+      Response.new(payload: nil)
+    end
+  end
+
+  def test_pins_list_uses_account_scoped_path
+    fake = FakeServiceClient.new(calls: [])
+
+    Fizzy::Services::PinsService.new(fake).list(account_id: "999")
+
+    assert_equal [ [ :get, "/999/my/pins.json", {} ] ], fake.calls
+  end
+
+  def test_identity_update_timezone_uses_account_scoped_path
+    fake = FakeServiceClient.new(calls: [])
+
+    Fizzy::Services::IdentityService.new(fake).update_timezone(account_id: "999", timezone_name: "America/New_York")
+
+    assert_equal [ [ :patch, "/999/my/timezone.json", { timezone_name: "America/New_York" } ] ], fake.calls
+  end
+end
+
 class FizzyConvenienceClientTest < Minitest::Test
   def test_client_with_access_token
     client = Fizzy.client(access_token: "test-token")

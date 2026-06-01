@@ -31,14 +31,6 @@
       "params": {}
     },
     {
-      "pattern": "/my/pins",
-      "resource": "unknown",
-      "operations": {
-        "GET": "ListPins"
-      },
-      "params": {}
-    },
-    {
       "pattern": "/session",
       "resource": "unknown",
       "operations": {
@@ -943,6 +935,32 @@
         "deviceToken": {
           "role": "resource",
           "type": "integer"
+        }
+      }
+    },
+    {
+      "pattern": "/{accountId}/my/pins",
+      "resource": "unknown",
+      "operations": {
+        "GET": "ListPins"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        }
+      }
+    },
+    {
+      "pattern": "/{accountId}/my/timezone",
+      "resource": "unknown",
+      "operations": {
+        "PATCH": "UpdateMyTimezone"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
         }
       }
     },

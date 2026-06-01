@@ -43,6 +43,7 @@ struct ServiceDefinition {
 /// Explicit overrides for operations that don't follow suffix patterns.
 private let operationServiceOverrides: [String: String] = [
     "GetMyIdentity": "Identity",
+    "UpdateMyTimezone": "Identity",
     "CreateDirectUpload": "Uploads",
     "RedeemMagicLink": "Sessions",
     "CompleteSignup": "Sessions",

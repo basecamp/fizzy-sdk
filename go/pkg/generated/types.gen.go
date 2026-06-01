@@ -700,6 +700,11 @@ type UpdateJoinCodeRequestContent struct {
 	UsageLimit int32 `json:"usage_limit,omitempty"`
 }
 
+// UpdateMyTimezoneRequestContent defines model for UpdateMyTimezoneRequestContent.
+type UpdateMyTimezoneRequestContent struct {
+	TimezoneName string `json:"timezone_name"`
+}
+
 // UpdateNotificationSettingsRequestContent defines model for UpdateNotificationSettingsRequestContent.
 type UpdateNotificationSettingsRequestContent struct {
 	BundleEmailFrequency string `json:"bundle_email_frequency,omitempty"`
@@ -942,6 +947,9 @@ type TriageCardJSONRequestBody = TriageCardRequestContent
 
 // RegisterDeviceJSONRequestBody defines body for RegisterDevice for application/json ContentType.
 type RegisterDeviceJSONRequestBody = RegisterDeviceRequestContent
+
+// UpdateMyTimezoneJSONRequestBody defines body for UpdateMyTimezone for application/json ContentType.
+type UpdateMyTimezoneJSONRequestBody = UpdateMyTimezoneRequestContent
 
 // BulkReadNotificationsJSONRequestBody defines body for BulkReadNotifications for application/json ContentType.
 type BulkReadNotificationsJSONRequestBody = BulkReadNotificationsRequestContent

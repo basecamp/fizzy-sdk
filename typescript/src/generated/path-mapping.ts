@@ -16,6 +16,7 @@ export const PATH_TO_OPERATION: Record<string, string> = {
   "GET:/{accountId}/account/settings.json": "GetAccountSettings",
   "PATCH:/{accountId}/account/settings.json": "UpdateAccountSettings",
   "GET:/{accountId}/activities.json": "ListActivities",
+  "PATCH:/{accountId}/my/timezone.json": "UpdateMyTimezone",
   "POST:/{accountId}/rails/active_storage/direct_uploads": "CreateDirectUpload",
   "GET:/{accountId}/search.json": "SearchCards",
   "GET:/my/access_tokens.json": "ListAccessTokens",
@@ -111,6 +112,9 @@ export const PATH_TO_OPERATION: Record<string, string> = {
   "POST:/{accountId}/devices": "RegisterDevice",
   "DELETE:/{accountId}/devices/{deviceToken}": "UnregisterDevice",
 
+  // Pins
+  "GET:/{accountId}/my/pins.json": "ListPins",
+
   // Notifications
   "GET:/{accountId}/notifications.json": "ListNotifications",
   "DELETE:/{accountId}/notifications/{notificationId}/reading.json": "UnreadNotification",
@@ -137,7 +141,4 @@ export const PATH_TO_OPERATION: Record<string, string> = {
   "DELETE:/{accountId}/users/{userId}/push_subscriptions/{pushSubscriptionId}": "DeletePushSubscription",
   "PATCH:/{accountId}/users/{userId}/role.json": "UpdateUserRole",
   "POST:/users/joins.json": "CompleteJoin",
-
-  // Pins
-  "GET:/my/pins.json": "ListPins",
 };

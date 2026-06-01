@@ -10,4 +10,14 @@ public final class IdentityService: BaseService, @unchecked Sendable {
             retryConfig: Metadata.retryConfig(for: "GetMyIdentity")
         )
     }
+
+    public func updateTimezone(accountId: String, req: UpdateMyTimezoneRequest) async throws {
+        try await requestVoid(
+            OperationInfo(service: "Identity", operation: "UpdateMyTimezone", resourceType: "my_timezone", isMutation: true),
+            method: "PATCH",
+            path: "/\(accountId)/my/timezone.json",
+            body: req,
+            retryConfig: Metadata.retryConfig(for: "UpdateMyTimezone")
+        )
+    }
 }

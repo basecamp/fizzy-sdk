@@ -108,6 +108,7 @@ enum Metadata {
         "UpdateColumn": RetryConfig(maxAttempts: 3, baseDelayMs: 1000, backoff: .exponential, retryOn: [429, 500, 503]),
         "UpdateComment": RetryConfig(maxAttempts: 3, baseDelayMs: 1000, backoff: .exponential, retryOn: [429, 500, 503]),
         "UpdateJoinCode": RetryConfig(maxAttempts: 3, baseDelayMs: 1000, backoff: .exponential, retryOn: [429, 500, 503]),
+        "UpdateMyTimezone": RetryConfig(maxAttempts: 3, baseDelayMs: 1000, backoff: .exponential, retryOn: [429, 500, 503]),
         "UpdateNotificationSettings": RetryConfig(maxAttempts: 3, baseDelayMs: 1000, backoff: .exponential, retryOn: [429, 500, 503]),
         "UpdateStep": RetryConfig(maxAttempts: 3, baseDelayMs: 1000, backoff: .exponential, retryOn: [429, 500, 503]),
         "UpdateUser": RetryConfig(maxAttempts: 3, baseDelayMs: 1000, backoff: .exponential, retryOn: [429, 500, 503]),

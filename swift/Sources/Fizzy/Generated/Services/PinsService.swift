@@ -2,11 +2,11 @@
 import Foundation
 
 public final class PinsService: BaseService, @unchecked Sendable {
-    public func list() async throws -> [Card] {
+    public func list(accountId: String) async throws -> [Card] {
         return try await request(
             OperationInfo(service: "Pins", operation: "ListPins", resourceType: "pin", isMutation: false),
             method: "GET",
-            path: "/my/pins.json",
+            path: "/\(accountId)/my/pins.json",
             retryConfig: Metadata.retryConfig(for: "ListPins")
         )
     }

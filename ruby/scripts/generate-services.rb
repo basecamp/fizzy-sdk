@@ -44,6 +44,7 @@ class ServiceGenerator
   # Method name overrides for Fizzy operations
   METHOD_NAME_OVERRIDES = {
     'GetMyIdentity' => 'me',
+    'UpdateMyTimezone' => 'update_timezone',
     'ListCardReactions' => 'list_for_card',
     'CreateCardReaction' => 'create_for_card',
     'DeleteCardReaction' => 'delete_for_card',
@@ -186,6 +187,7 @@ class ServiceGenerator
   # Derive service name from operationId when tags are absent.
   OPERATION_SERVICE_OVERRIDES = {
     'GetMyIdentity' => 'Identity',
+    'UpdateMyTimezone' => 'Identity',
     'CreateDirectUpload' => 'Uploads',
     'RedeemMagicLink' => 'Sessions',
     'CompleteJoin' => 'Sessions',

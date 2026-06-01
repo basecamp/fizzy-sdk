@@ -19,6 +19,26 @@
     "tags": ["request-shapes"]
   },
   {
+    "name": "UpdateMyTimezone sends timezone_name field",
+    "operation": "UpdateMyTimezone",
+    "method": "PATCH",
+    "path": "/{accountId}/my/timezone.json",
+    "pathParams": { "accountId": "999" },
+    "requestBody": { "timezone_name": "America/New_York" },
+    "mockResponses": [
+      {
+        "status": 204,
+        "headers": {},
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestBodyField", "expected": "timezone_name" },
+      { "type": "noError" }
+    ],
+    "tags": ["request-shapes"]
+  },
+  {
     "name": "CreateCardReaction sends content field",
     "operation": "CreateCardReaction",
     "method": "POST",

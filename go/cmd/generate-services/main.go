@@ -145,6 +145,7 @@ func responseTypeName(refName string, schemas map[string]json.RawMessage) (goTyp
 // whose service cannot be derived from suffix matching.
 var operationServiceOverrides = map[string]string{
 	"GetMyIdentity":             "Identity",
+	"UpdateMyTimezone":          "Identity",
 	"CreateDirectUpload":        "Uploads",
 	"RedeemMagicLink":           "Sessions",
 	"CompleteJoin":              "Sessions",
@@ -257,6 +258,7 @@ func deriveServiceName(opID string) string {
 // follow simple prefix-stripping.
 var methodNameOverrides = map[string]string{
 	"GetMyIdentity":         "GetMyIdentity",
+	"UpdateMyTimezone":      "UpdateTimezone",
 	"RedeemMagicLink":       "RedeemMagicLink",
 	"CompleteJoin":          "CompleteJoin",
 	"CompleteSignup":        "CompleteSignup",

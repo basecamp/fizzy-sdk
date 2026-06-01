@@ -1040,6 +1040,16 @@ module Fizzy
     end
 
     # @generated
+    UpdateMyTimezoneRequestContent = Data.define(:timezone_name) do
+      # @param data [Hash] raw JSON response
+      def self.from_json(data)
+        new(
+          timezone_name: data["timezone_name"]
+        )
+      end
+    end
+
+    # @generated
     UpdateNotificationSettingsRequestContent = Data.define(:bundle_email_frequency) do
       # @param data [Hash] raw JSON response
       def self.from_json(data)

@@ -30,6 +30,7 @@ service Fizzy {
     operations: [
         // Identity
         GetMyIdentity
+        UpdateMyTimezone
 
         // Access Tokens
         ListAccessTokens
@@ -847,7 +848,7 @@ list AccessTokenList { member: AccessToken }
 //   @noRetry      — POST creates, session ops: 1 attempt (no retry)
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Identity (no account prefix)
+// Identity
 // ═══════════════════════════════════════════════════════════════════════════
 
 @readonly
@@ -862,6 +863,24 @@ operation GetMyIdentity {
 structure GetMyIdentityOutput {
     @required
     identity: Identity
+}
+
+@http(method: "PATCH", uri: "/{accountId}/my/timezone.json", code: 204)
+@tags(["Identity"])
+@fizzyIdempotent(natural: true)
+@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+operation UpdateMyTimezone {
+    input: UpdateMyTimezoneInput
+    errors: [UnauthorizedError, ValidationError]
+}
+
+structure UpdateMyTimezoneInput {
+    @required
+    @httpLabel
+    accountId: AccountId
+
+    @required
+    timezone_name: String
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2961,16 +2980,23 @@ structure DeletePushSubscriptionInput {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Pins (no account prefix — uses /my/)
+// Pins
 // ═══════════════════════════════════════════════════════════════════════════
 
 @readonly
-@http(method: "GET", uri: "/my/pins.json")
+@http(method: "GET", uri: "/{accountId}/my/pins.json")
 @tags(["Pins"])
 @fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
 operation ListPins {
+    input: ListPinsInput
     output: ListPinsOutput
     errors: [UnauthorizedError]
+}
+
+structure ListPinsInput {
+    @required
+    @httpLabel
+    accountId: AccountId
 }
 
 structure ListPinsOutput {
