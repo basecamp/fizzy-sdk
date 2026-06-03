@@ -40,10 +40,12 @@ sedi "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" package.json
 sedi "s/FizzyConfig.sdkVersion == \"[^\"]*\"/FizzyConfig.sdkVersion == \"$VERSION\"/" swift/Tests/FizzyTests/FizzyTests.swift
 
 # Sync lockfiles
-echo "Syncing TypeScript lockfile..."
+echo "Syncing TypeScript lockfiles..."
 cd typescript && npm install --package-lock-only 2>/dev/null && cd ..
+cd conformance/runner/typescript && npm install --package-lock-only 2>/dev/null && cd ../../..
 
-echo "Syncing Ruby lockfile..."
+echo "Syncing Ruby lockfiles..."
 cd ruby && bundle install 2>/dev/null && cd ..
+cd conformance/runner/ruby && bundle install 2>/dev/null && cd ../../..
 
 echo "Version bumped to $VERSION"
