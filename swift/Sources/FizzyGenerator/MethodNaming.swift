@@ -51,6 +51,7 @@ let verbPatterns: [(prefix: String, method: String)] = [
 /// Explicit overrides for method name generation.
 let methodNameOverrides: [String: String] = [
     "GetMyIdentity": "me",
+    "UpdateMyTimezone": "updateTimezone",
     "CloseCard": "close",
     "ReopenCard": "reopen",
     "PostponeCard": "postpone",

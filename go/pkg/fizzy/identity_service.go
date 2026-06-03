@@ -19,3 +19,13 @@ func (s *IdentityService) GetMyIdentity(ctx context.Context) (*generated.Identit
 	}
 	return &result, resp, nil
 }
+
+// UpdateMyTimezone updates my timezone.
+func (s *IdentityService) UpdateMyTimezone(ctx context.Context, accountID string, req *generated.UpdateMyTimezoneRequest) (*Response, error) {
+	path, ok := URLPathByOperation("UpdateMyTimezone", map[string]string{"accountId": accountID})
+	if !ok {
+		return nil, ErrUsage("missing generated route for UpdateMyTimezone")
+	}
+	resp, err := s.client.Patch(ctx, path, req)
+	return resp, err
+}

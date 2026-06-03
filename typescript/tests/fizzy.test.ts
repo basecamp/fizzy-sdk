@@ -818,6 +818,46 @@ describe("client integration", () => {
     expect(result).toBeUndefined();
   });
 
+  it("lists pins from the account-scoped my path", async () => {
+    let requestedPath = "";
+    server.use(
+      http.get(`${BASE_URL}/999/my/pins.json`, ({ request }) => {
+        requestedPath = new URL(request.url).pathname;
+        return HttpResponse.json([]);
+      }),
+    );
+
+    const client = createFizzyClient({
+      accessToken: "token",
+      baseUrl: `${BASE_URL}/999`,
+      enableRetry: false,
+    });
+    await (client as any).pins.list();
+    expect(requestedPath).toBe("/999/my/pins.json");
+  });
+
+  it("updates timezone on the account-scoped my path", async () => {
+    let requestedPath = "";
+    let requestBody: unknown;
+    server.use(
+      http.patch(`${BASE_URL}/999/my/timezone.json`, async ({ request }) => {
+        requestedPath = new URL(request.url).pathname;
+        requestBody = await request.json();
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    const client = createFizzyClient({
+      accessToken: "token",
+      baseUrl: `${BASE_URL}/999`,
+      enableRetry: false,
+    });
+    const result = await (client as any).identity.updateTimezone({ timezoneName: "America/New_York" });
+    expect(result).toBeUndefined();
+    expect(requestedPath).toBe("/999/my/timezone.json");
+    expect(requestBody).toEqual({ timezone_name: "America/New_York" });
+  });
+
   it("auto-paginates list operations", async () => {
     let requestCount = 0;
     server.use(

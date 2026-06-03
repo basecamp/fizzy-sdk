@@ -37,6 +37,7 @@ type UpdateCardRequest = UpdateCardRequestContent
 type UpdateColumnRequest = UpdateColumnRequestContent
 type UpdateCommentRequest = UpdateCommentRequestContent
 type UpdateJoinCodeRequest = UpdateJoinCodeRequestContent
+type UpdateMyTimezoneRequest = UpdateMyTimezoneRequestContent
 type UpdateNotificationSettingsRequest = UpdateNotificationSettingsRequestContent
 type UpdateStepRequest = UpdateStepRequestContent
 type UpdateUserRequest = UpdateUserRequestContent

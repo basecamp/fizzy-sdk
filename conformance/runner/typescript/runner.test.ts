@@ -329,6 +329,9 @@ async function dispatch(
       case "GetMyIdentity":
         data = await (client as any).identity.me();
         break;
+      case "UpdateMyTimezone":
+        data = await (client as any).identity.updateTimezone({ timezoneName: body.timezone_name });
+        break;
 
       // Notifications
       case "ListNotifications": {

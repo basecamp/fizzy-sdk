@@ -30,4 +30,24 @@ class IdentityService(client: AccountClient) : BaseService(client) {
             json.decodeFromString<Identity>(body)
         }
     }
+
+    /**
+     * updateTimezone operation
+     * @param body Request body
+     */
+    suspend fun updateTimezone(body: UpdateMyTimezoneBody): Unit {
+        val info = OperationInfo(
+            service = "Identity",
+            operation = "UpdateMyTimezone",
+            resourceType = "my_timezone",
+            isMutation = true,
+            boardId = null,
+            resourceId = null,
+        )
+        request(info, {
+            httpPatch("/my/timezone.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
+                put("timezone_name", kotlinx.serialization.json.JsonPrimitive(body.timezoneName))
+            }), operationName = info.operation)
+        }) { Unit }
+    }
 }

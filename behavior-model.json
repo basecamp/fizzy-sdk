@@ -1304,6 +1304,19 @@
         ]
       }
     },
+    "UpdateMyTimezone": {
+      "idempotent": true,
+      "retry": {
+        "max": 3,
+        "base_delay_ms": 1000,
+        "backoff": "exponential",
+        "retry_on": [
+          429,
+          500,
+          503
+        ]
+      }
+    },
     "UpdateNotificationSettings": {
       "idempotent": true,
       "retry": {

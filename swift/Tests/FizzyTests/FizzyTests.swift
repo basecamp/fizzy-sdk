@@ -160,6 +160,63 @@ struct CookieAuthTests {
     }
 }
 
+@Suite("Generated Service Path Tests")
+struct GeneratedServicePathTests {
+    final class RecordingTransport: Transport, @unchecked Sendable {
+        private let lock = NSLock()
+        private(set) var requests: [URLRequest] = []
+
+        func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+            lock.withLock { requests.append(request) }
+            let status = request.url?.path == "/999/my/timezone.json" ? 204 : 200
+            let body = status == 204 ? Data() : Data("[]".utf8)
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: status,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            return (body, response)
+        }
+    }
+
+    @Test("Pins list uses account-scoped my path")
+    func pinsListPath() async throws {
+        let transport = RecordingTransport()
+        let client = FizzyClient(
+            tokenProvider: StaticTokenProvider("token"),
+            userAgent: "test/1.0",
+            config: FizzyConfig(baseURL: "https://fizzy.do"),
+            transport: transport
+        )
+
+        _ = try await client.pins.list(accountId: "999")
+
+        #expect(transport.requests.last?.url?.path == "/999/my/pins.json")
+    }
+
+    @Test("Timezone update uses account-scoped my path")
+    func updateTimezonePath() async throws {
+        let transport = RecordingTransport()
+        let client = FizzyClient(
+            tokenProvider: StaticTokenProvider("token"),
+            userAgent: "test/1.0",
+            config: FizzyConfig(baseURL: "https://fizzy.do"),
+            transport: transport
+        )
+
+        try await client.identity.updateTimezone(
+            accountId: "999",
+            req: UpdateMyTimezoneRequest(timezoneName: "America/New_York")
+        )
+
+        let request = transport.requests.last
+        #expect(request?.httpMethod == "PATCH")
+        #expect(request?.url?.path == "/999/my/timezone.json")
+        #expect(String(data: request?.httpBody ?? Data(), encoding: .utf8)?.contains("timezone_name") == true)
+    }
+}
+
 @Suite("WebhookVerifier Tests")
 struct WebhookVerifierTests {
     @Test("Verify valid signature")

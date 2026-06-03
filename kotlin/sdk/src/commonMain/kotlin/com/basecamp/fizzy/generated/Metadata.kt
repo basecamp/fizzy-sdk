@@ -125,6 +125,7 @@ object Metadata {
         "UpdateColumn" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 500, 503))),
         "UpdateComment" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 500, 503))),
         "UpdateJoinCode" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 500, 503))),
+        "UpdateMyTimezone" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 500, 503))),
         "UpdateNotificationSettings" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 500, 503))),
         "UpdateStep" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 500, 503))),
         "UpdateUser" to OperationConfig(true, RetryConfig(3, 1000L, "exponential", setOf(429, 500, 503))),

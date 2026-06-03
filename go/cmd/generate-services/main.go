@@ -8,6 +8,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"go/format"
 	"log"
 	"os"
 	"path/filepath"
@@ -145,6 +146,7 @@ func responseTypeName(refName string, schemas map[string]json.RawMessage) (goTyp
 // whose service cannot be derived from suffix matching.
 var operationServiceOverrides = map[string]string{
 	"GetMyIdentity":             "Identity",
+	"UpdateMyTimezone":          "Identity",
 	"CreateDirectUpload":        "Uploads",
 	"RedeemMagicLink":           "Sessions",
 	"CompleteJoin":              "Sessions",
@@ -360,6 +362,12 @@ func deriveMethodName(opID, serviceName string) string {
 	return opID
 }
 
+// routeRenderedPathOperations identifies operations whose request paths are
+// rendered from the generated route table instead of an inline path template.
+var routeRenderedPathOperations = map[string]bool{
+	"UpdateMyTimezone": true,
+}
+
 // ---------------------------------------------------------------------------
 // Client type determination
 // ---------------------------------------------------------------------------
@@ -514,7 +522,7 @@ func generateServiceFile(svc ServiceDef) string {
 		if isAccountScoped(svc.Name) {
 			path = stripAccountPrefix(path)
 		}
-		if strings.Contains(path, "{") {
+		if strings.Contains(path, "{") && !routeRenderedPathOperations[op.OperationID] {
 			needsFmt = true
 		}
 		// Query params need fmt for Sprintf
@@ -659,7 +667,7 @@ func generateMethod(serviceName string, op ParsedOp) string {
 	if isPaginatedList {
 		buf.WriteString(generatePaginatedListBody(op, fmtStr, goParams))
 	} else {
-		buf.WriteString(generateMethodBody(op, fmtStr, hasFormatParams, goParams, returnsData))
+		buf.WriteString(generateMethodBody(op, fmtStr, hasFormatParams, pathParamNames, goParams, returnsData))
 	}
 
 	buf.WriteString("}\n")
@@ -720,8 +728,8 @@ func generateDocComment(methodName, serviceName string, op ParsedOp) string {
 	case strings.HasPrefix(methodName, "List"):
 		comment = fmt.Sprintf("// %s %s %s.", methodName, action, smartPlural(resource, serviceName, op))
 	default:
-		// For uncountable nouns (like "settings"), skip the article
-		if isUncountable(resource, serviceName) {
+		// For uncountable nouns and possessive resources, skip the article.
+		if isUncountable(resource, serviceName) || strings.HasPrefix(resource, "my ") {
 			comment = fmt.Sprintf("// %s %s %s.", methodName, action, resource)
 		} else {
 			comment = fmt.Sprintf("// %s %s %s %s.", methodName, action, article, resource)
@@ -797,14 +805,37 @@ func queryParamsNeedURLEscape(queryParams []QueryParam) bool {
 	return false
 }
 
-func generateMethodBody(op ParsedOp, fmtStr string, hasFormatParams bool, goParams []string, returnsData bool) string {
+func routeParamsLiteral(pathParamNames []string, goParams []string) string {
+	if len(pathParamNames) == 0 {
+		return "nil"
+	}
+	pairs := make([]string, len(pathParamNames))
+	for i, name := range pathParamNames {
+		pairs[i] = fmt.Sprintf("%q: %s", name, goParams[i])
+	}
+	return "map[string]string{" + strings.Join(pairs, ", ") + "}"
+}
+
+func routeErrorReturn(op ParsedOp, returnsData bool) string {
+	errExpr := fmt.Sprintf("ErrUsage(%q)", "missing generated route for "+op.OperationID)
+	if returnsData {
+		return "return nil, nil, " + errExpr
+	}
+	return "return nil, " + errExpr
+}
+
+func generateMethodBody(op ParsedOp, fmtStr string, hasFormatParams bool, pathParamNames []string, goParams []string, returnsData bool) string {
 	var buf strings.Builder
 
 	hasQueryParams := len(op.QueryParams) > 0
 
 	// Build path expression
 	var pathExpr string
-	if hasQueryParams {
+	if routeRenderedPathOperations[op.OperationID] {
+		fmt.Fprintf(&buf, "\tpath, ok := URLPathByOperation(%q, %s)\n", op.OperationID, routeParamsLiteral(pathParamNames, goParams))
+		fmt.Fprintf(&buf, "\tif !ok {\n\t\t%s\n\t}\n", routeErrorReturn(op, returnsData))
+		pathExpr = "path"
+	} else if hasQueryParams {
 		// When query params exist, we need a mutable path variable
 		if hasFormatParams {
 			args := make([]string, len(goParams))
@@ -1071,7 +1102,7 @@ func main() {
 		filename := toSnakeCase(name) + "_service.go"
 		outPath := filepath.Join(outputDir, filename)
 
-		if err := os.WriteFile(outPath, []byte(code), 0600); err != nil {
+		if err := writeGoFile(outPath, code); err != nil {
 			log.Fatalf("writing %s: %v", outPath, err)
 		}
 		fmt.Printf("Generated %s (%d operations)\n", filename, len(svc.Operations))
@@ -1081,12 +1112,20 @@ func main() {
 	// Generate operations registry
 	registryCode := generateOperationsRegistry(services)
 	registryPath := filepath.Join(outputDir, "operations_registry.go")
-	if err := os.WriteFile(registryPath, []byte(registryCode), 0600); err != nil {
+	if err := writeGoFile(registryPath, registryCode); err != nil {
 		log.Fatalf("writing operations_registry.go: %v", err)
 	}
 	fmt.Printf("Generated operations_registry.go (%d operations)\n", totalOps)
 
 	fmt.Printf("\nGenerated %d services with %d operations total.\n", len(services), totalOps)
+}
+
+func writeGoFile(path string, code string) error {
+	formatted, err := format.Source([]byte(code))
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, formatted, 0600)
 }
 
 // isSimplePlural returns true if the remainder is the service resource

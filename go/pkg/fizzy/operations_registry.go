@@ -86,7 +86,8 @@ var OperationRegistry = map[string]string{
 	"UnregisterDevice": "DevicesService.Unregister",
 
 	// Identity
-	"GetMyIdentity": "IdentityService.GetMyIdentity",
+	"GetMyIdentity":    "IdentityService.GetMyIdentity",
+	"UpdateMyTimezone": "IdentityService.UpdateMyTimezone",
 
 	// Notifications
 	"BulkReadNotifications":      "NotificationsService.BulkRead",

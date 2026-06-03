@@ -3,6 +3,8 @@ package fizzy
 import (
 	_ "embed"
 	"encoding/json"
+	"net/url"
+	"strings"
 	"sync"
 )
 
@@ -18,6 +20,7 @@ type URLRouteParam struct {
 // URLRoute describes a single API route pattern.
 type URLRoute struct {
 	Pattern    string                   `json:"pattern"`
+	APIPath    string                   `json:"api_path"`
 	Resource   string                   `json:"resource"`
 	Operations map[string]string        `json:"operations"`
 	Params     map[string]URLRouteParam `json:"params"`
@@ -56,4 +59,29 @@ func URLRouteByOperation(operationID string) (URLRoute, bool) {
 		}
 	}
 	return URLRoute{}, false
+}
+
+// URLPathByOperation returns the API path for an operation with path parameters applied.
+// The path comes from the generated route table and uses URL-escaped parameter values.
+func URLPathByOperation(operationID string, params map[string]string) (string, bool) {
+	route, ok := URLRouteByOperation(operationID)
+	if !ok {
+		return "", false
+	}
+
+	path := route.APIPath
+	if path == "" {
+		path = route.Pattern
+	}
+	for name := range route.Params {
+		value, ok := params[name]
+		if !ok {
+			return "", false
+		}
+		path = strings.ReplaceAll(path, "{"+name+"}", url.PathEscape(value))
+	}
+	if strings.Contains(path, "{") {
+		return "", false
+	}
+	return path, true
 }

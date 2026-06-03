@@ -409,103 +409,6 @@
                 }
             }
         },
-        "/my/pins.json": {
-            "get": {
-                "operationId": "ListPins",
-                "responses": {
-                    "200": {
-                        "description": "ListPins 200 response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ListPinsResponseContent"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "BadRequestError 400 response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/BadRequestErrorResponseContent"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "UnauthorizedError 401 response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/UnauthorizedErrorResponseContent"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "ForbiddenError 403 response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ForbiddenErrorResponseContent"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "NotFoundError 404 response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/NotFoundErrorResponseContent"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "ValidationError 422 response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ValidationErrorResponseContent"
-                                }
-                            }
-                        }
-                    },
-                    "429": {
-                        "description": "RateLimitError 429 response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/RateLimitErrorResponseContent"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "InternalServerError 500 response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/InternalServerErrorResponseContent"
-                                }
-                            }
-                        }
-                    }
-                },
-                "x-fizzy-retry": {
-                    "maxAttempts": 3,
-                    "baseDelayMs": 1000,
-                    "backoff": "exponential",
-                    "retryOn": [
-                        429,
-                        500,
-                        503
-                    ]
-                }
-            }
-        },
         "/session.json": {
             "delete": {
                 "operationId": "DestroySession",
@@ -10286,6 +10189,226 @@
                 }
             }
         },
+        "/{accountId}/my/pins.json": {
+            "get": {
+                "operationId": "ListPins",
+                "parameters": [
+                    {
+                        "name": "accountId",
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ListPins 200 response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ListPinsResponseContent"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "BadRequestError 400 response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BadRequestErrorResponseContent"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "UnauthorizedError 401 response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UnauthorizedErrorResponseContent"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "ForbiddenError 403 response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenErrorResponseContent"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "NotFoundError 404 response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/NotFoundErrorResponseContent"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "ValidationError 422 response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponseContent"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "RateLimitError 429 response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RateLimitErrorResponseContent"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "InternalServerError 500 response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalServerErrorResponseContent"
+                                }
+                            }
+                        }
+                    }
+                },
+                "x-fizzy-retry": {
+                    "maxAttempts": 3,
+                    "baseDelayMs": 1000,
+                    "backoff": "exponential",
+                    "retryOn": [
+                        429,
+                        500,
+                        503
+                    ]
+                }
+            }
+        },
+        "/{accountId}/my/timezone.json": {
+            "patch": {
+                "operationId": "UpdateMyTimezone",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateMyTimezoneRequestContent"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "parameters": [
+                    {
+                        "name": "accountId",
+                        "in": "path",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "UpdateMyTimezone 204 response"
+                    },
+                    "400": {
+                        "description": "BadRequestError 400 response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BadRequestErrorResponseContent"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "UnauthorizedError 401 response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UnauthorizedErrorResponseContent"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "ForbiddenError 403 response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenErrorResponseContent"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "NotFoundError 404 response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/NotFoundErrorResponseContent"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "ValidationError 422 response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponseContent"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "RateLimitError 429 response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RateLimitErrorResponseContent"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "InternalServerError 500 response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalServerErrorResponseContent"
+                                }
+                            }
+                        }
+                    }
+                },
+                "x-fizzy-idempotent": {
+                    "natural": true
+                },
+                "x-fizzy-retry": {
+                    "maxAttempts": 3,
+                    "baseDelayMs": 1000,
+                    "backoff": "exponential",
+                    "retryOn": [
+                        429,
+                        500,
+                        503
+                    ]
+                }
+            }
+        },
         "/{accountId}/notifications.json": {
             "get": {
                 "operationId": "ListNotifications",
@@ -14467,6 +14590,17 @@
                         "format": "int32"
                     }
                 }
+            },
+            "UpdateMyTimezoneRequestContent": {
+                "type": "object",
+                "properties": {
+                    "timezone_name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "timezone_name"
+                ]
             },
             "UpdateNotificationSettingsRequestContent": {
                 "type": "object",

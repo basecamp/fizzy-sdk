@@ -309,7 +309,7 @@ class ConformanceRunner
 
     # Pins
     when "ListPins"
-      client.pins.list
+      client.pins.list(account_id: account_id)
 
     # Uploads
     when "CreateDirectUpload"
@@ -344,9 +344,11 @@ class ConformanceRunner
     when "CompleteJoin"
       client.sessions.complete_join(**symbolize_body(body))
 
-    # Identity (account-independent)
+    # Identity
     when "GetMyIdentity"
       client.identity.me
+    when "UpdateMyTimezone"
+      client.identity.update_timezone(account_id: account_id, **symbolize_body(body))
 
     # Devices
     when "RegisterDevice"

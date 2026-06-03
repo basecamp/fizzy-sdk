@@ -59,11 +59,11 @@ Fizzy uses **two auth strategies** (no OAuth):
 
 ## API Surface Inventory
 
-111 operations across the current Smithy-defined API surface:
+112 operations across the current Smithy-defined API surface:
 
 | Area | Operations |
 |---------|-----------|
-| Identity | GetMyIdentity |
+| Identity | GetMyIdentity, UpdateMyTimezone |
 | Access Tokens | ListAccessTokens, CreateAccessToken, DeleteAccessToken |
 | Account | GetAccountSettings, UpdateAccountSettings, GetJoinCode, UpdateJoinCode, ResetJoinCode, UpdateAccountEntropy, CreateAccountExport, GetAccountExport |
 | Boards | ListBoards, CreateBoard, GetBoard, ListBoardAccesses, UpdateBoard, DeleteBoard, PublishBoard, UnpublishBoard, UpdateBoardInvolvement, UpdateBoardEntropy, ListStreamCards, ListPostponedCards, ListClosedCards |

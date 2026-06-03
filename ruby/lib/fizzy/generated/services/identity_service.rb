@@ -14,6 +14,17 @@ module Fizzy
           http_get("/my/identity.json").json
         end
       end
+
+      # update_timezone operation
+      # @param account_id [String] account id ID
+      # @param timezone_name [String] timezone name
+      # @return [void]
+      def update_timezone(account_id:, timezone_name:)
+        with_operation(service: "identity", operation: "UpdateMyTimezone", is_mutation: true, resource_id: account_id) do
+          http_patch("/#{account_id}/my/timezone.json", body: compact_params(timezone_name: timezone_name))
+          nil
+        end
+      end
     end
   end
 end

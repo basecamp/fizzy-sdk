@@ -2,6 +2,7 @@
   "routes": [
     {
       "pattern": "/my/access_tokens",
+      "api_path": "/my/access_tokens.json",
       "resource": "unknown",
       "operations": {
         "GET": "ListAccessTokens",
@@ -11,6 +12,7 @@
     },
     {
       "pattern": "/my/access_tokens/{accessTokenId}",
+      "api_path": "/my/access_tokens/{accessTokenId}",
       "resource": "unknown",
       "operations": {
         "DELETE": "DeleteAccessToken"
@@ -24,6 +26,7 @@
     },
     {
       "pattern": "/my/identity",
+      "api_path": "/my/identity.json",
       "resource": "unknown",
       "operations": {
         "GET": "GetMyIdentity"
@@ -31,15 +34,8 @@
       "params": {}
     },
     {
-      "pattern": "/my/pins",
-      "resource": "unknown",
-      "operations": {
-        "GET": "ListPins"
-      },
-      "params": {}
-    },
-    {
       "pattern": "/session",
+      "api_path": "/session.json",
       "resource": "unknown",
       "operations": {
         "DELETE": "DestroySession",
@@ -49,6 +45,7 @@
     },
     {
       "pattern": "/session/magic_link",
+      "api_path": "/session/magic_link.json",
       "resource": "unknown",
       "operations": {
         "POST": "RedeemMagicLink"
@@ -57,6 +54,7 @@
     },
     {
       "pattern": "/signup/completion",
+      "api_path": "/signup/completion.json",
       "resource": "unknown",
       "operations": {
         "POST": "CompleteSignup"
@@ -65,6 +63,7 @@
     },
     {
       "pattern": "/users/joins",
+      "api_path": "/users/joins.json",
       "resource": "unknown",
       "operations": {
         "POST": "CompleteJoin"
@@ -73,6 +72,7 @@
     },
     {
       "pattern": "/{accountId}/account/entropy",
+      "api_path": "/{accountId}/account/entropy.json",
       "resource": "unknown",
       "operations": {
         "PUT": "UpdateAccountEntropy"
@@ -86,6 +86,7 @@
     },
     {
       "pattern": "/{accountId}/account/exports",
+      "api_path": "/{accountId}/account/exports.json",
       "resource": "unknown",
       "operations": {
         "POST": "CreateAccountExport"
@@ -99,6 +100,7 @@
     },
     {
       "pattern": "/{accountId}/account/exports/{exportId}",
+      "api_path": "/{accountId}/account/exports/{exportId}",
       "resource": "unknown",
       "operations": {
         "GET": "GetAccountExport"
@@ -116,6 +118,7 @@
     },
     {
       "pattern": "/{accountId}/account/join_code",
+      "api_path": "/{accountId}/account/join_code.json",
       "resource": "unknown",
       "operations": {
         "DELETE": "ResetJoinCode",
@@ -131,6 +134,7 @@
     },
     {
       "pattern": "/{accountId}/account/settings",
+      "api_path": "/{accountId}/account/settings.json",
       "resource": "unknown",
       "operations": {
         "GET": "GetAccountSettings",
@@ -145,6 +149,7 @@
     },
     {
       "pattern": "/{accountId}/activities",
+      "api_path": "/{accountId}/activities.json",
       "resource": "unknown",
       "operations": {
         "GET": "ListActivities"
@@ -158,6 +163,7 @@
     },
     {
       "pattern": "/{accountId}/boards",
+      "api_path": "/{accountId}/boards.json",
       "resource": "unknown",
       "operations": {
         "GET": "ListBoards",
@@ -172,6 +178,7 @@
     },
     {
       "pattern": "/{accountId}/boards/{boardId}",
+      "api_path": "/{accountId}/boards/{boardId}",
       "resource": "unknown",
       "operations": {
         "DELETE": "DeleteBoard",
@@ -191,6 +198,7 @@
     },
     {
       "pattern": "/{accountId}/boards/{boardId}/accesses",
+      "api_path": "/{accountId}/boards/{boardId}/accesses.json",
       "resource": "unknown",
       "operations": {
         "GET": "ListBoardAccesses"
@@ -208,6 +216,7 @@
     },
     {
       "pattern": "/{accountId}/boards/{boardId}/columns",
+      "api_path": "/{accountId}/boards/{boardId}/columns.json",
       "resource": "unknown",
       "operations": {
         "GET": "ListColumns",
@@ -226,6 +235,7 @@
     },
     {
       "pattern": "/{accountId}/boards/{boardId}/columns/closed",
+      "api_path": "/{accountId}/boards/{boardId}/columns/closed.json",
       "resource": "unknown",
       "operations": {
         "GET": "ListClosedCards"
@@ -243,6 +253,7 @@
     },
     {
       "pattern": "/{accountId}/boards/{boardId}/columns/not_now",
+      "api_path": "/{accountId}/boards/{boardId}/columns/not_now.json",
       "resource": "unknown",
       "operations": {
         "GET": "ListPostponedCards"
@@ -260,6 +271,7 @@
     },
     {
       "pattern": "/{accountId}/boards/{boardId}/columns/stream",
+      "api_path": "/{accountId}/boards/{boardId}/columns/stream.json",
       "resource": "unknown",
       "operations": {
         "GET": "ListStreamCards"
@@ -277,6 +289,7 @@
     },
     {
       "pattern": "/{accountId}/boards/{boardId}/columns/{columnId}",
+      "api_path": "/{accountId}/boards/{boardId}/columns/{columnId}",
       "resource": "unknown",
       "operations": {
         "DELETE": "DeleteColumn",
@@ -300,6 +313,7 @@
     },
     {
       "pattern": "/{accountId}/boards/{boardId}/columns/{columnId}/cards",
+      "api_path": "/{accountId}/boards/{boardId}/columns/{columnId}/cards.json",
       "resource": "unknown",
       "operations": {
         "GET": "ListColumnCards"
@@ -321,6 +335,7 @@
     },
     {
       "pattern": "/{accountId}/boards/{boardId}/entropy",
+      "api_path": "/{accountId}/boards/{boardId}/entropy.json",
       "resource": "unknown",
       "operations": {
         "PUT": "UpdateBoardEntropy"
@@ -338,6 +353,7 @@
     },
     {
       "pattern": "/{accountId}/boards/{boardId}/involvement",
+      "api_path": "/{accountId}/boards/{boardId}/involvement.json",
       "resource": "unknown",
       "operations": {
         "PATCH": "UpdateBoardInvolvement"
@@ -355,6 +371,7 @@
     },
     {
       "pattern": "/{accountId}/boards/{boardId}/publication",
+      "api_path": "/{accountId}/boards/{boardId}/publication.json",
       "resource": "unknown",
       "operations": {
         "DELETE": "UnpublishBoard",
@@ -373,6 +390,7 @@
     },
     {
       "pattern": "/{accountId}/boards/{boardId}/webhooks",
+      "api_path": "/{accountId}/boards/{boardId}/webhooks.json",
       "resource": "unknown",
       "operations": {
         "GET": "ListWebhooks",
@@ -391,6 +409,7 @@
     },
     {
       "pattern": "/{accountId}/boards/{boardId}/webhooks/{webhookId}",
+      "api_path": "/{accountId}/boards/{boardId}/webhooks/{webhookId}",
       "resource": "unknown",
       "operations": {
         "DELETE": "DeleteWebhook",
@@ -414,6 +433,7 @@
     },
     {
       "pattern": "/{accountId}/boards/{boardId}/webhooks/{webhookId}/activation",
+      "api_path": "/{accountId}/boards/{boardId}/webhooks/{webhookId}/activation.json",
       "resource": "unknown",
       "operations": {
         "POST": "ActivateWebhook"
@@ -435,6 +455,7 @@
     },
     {
       "pattern": "/{accountId}/boards/{boardId}/webhooks/{webhookId}/deliveries",
+      "api_path": "/{accountId}/boards/{boardId}/webhooks/{webhookId}/deliveries.json",
       "resource": "unknown",
       "operations": {
         "GET": "ListWebhookDeliveries"
@@ -456,6 +477,7 @@
     },
     {
       "pattern": "/{accountId}/cards",
+      "api_path": "/{accountId}/cards.json",
       "resource": "unknown",
       "operations": {
         "GET": "ListCards",
@@ -470,6 +492,7 @@
     },
     {
       "pattern": "/{accountId}/cards/{cardNumber}",
+      "api_path": "/{accountId}/cards/{cardNumber}",
       "resource": "unknown",
       "operations": {
         "DELETE": "DeleteCard",
@@ -489,6 +512,7 @@
     },
     {
       "pattern": "/{accountId}/cards/{cardNumber}/assignments",
+      "api_path": "/{accountId}/cards/{cardNumber}/assignments.json",
       "resource": "unknown",
       "operations": {
         "POST": "AssignCard"
@@ -506,6 +530,7 @@
     },
     {
       "pattern": "/{accountId}/cards/{cardNumber}/board",
+      "api_path": "/{accountId}/cards/{cardNumber}/board.json",
       "resource": "unknown",
       "operations": {
         "PATCH": "MoveCard"
@@ -523,6 +548,7 @@
     },
     {
       "pattern": "/{accountId}/cards/{cardNumber}/closure",
+      "api_path": "/{accountId}/cards/{cardNumber}/closure.json",
       "resource": "unknown",
       "operations": {
         "DELETE": "ReopenCard",
@@ -541,6 +567,7 @@
     },
     {
       "pattern": "/{accountId}/cards/{cardNumber}/comments",
+      "api_path": "/{accountId}/cards/{cardNumber}/comments.json",
       "resource": "unknown",
       "operations": {
         "GET": "ListComments",
@@ -559,6 +586,7 @@
     },
     {
       "pattern": "/{accountId}/cards/{cardNumber}/comments/{commentId}",
+      "api_path": "/{accountId}/cards/{cardNumber}/comments/{commentId}",
       "resource": "unknown",
       "operations": {
         "DELETE": "DeleteComment",
@@ -582,6 +610,7 @@
     },
     {
       "pattern": "/{accountId}/cards/{cardNumber}/comments/{commentId}/reactions",
+      "api_path": "/{accountId}/cards/{cardNumber}/comments/{commentId}/reactions.json",
       "resource": "unknown",
       "operations": {
         "GET": "ListCommentReactions",
@@ -604,6 +633,7 @@
     },
     {
       "pattern": "/{accountId}/cards/{cardNumber}/comments/{commentId}/reactions/{reactionId}",
+      "api_path": "/{accountId}/cards/{cardNumber}/comments/{commentId}/reactions/{reactionId}",
       "resource": "unknown",
       "operations": {
         "DELETE": "DeleteCommentReaction"
@@ -629,6 +659,7 @@
     },
     {
       "pattern": "/{accountId}/cards/{cardNumber}/goldness",
+      "api_path": "/{accountId}/cards/{cardNumber}/goldness.json",
       "resource": "unknown",
       "operations": {
         "DELETE": "UngoldCard",
@@ -647,6 +678,7 @@
     },
     {
       "pattern": "/{accountId}/cards/{cardNumber}/image",
+      "api_path": "/{accountId}/cards/{cardNumber}/image.json",
       "resource": "unknown",
       "operations": {
         "DELETE": "DeleteCardImage"
@@ -664,6 +696,7 @@
     },
     {
       "pattern": "/{accountId}/cards/{cardNumber}/not_now",
+      "api_path": "/{accountId}/cards/{cardNumber}/not_now.json",
       "resource": "unknown",
       "operations": {
         "POST": "PostponeCard"
@@ -681,6 +714,7 @@
     },
     {
       "pattern": "/{accountId}/cards/{cardNumber}/pin",
+      "api_path": "/{accountId}/cards/{cardNumber}/pin.json",
       "resource": "unknown",
       "operations": {
         "DELETE": "UnpinCard",
@@ -699,6 +733,7 @@
     },
     {
       "pattern": "/{accountId}/cards/{cardNumber}/publish",
+      "api_path": "/{accountId}/cards/{cardNumber}/publish.json",
       "resource": "unknown",
       "operations": {
         "POST": "PublishCard"
@@ -716,6 +751,7 @@
     },
     {
       "pattern": "/{accountId}/cards/{cardNumber}/reactions",
+      "api_path": "/{accountId}/cards/{cardNumber}/reactions.json",
       "resource": "unknown",
       "operations": {
         "GET": "ListCardReactions",
@@ -734,6 +770,7 @@
     },
     {
       "pattern": "/{accountId}/cards/{cardNumber}/reactions/{reactionId}",
+      "api_path": "/{accountId}/cards/{cardNumber}/reactions/{reactionId}",
       "resource": "unknown",
       "operations": {
         "DELETE": "DeleteCardReaction"
@@ -755,6 +792,7 @@
     },
     {
       "pattern": "/{accountId}/cards/{cardNumber}/reading",
+      "api_path": "/{accountId}/cards/{cardNumber}/reading.json",
       "resource": "unknown",
       "operations": {
         "DELETE": "MarkCardUnread",
@@ -773,6 +811,7 @@
     },
     {
       "pattern": "/{accountId}/cards/{cardNumber}/self_assignment",
+      "api_path": "/{accountId}/cards/{cardNumber}/self_assignment.json",
       "resource": "unknown",
       "operations": {
         "POST": "SelfAssignCard"
@@ -790,6 +829,7 @@
     },
     {
       "pattern": "/{accountId}/cards/{cardNumber}/steps",
+      "api_path": "/{accountId}/cards/{cardNumber}/steps.json",
       "resource": "unknown",
       "operations": {
         "GET": "ListSteps",
@@ -808,6 +848,7 @@
     },
     {
       "pattern": "/{accountId}/cards/{cardNumber}/steps/{stepId}",
+      "api_path": "/{accountId}/cards/{cardNumber}/steps/{stepId}",
       "resource": "unknown",
       "operations": {
         "DELETE": "DeleteStep",
@@ -831,6 +872,7 @@
     },
     {
       "pattern": "/{accountId}/cards/{cardNumber}/taggings",
+      "api_path": "/{accountId}/cards/{cardNumber}/taggings.json",
       "resource": "unknown",
       "operations": {
         "POST": "TagCard"
@@ -848,6 +890,7 @@
     },
     {
       "pattern": "/{accountId}/cards/{cardNumber}/triage",
+      "api_path": "/{accountId}/cards/{cardNumber}/triage.json",
       "resource": "unknown",
       "operations": {
         "DELETE": "UnTriageCard",
@@ -866,6 +909,7 @@
     },
     {
       "pattern": "/{accountId}/cards/{cardNumber}/watch",
+      "api_path": "/{accountId}/cards/{cardNumber}/watch.json",
       "resource": "unknown",
       "operations": {
         "DELETE": "UnwatchCard",
@@ -884,6 +928,7 @@
     },
     {
       "pattern": "/{accountId}/columns/{columnId}/left_position",
+      "api_path": "/{accountId}/columns/{columnId}/left_position.json",
       "resource": "unknown",
       "operations": {
         "POST": "MoveColumnLeft"
@@ -901,6 +946,7 @@
     },
     {
       "pattern": "/{accountId}/columns/{columnId}/right_position",
+      "api_path": "/{accountId}/columns/{columnId}/right_position.json",
       "resource": "unknown",
       "operations": {
         "POST": "MoveColumnRight"
@@ -918,6 +964,7 @@
     },
     {
       "pattern": "/{accountId}/devices",
+      "api_path": "/{accountId}/devices",
       "resource": "unknown",
       "operations": {
         "POST": "RegisterDevice"
@@ -931,6 +978,7 @@
     },
     {
       "pattern": "/{accountId}/devices/{deviceToken}",
+      "api_path": "/{accountId}/devices/{deviceToken}",
       "resource": "unknown",
       "operations": {
         "DELETE": "UnregisterDevice"
@@ -947,7 +995,36 @@
       }
     },
     {
+      "pattern": "/{accountId}/my/pins",
+      "api_path": "/{accountId}/my/pins.json",
+      "resource": "unknown",
+      "operations": {
+        "GET": "ListPins"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        }
+      }
+    },
+    {
+      "pattern": "/{accountId}/my/timezone",
+      "api_path": "/{accountId}/my/timezone.json",
+      "resource": "unknown",
+      "operations": {
+        "PATCH": "UpdateMyTimezone"
+      },
+      "params": {
+        "accountId": {
+          "role": "account",
+          "type": "string"
+        }
+      }
+    },
+    {
       "pattern": "/{accountId}/notifications",
+      "api_path": "/{accountId}/notifications.json",
       "resource": "unknown",
       "operations": {
         "GET": "ListNotifications"
@@ -961,6 +1038,7 @@
     },
     {
       "pattern": "/{accountId}/notifications/bulk_reading",
+      "api_path": "/{accountId}/notifications/bulk_reading.json",
       "resource": "unknown",
       "operations": {
         "POST": "BulkReadNotifications"
@@ -974,6 +1052,7 @@
     },
     {
       "pattern": "/{accountId}/notifications/settings",
+      "api_path": "/{accountId}/notifications/settings.json",
       "resource": "unknown",
       "operations": {
         "GET": "GetNotificationSettings",
@@ -988,6 +1067,7 @@
     },
     {
       "pattern": "/{accountId}/notifications/tray",
+      "api_path": "/{accountId}/notifications/tray.json",
       "resource": "unknown",
       "operations": {
         "GET": "GetNotificationTray"
@@ -1001,6 +1081,7 @@
     },
     {
       "pattern": "/{accountId}/notifications/{notificationId}/reading",
+      "api_path": "/{accountId}/notifications/{notificationId}/reading.json",
       "resource": "unknown",
       "operations": {
         "DELETE": "UnreadNotification",
@@ -1019,6 +1100,7 @@
     },
     {
       "pattern": "/{accountId}/rails/active_storage/direct_uploads",
+      "api_path": "/{accountId}/rails/active_storage/direct_uploads",
       "resource": "unknown",
       "operations": {
         "POST": "CreateDirectUpload"
@@ -1032,6 +1114,7 @@
     },
     {
       "pattern": "/{accountId}/search",
+      "api_path": "/{accountId}/search.json",
       "resource": "unknown",
       "operations": {
         "GET": "SearchCards"
@@ -1045,6 +1128,7 @@
     },
     {
       "pattern": "/{accountId}/tags",
+      "api_path": "/{accountId}/tags.json",
       "resource": "unknown",
       "operations": {
         "GET": "ListTags"
@@ -1058,6 +1142,7 @@
     },
     {
       "pattern": "/{accountId}/users",
+      "api_path": "/{accountId}/users.json",
       "resource": "unknown",
       "operations": {
         "GET": "ListUsers"
@@ -1071,6 +1156,7 @@
     },
     {
       "pattern": "/{accountId}/users/{userId}",
+      "api_path": "/{accountId}/users/{userId}",
       "resource": "unknown",
       "operations": {
         "DELETE": "DeactivateUser",
@@ -1090,6 +1176,7 @@
     },
     {
       "pattern": "/{accountId}/users/{userId}/avatar",
+      "api_path": "/{accountId}/users/{userId}/avatar",
       "resource": "unknown",
       "operations": {
         "DELETE": "DeleteUserAvatar"
@@ -1107,6 +1194,7 @@
     },
     {
       "pattern": "/{accountId}/users/{userId}/data_exports",
+      "api_path": "/{accountId}/users/{userId}/data_exports.json",
       "resource": "unknown",
       "operations": {
         "POST": "CreateUserDataExport"
@@ -1124,6 +1212,7 @@
     },
     {
       "pattern": "/{accountId}/users/{userId}/data_exports/{exportId}",
+      "api_path": "/{accountId}/users/{userId}/data_exports/{exportId}",
       "resource": "unknown",
       "operations": {
         "GET": "GetUserDataExport"
@@ -1145,6 +1234,7 @@
     },
     {
       "pattern": "/{accountId}/users/{userId}/email_addresses",
+      "api_path": "/{accountId}/users/{userId}/email_addresses.json",
       "resource": "unknown",
       "operations": {
         "POST": "RequestEmailAddressChange"
@@ -1162,6 +1252,7 @@
     },
     {
       "pattern": "/{accountId}/users/{userId}/email_addresses/{emailAddressToken}/confirmation",
+      "api_path": "/{accountId}/users/{userId}/email_addresses/{emailAddressToken}/confirmation.json",
       "resource": "unknown",
       "operations": {
         "POST": "ConfirmEmailAddressChange"
@@ -1183,6 +1274,7 @@
     },
     {
       "pattern": "/{accountId}/users/{userId}/push_subscriptions",
+      "api_path": "/{accountId}/users/{userId}/push_subscriptions.json",
       "resource": "unknown",
       "operations": {
         "POST": "CreatePushSubscription"
@@ -1200,6 +1292,7 @@
     },
     {
       "pattern": "/{accountId}/users/{userId}/push_subscriptions/{pushSubscriptionId}",
+      "api_path": "/{accountId}/users/{userId}/push_subscriptions/{pushSubscriptionId}",
       "resource": "unknown",
       "operations": {
         "DELETE": "DeletePushSubscription"
@@ -1221,6 +1314,7 @@
     },
     {
       "pattern": "/{accountId}/users/{userId}/role",
+      "api_path": "/{accountId}/users/{userId}/role.json",
       "resource": "unknown",
       "operations": {
         "PATCH": "UpdateUserRole"

@@ -168,6 +168,7 @@ const TAG_TO_SERVICE: Record<string, string> = {
 function deriveServiceName(operationId: string): string {
   const overrides: Record<string, string> = {
     GetMyIdentity: "Identity",
+    UpdateMyTimezone: "Identity",
     CreateDirectUpload: "Uploads",
     RedeemMagicLink: "Sessions",
     CompleteJoin: "Sessions",
@@ -261,6 +262,7 @@ const VERB_PATTERNS = [
  */
 const METHOD_NAME_OVERRIDES: Record<string, string> = {
   GetMyIdentity: "me",
+  UpdateMyTimezone: "updateTimezone",
   CloseCard: "close",
   ReopenCard: "reopen",
   PostponeCard: "postpone",

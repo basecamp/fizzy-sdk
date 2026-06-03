@@ -2,6 +2,9 @@ package com.basecamp.fizzy
 
 import com.basecamp.fizzy.generated.boards
 import com.basecamp.fizzy.generated.columns
+import com.basecamp.fizzy.generated.identity
+import com.basecamp.fizzy.generated.pins
+import com.basecamp.fizzy.generated.services.UpdateMyTimezoneBody
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import kotlinx.coroutines.test.runTest
@@ -11,6 +14,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.test.assertFalse
 import kotlin.test.assertFailsWith
+import kotlin.time.Duration
 
 class FizzyTest {
 
@@ -283,7 +287,7 @@ class FizzyTest {
 
         val client = FizzyClient(
             authStrategy = BearerAuth(StaticTokenProvider("test-token")),
-            config = FizzyConfig(baseUrl = "https://fizzy.do", userAgent = "test/1.0"),
+            config = FizzyConfig(baseUrl = "https://fizzy.do", userAgent = "test/1.0", timeout = Duration.INFINITE),
             hooks = NoopHooks,
             engine = mockEngine,
             externalHttpClient = null,
@@ -315,6 +319,59 @@ class FizzyTest {
         assertEquals(null, parseRetryAfter("0"))
     }
 
+    @Test
+    fun testPinsListUsesAccountScopedPath() = runTest {
+        val requestedUrls = mutableListOf<String>()
+        val mockEngine = MockEngine { request ->
+            requestedUrls += request.url.toString()
+            respond(
+                content = "[]",
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType to listOf("application/json")),
+            )
+        }
+
+        val client = FizzyClient(
+            authStrategy = BearerAuth(StaticTokenProvider("test-token")),
+            config = FizzyConfig(baseUrl = "https://fizzy.do", userAgent = "test/1.0", timeout = Duration.INFINITE),
+            hooks = NoopHooks,
+            engine = mockEngine,
+            externalHttpClient = null,
+        )
+
+        client.forAccount("999").pins.list()
+        assertEquals("https://fizzy.do/999/my/pins.json", requestedUrls.single())
+        client.close()
+    }
+
+    @Test
+    fun testUpdateTimezoneUsesAccountScopedPath() = runTest {
+        val requestedUrls = mutableListOf<String>()
+        val requestBodies = mutableListOf<String>()
+        val mockEngine = MockEngine { request ->
+            requestedUrls += request.url.toString()
+            requestBodies += request.body.toByteArray().decodeToString()
+            respond(
+                content = "",
+                status = HttpStatusCode.NoContent,
+                headers = headersOf(HttpHeaders.ContentType to listOf("application/json")),
+            )
+        }
+
+        val client = FizzyClient(
+            authStrategy = BearerAuth(StaticTokenProvider("test-token")),
+            config = FizzyConfig(baseUrl = "https://fizzy.do", userAgent = "test/1.0", timeout = Duration.INFINITE),
+            hooks = NoopHooks,
+            engine = mockEngine,
+            externalHttpClient = null,
+        )
+
+        client.forAccount("999").identity.updateTimezone(UpdateMyTimezoneBody(timezoneName = "America/New_York"))
+        assertEquals("https://fizzy.do/999/my/timezone.json", requestedUrls.single())
+        assertTrue(requestBodies.single().contains("\"timezone_name\":\"America/New_York\""))
+        client.close()
+    }
+
     // Pins Column.color as a structured {name, value} object. The live API
     // returns color this way; an earlier schema typed it as a string and broke
     // typed Column decoding.
@@ -330,7 +387,7 @@ class FizzyTest {
 
         val client = FizzyClient(
             authStrategy = BearerAuth(StaticTokenProvider("test-token")),
-            config = FizzyConfig(baseUrl = "https://fizzy.do", userAgent = "test/1.0"),
+            config = FizzyConfig(baseUrl = "https://fizzy.do", userAgent = "test/1.0", timeout = Duration.INFINITE),
             hooks = NoopHooks,
             engine = mockEngine,
             externalHttpClient = null,
