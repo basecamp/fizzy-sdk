@@ -87,7 +87,7 @@ var OperationRegistry = map[string]string{
 
 	// Identity
 	"GetMyIdentity":    "IdentityService.GetMyIdentity",
-	"UpdateMyTimezone": "IdentityService.UpdateTimezone",
+	"UpdateMyTimezone": "IdentityService.UpdateMyTimezone",
 
 	// Notifications
 	"BulkReadNotifications":      "NotificationsService.BulkRead",

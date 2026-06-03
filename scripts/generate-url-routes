@@ -26,6 +26,7 @@ generate() {
       .paths | to_entries[] | . as $path |
       {
         pattern: ($path.key | sub("\\.json$"; "")),
+        api_path: $path.key,
         resource: (
           [$path.value | to_entries[] | select(.key | test("^(get|put|post|delete|patch|head|options|trace)$")) | .value.tags[0]] | first // "unknown"
         ),

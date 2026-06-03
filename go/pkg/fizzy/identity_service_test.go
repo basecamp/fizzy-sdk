@@ -22,9 +22,9 @@ func TestIdentityUpdateTimezone(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(&Config{BaseURL: server.URL}, &StaticTokenProvider{Token: "test"})
-	_, err := client.Identity().UpdateTimezone(context.Background(), "999", &generated.UpdateMyTimezoneRequest{TimezoneName: "America/New_York"})
+	_, err := client.Identity().UpdateMyTimezone(context.Background(), "999", &generated.UpdateMyTimezoneRequest{TimezoneName: "America/New_York"})
 	if err != nil {
-		t.Fatalf("UpdateTimezone: %v", err)
+		t.Fatalf("UpdateMyTimezone: %v", err)
 	}
 }
 

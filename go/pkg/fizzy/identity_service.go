@@ -3,7 +3,6 @@ package fizzy
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/basecamp/fizzy-sdk/go/pkg/generated"
 )
@@ -21,8 +20,12 @@ func (s *IdentityService) GetMyIdentity(ctx context.Context) (*generated.Identit
 	return &result, resp, nil
 }
 
-// UpdateTimezone updates a timezone.
-func (s *IdentityService) UpdateTimezone(ctx context.Context, accountID string, req *generated.UpdateMyTimezoneRequest) (*Response, error) {
-	resp, err := s.client.Patch(ctx, fmt.Sprintf("/%s/my/timezone.json", accountID), req)
+// UpdateMyTimezone updates my timezone.
+func (s *IdentityService) UpdateMyTimezone(ctx context.Context, accountID string, req *generated.UpdateMyTimezoneRequest) (*Response, error) {
+	path, ok := URLPathByOperation("UpdateMyTimezone", map[string]string{"accountId": accountID})
+	if !ok {
+		return nil, ErrUsage("missing generated route for UpdateMyTimezone")
+	}
+	resp, err := s.client.Patch(ctx, path, req)
 	return resp, err
 }
