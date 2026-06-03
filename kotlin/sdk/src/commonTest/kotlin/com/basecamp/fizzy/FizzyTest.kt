@@ -7,13 +7,14 @@ import com.basecamp.fizzy.generated.pins
 import com.basecamp.fizzy.generated.services.UpdateMyTimezoneBody
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.test.assertFalse
 import kotlin.test.assertFailsWith
+import kotlin.time.Duration
 
 class FizzyTest {
 
@@ -270,7 +271,7 @@ class FizzyTest {
     }
 
     @Test
-    fun testCrossOriginPaginationThrows() = runBlocking {
+    fun testCrossOriginPaginationThrows() = runTest {
         // MockEngine returns a valid first page with a cross-origin Link header.
         // The real requestPaginated code in BaseService must reject it.
         val mockEngine = MockEngine { request ->
@@ -286,7 +287,7 @@ class FizzyTest {
 
         val client = FizzyClient(
             authStrategy = BearerAuth(StaticTokenProvider("test-token")),
-            config = FizzyConfig(baseUrl = "https://fizzy.do", userAgent = "test/1.0"),
+            config = FizzyConfig(baseUrl = "https://fizzy.do", userAgent = "test/1.0", timeout = Duration.INFINITE),
             hooks = NoopHooks,
             engine = mockEngine,
             externalHttpClient = null,
@@ -319,7 +320,7 @@ class FizzyTest {
     }
 
     @Test
-    fun testPinsListUsesAccountScopedPath() = runBlocking {
+    fun testPinsListUsesAccountScopedPath() = runTest {
         val requestedUrls = mutableListOf<String>()
         val mockEngine = MockEngine { request ->
             requestedUrls += request.url.toString()
@@ -332,7 +333,7 @@ class FizzyTest {
 
         val client = FizzyClient(
             authStrategy = BearerAuth(StaticTokenProvider("test-token")),
-            config = FizzyConfig(baseUrl = "https://fizzy.do", userAgent = "test/1.0"),
+            config = FizzyConfig(baseUrl = "https://fizzy.do", userAgent = "test/1.0", timeout = Duration.INFINITE),
             hooks = NoopHooks,
             engine = mockEngine,
             externalHttpClient = null,
@@ -344,7 +345,7 @@ class FizzyTest {
     }
 
     @Test
-    fun testUpdateTimezoneUsesAccountScopedPath() = runBlocking {
+    fun testUpdateTimezoneUsesAccountScopedPath() = runTest {
         val requestedUrls = mutableListOf<String>()
         val requestBodies = mutableListOf<String>()
         val mockEngine = MockEngine { request ->
@@ -359,7 +360,7 @@ class FizzyTest {
 
         val client = FizzyClient(
             authStrategy = BearerAuth(StaticTokenProvider("test-token")),
-            config = FizzyConfig(baseUrl = "https://fizzy.do", userAgent = "test/1.0"),
+            config = FizzyConfig(baseUrl = "https://fizzy.do", userAgent = "test/1.0", timeout = Duration.INFINITE),
             hooks = NoopHooks,
             engine = mockEngine,
             externalHttpClient = null,
@@ -375,7 +376,7 @@ class FizzyTest {
     // returns color this way; an earlier schema typed it as a string and broke
     // typed Column decoding.
     @Test
-    fun testColumnGetDecodesColorObject() = runBlocking {
+    fun testColumnGetDecodesColorObject() = runTest {
         val mockEngine = MockEngine { _ ->
             respond(
                 content = """{"id":"abc123","name":"In Progress","color":{"name":"Blue","value":"var(--color-card-1)"},"created_at":"2026-04-30T00:00:00Z","cards_url":"https://example.com/cards"}""",
@@ -386,7 +387,7 @@ class FizzyTest {
 
         val client = FizzyClient(
             authStrategy = BearerAuth(StaticTokenProvider("test-token")),
-            config = FizzyConfig(baseUrl = "https://fizzy.do", userAgent = "test/1.0"),
+            config = FizzyConfig(baseUrl = "https://fizzy.do", userAgent = "test/1.0", timeout = Duration.INFINITE),
             hooks = NoopHooks,
             engine = mockEngine,
             externalHttpClient = null,
