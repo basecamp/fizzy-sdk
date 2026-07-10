@@ -20,7 +20,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
-          go-version: '1.26'
+          go-version-file: 'go/go.mod'
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@v1.1.4
       - name: Run govulncheck
@@ -57,10 +57,8 @@ jobs:
           ruby-version: '4.0'
           bundler-cache: true
           working-directory: ruby
-      - name: Install bundler-audit
-        run: gem install bundler-audit -v 0.9.3
       - name: Audit
-        run: cd ruby && bundle-audit check --update
+        run: cd ruby && bundle exec bundle-audit check --update
 
   trivy-go:
     name: Trivy (Go)
@@ -150,6 +148,7 @@ jobs:
         with:
           persist-credentials: false
       - uses: securego/gosec@9e6a9843d7a4a6e3e9a8539b02612c8a4aa3f889 # v2.27.1
+        env:
+          GOTOOLCHAIN: auto
         with:
           args: -severity high -exclude-dir=pkg/generated ./go/...
-
