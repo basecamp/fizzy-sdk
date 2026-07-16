@@ -52,7 +52,7 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
-      - uses: ruby/setup-ruby@9eb537ca036ebaed86729dcb9309076e4c5c3b74 # v1.314.0
+      - uses: ruby/setup-ruby@d45b1a4e94b71acab930e56e79c6aa188764e7f9 # v1.316.0
         with:
           ruby-version: '4.0'
           bundler-cache: true
@@ -80,7 +80,7 @@ jobs:
           ignore-unfixed: true
           format: sarif
           output: trivy-go.sarif
-      - uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
+      - uses: github/codeql-action/upload-sarif@54f647b7e1bb85c95cddabcd46b0c578ec92bc1a # v4.36.3
         if: always()
         with:
           sarif_file: trivy-go.sarif
@@ -106,7 +106,7 @@ jobs:
           ignore-unfixed: true
           format: sarif
           output: trivy-typescript.sarif
-      - uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
+      - uses: github/codeql-action/upload-sarif@54f647b7e1bb85c95cddabcd46b0c578ec92bc1a # v4.36.3
         if: always()
         with:
           sarif_file: trivy-typescript.sarif
@@ -132,7 +132,7 @@ jobs:
           ignore-unfixed: true
           format: sarif
           output: trivy-ruby.sarif
-      - uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
+      - uses: github/codeql-action/upload-sarif@54f647b7e1bb85c95cddabcd46b0c578ec92bc1a # v4.36.3
         if: always()
         with:
           sarif_file: trivy-ruby.sarif
