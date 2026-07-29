@@ -9,6 +9,8 @@ from the Smithy spec in `spec/`.
 2. **Never construct URL paths manually.** Use the generated route table -- no
    `fmt.Sprintf` or template literals for paths.
 3. **Every new operation needs tests.** Unit tests per language + conformance tests.
+   The same applies when an existing operation's *behavior* changes -- never ship a
+   behavioral change with language unit tests alone.
 4. **Run `make check` before committing.**
 
 Never edit `openapi.json` by hand; it is generated from Smithy and the drift checks in
