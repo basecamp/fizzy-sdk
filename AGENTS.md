@@ -25,10 +25,19 @@ spec/fizzy.smithy -> openapi.json -> behavior-model.json -> per-language generat
 1. Check the upstream sources below -- the spec is downstream of them
 2. Edit the Smithy spec in `spec/`
 3. `make smithy-build` to regenerate OpenAPI
-4. Regenerate the service layer for each language you touched:
-   `make go-generate-services`, `ts-generate-services`, `rb-generate-services`,
-   `kt-generate-services`, and `make swift-generate` for Swift. This repo has no
-   aggregate `generate-services` target -- name them individually.
+4. Regenerate **every** language, not just the one you were working in.
+   `make smithy-build` rewrites the shared `openapi.json`, so all five generated
+   service layers go stale at once, and `make check` runs a drift check for each of
+   them. This repo has no aggregate `generate-services` target, so name them
+   individually:
+
+   ```bash
+   make go-generate-services
+   make ts-generate-services
+   make rb-generate-services
+   make kt-generate-services
+   make swift-generate
+   ```
 5. Add or update tests
 6. `make check`
 
