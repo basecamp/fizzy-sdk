@@ -55,3 +55,4 @@ conformance/runner/typescript/node_modules/
 # Claude
 .claude/*
 !.claude/skills/
+!.claude/CLAUDE.md
