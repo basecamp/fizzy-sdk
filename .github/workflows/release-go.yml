@@ -36,7 +36,7 @@ jobs:
           git merge-base --is-ancestor "$GITHUB_SHA" origin/main
 
       - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v6.5.0 # zizmor: ignore[cache-poisoning] -- cached deps are for testing, not release artifact generation
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0 # zizmor: ignore[cache-poisoning] -- cached deps are for testing, not release artifact generation
         with:
           go-version-file: 'go/go.mod'
           cache-dependency-path: 'go/go.sum'
@@ -73,7 +73,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.0 # zizmor: ignore[artipacked] -- credentials needed for git push
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1 # zizmor: ignore[artipacked] -- credentials needed for git push
         with:
           fetch-depth: 0
 
