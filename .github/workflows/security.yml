@@ -80,7 +80,7 @@ jobs:
           ignore-unfixed: true
           format: sarif
           output: trivy-go.sarif
-      - uses: github/codeql-action/upload-sarif@d1ba80a13dd99fba24a470575428917156a28b43 # v4.37.5
+      - uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
         if: always()
         with:
           sarif_file: trivy-go.sarif
@@ -106,7 +106,7 @@ jobs:
           ignore-unfixed: true
           format: sarif
           output: trivy-typescript.sarif
-      - uses: github/codeql-action/upload-sarif@d1ba80a13dd99fba24a470575428917156a28b43 # v4.37.5
+      - uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
         if: always()
         with:
           sarif_file: trivy-typescript.sarif
@@ -132,7 +132,7 @@ jobs:
           ignore-unfixed: true
           format: sarif
           output: trivy-ruby.sarif
-      - uses: github/codeql-action/upload-sarif@d1ba80a13dd99fba24a470575428917156a28b43 # v4.37.5
+      - uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
         if: always()
         with:
           sarif_file: trivy-ruby.sarif
