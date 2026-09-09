@@ -9,8 +9,8 @@
     "@37signals/fizzy": "file:../../../typescript"
   },
   "devDependencies": {
-    "vitest": "^3.0.0",
     "msw": "^2.7.0",
-    "typescript": "^5.8.0"
+    "typescript": "^5.8.0",
+    "vitest": "^4.1.11"
   }
 }
