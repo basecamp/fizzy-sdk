@@ -56,3 +56,7 @@ conformance/runner/typescript/node_modules/
 .claude/*
 !.claude/skills/
 !.claude/CLAUDE.md
+
+# Rust
+rust/target/
+conformance/runner/rust/target/
