@@ -104,12 +104,17 @@ impl Client {
     fn absolute(&self, path: &str) -> Result<Option<Url>, Error> {
         if path.starts_with("https://") || path.starts_with("http://") {
             let url = Url::parse(path)?;
-            if is_same_origin(&url, self.base_url()) {
+            if !url.username().is_empty() || url.password().is_some() {
+                Err(Error::usage(
+                    "URL must not carry credentials; use an access token or a session token",
+                ))
+            } else if is_same_origin(&url, self.base_url()) {
                 Ok(Some(url))
             } else {
                 Err(Error::usage(format!(
-                    "URL must be on the Fizzy origin {}, got: {path}",
-                    self.base_url().origin().ascii_serialization()
+                    "URL must be on the Fizzy origin {}, got one on {}",
+                    self.base_url().origin().ascii_serialization(),
+                    url.origin().ascii_serialization()
                 )))
             }
         } else {

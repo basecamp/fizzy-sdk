@@ -790,17 +790,18 @@ impl Client {
             url.query_pairs_mut().extend_pairs(&operation.query);
         }
         require_secure_endpoint(&url)?;
-        if !is_same_origin(&url, &self.shared.base_url) {
-            return Err(Error::usage(format!(
-                "{} resolves off the Fizzy origin {}: {url}",
-                operation.id,
-                self.shared.base_url.origin().ascii_serialization()
-            )));
-        }
         if !url.username().is_empty() || url.password().is_some() {
             return Err(Error::usage(format!(
                 "{} names a URL carrying credentials; use an access token or a session token",
                 operation.id
+            )));
+        }
+        if !is_same_origin(&url, &self.shared.base_url) {
+            return Err(Error::usage(format!(
+                "{} resolves off the Fizzy origin {}, onto {}",
+                operation.id,
+                self.shared.base_url.origin().ascii_serialization(),
+                url.origin().ascii_serialization()
             )));
         }
         Ok(url)

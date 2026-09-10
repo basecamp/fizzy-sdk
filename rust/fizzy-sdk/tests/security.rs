@@ -135,6 +135,18 @@ async fn an_absolute_url_off_the_origin_is_refused_before_credentials_go_anywher
     assert!(account(&server).get(&same).await.is_ok());
 }
 
+#[tokio::test]
+async fn an_absolute_url_off_the_origin_carrying_credentials_is_refused_without_echoing_them() {
+    let server = MockServer::start().await;
+    let error = account(&server)
+        .get("https://user:s3cret@other.example.com/999/boards.json?token=s3cret")
+        .await
+        .unwrap_err();
+    assert_eq!(error.code(), ErrorCode::Usage);
+    assert!(!error.to_string().contains("s3cret"));
+    assert!(server.received_requests().await.unwrap().is_empty());
+}
+
 #[test]
 fn a_base_url_with_credentials_is_refused() {
     let error = Client::builder(Config::default().with_base_url("https://user:secret@fizzy.do"))
