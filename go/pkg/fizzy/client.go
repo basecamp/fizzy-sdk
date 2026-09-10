@@ -465,7 +465,7 @@ func (c *Client) singleRequest(ctx context.Context, method, url string, body any
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, ErrNetwork(err)
+		return nil, networkError(err, c.cfg.BaseURL)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
