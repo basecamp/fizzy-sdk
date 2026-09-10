@@ -1,0 +1,174 @@
+# Naming overrides for the Rust generator.
+#
+# Fizzy's OpenAPI tags no operation, so the service an operation files under comes from its
+# id: an [operation_services] override, else the first [[service_suffixes]] rule its id ends
+# in, tried in the order written. The rules and overrides are Go's (go/cmd/generate-services),
+# so every SDK files an operation under the same service. Method names come from the id with
+# the service's own noun removed (ListBoards -> boards().list()); [operation_methods] settles
+# the ones Go names differently. The generator fails when an id matches no rule, when two
+# operations in one service end up with the same method name, or when a name is a keyword.
+
+service_suffixes = [
+    { suffix = "CommentReactions", service = "reactions" },
+    { suffix = "CommentReaction", service = "reactions" },
+    { suffix = "CardReactions", service = "reactions" },
+    { suffix = "CardReaction", service = "reactions" },
+    { suffix = "Notifications", service = "notifications" },
+    { suffix = "Notification", service = "notifications" },
+    { suffix = "Comments", service = "comments" },
+    { suffix = "Comment", service = "comments" },
+    { suffix = "Webhooks", service = "webhooks" },
+    { suffix = "Webhook", service = "webhooks" },
+    { suffix = "Columns", service = "columns" },
+    { suffix = "Column", service = "columns" },
+    { suffix = "Boards", service = "boards" },
+    { suffix = "Board", service = "boards" },
+    { suffix = "Cards", service = "cards" },
+    { suffix = "Card", service = "cards" },
+    { suffix = "Steps", service = "steps" },
+    { suffix = "Step", service = "steps" },
+    { suffix = "Users", service = "users" },
+    { suffix = "User", service = "users" },
+    { suffix = "Tags", service = "tags" },
+    { suffix = "Pins", service = "pins" },
+    { suffix = "Session", service = "sessions" },
+    { suffix = "Device", service = "devices" },
+]
+
+[operation_services]
+GetMyIdentity = "identity"
+UpdateMyTimezone = "identity"
+CreateDirectUpload = "uploads"
+RedeemMagicLink = "sessions"
+CompleteJoin = "sessions"
+CompleteSignup = "sessions"
+GetNotificationTray = "notifications"
+BulkReadNotifications = "notifications"
+DeleteCardImage = "cards"
+ListBoardAccesses = "boards"
+ListColumnCards = "cards"
+ListActivities = "cards"
+RequestEmailAddressChange = "users"
+ConfirmEmailAddressChange = "users"
+CreateUserDataExport = "users"
+GetUserDataExport = "users"
+ListWebhookDeliveries = "webhooks"
+ListAccessTokens = "access_tokens"
+CreateAccessToken = "access_tokens"
+DeleteAccessToken = "access_tokens"
+GetAccountSettings = "account"
+UpdateAccountSettings = "account"
+GetJoinCode = "account"
+UpdateJoinCode = "account"
+ResetJoinCode = "account"
+UpdateAccountEntropy = "account"
+CreateAccountExport = "account"
+GetAccountExport = "account"
+UpdateBoardInvolvement = "boards"
+UpdateBoardEntropy = "boards"
+ListStreamCards = "boards"
+ListPostponedCards = "boards"
+ListClosedCards = "boards"
+MoveColumnLeft = "columns"
+MoveColumnRight = "columns"
+MarkCardRead = "cards"
+MarkCardUnread = "cards"
+SearchCards = "search"
+GetNotificationSettings = "notifications"
+UpdateNotificationSettings = "notifications"
+UpdateUserRole = "users"
+DeleteUserAvatar = "users"
+CreatePushSubscription = "users"
+DeletePushSubscription = "users"
+
+# Where Go's method name differs from the id with the service noun dropped.
+[operation_methods]
+GetMyIdentity = "get_my_identity"
+UpdateMyTimezone = "update_my_timezone"
+RedeemMagicLink = "redeem_magic_link"
+CompleteJoin = "complete_join"
+CompleteSignup = "complete_signup"
+CreateDirectUpload = "create_direct_upload"
+ListBoardAccesses = "list_board_accesses"
+ListClosedCards = "list_closed"
+ListPostponedCards = "list_postponed"
+ListStreamCards = "list_stream"
+ListColumnCards = "list_column_cards"
+ListActivities = "list_activities"
+ListCardReactions = "list_card"
+CreateCardReaction = "create_card"
+DeleteCardReaction = "delete_card"
+ListCommentReactions = "list_comment"
+CreateCommentReaction = "create_comment"
+DeleteCommentReaction = "delete_comment"
+GetJoinCode = "get_join_code"
+UpdateJoinCode = "update_join_code"
+ResetJoinCode = "reset_join_code"
+CreatePushSubscription = "create_push_subscription"
+DeletePushSubscription = "delete_push_subscription"
+CreateUserDataExport = "create_user_data_export"
+GetUserDataExport = "get_user_data_export"
+RequestEmailAddressChange = "request_email_address_change"
+ConfirmEmailAddressChange = "confirm_email_address_change"
+ListWebhookDeliveries = "list_webhook_deliveries"
+SearchCards = "search"
+MoveCard = "move_to_board"
+
+# The noun each service's operations act on, as the hooks report it. Nothing in OpenAPI
+# says it, so it is written down here; the generator fails when a service has no entry.
+[resource_types]
+access_tokens = "access_token"
+account = "account"
+boards = "board"
+cards = "card"
+columns = "column"
+comments = "comment"
+devices = "device"
+identity = "identity"
+notifications = "notification"
+pins = "pin"
+reactions = "reaction"
+search = "search"
+sessions = "session"
+steps = "step"
+tags = "tag"
+uploads = "direct_upload"
+users = "user"
+webhooks = "webhook"
+
+# Operations that act on something other than their service's noun.
+[operation_resource_types]
+ListBoardAccesses = "board_access"
+ListClosedCards = "card"
+ListPostponedCards = "card"
+ListStreamCards = "card"
+ListColumnCards = "card"
+ListActivities = "activity"
+GetAccountSettings = "account_settings"
+UpdateAccountSettings = "account_settings"
+GetJoinCode = "join_code"
+UpdateJoinCode = "join_code"
+ResetJoinCode = "join_code"
+CreateAccountExport = "account_export"
+GetAccountExport = "account_export"
+GetNotificationSettings = "notification_settings"
+UpdateNotificationSettings = "notification_settings"
+GetNotificationTray = "notification"
+UpdateMyTimezone = "timezone"
+ListWebhookDeliveries = "webhook_delivery"
+CreateUserDataExport = "data_export"
+GetUserDataExport = "data_export"
+CreatePushSubscription = "push_subscription"
+DeletePushSubscription = "push_subscription"
+RequestEmailAddressChange = "email_address"
+ConfirmEmailAddressChange = "email_address"
+DeleteUserAvatar = "avatar"
+UpdateUserRole = "role"
+DeleteCardImage = "card_image"
+TagCard = "tagging"
+AssignCard = "assignment"
+SelfAssignCard = "assignment"
+CompleteJoin = "join"
+CompleteSignup = "signup"
+SearchCards = "card"
+ListPins = "card"
