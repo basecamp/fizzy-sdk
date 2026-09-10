@@ -4,13 +4,13 @@ package com.basecamp.fizzy.webhooks
  * Webhook signature verification for Fizzy webhooks.
  *
  * Fizzy signs webhook payloads with HMAC-SHA256 using the webhook's
- * signing secret. The signature is sent in the `X-Fizzy-Signature` header
+ * signing secret. The signature is sent in the `X-Webhook-Signature` header
  * as a hex-encoded string.
  *
  * ```kotlin
  * val isValid = verifyWebhookSignature(
  *     payload = requestBody,
- *     signature = headers["X-Fizzy-Signature"],
+ *     signature = headers["X-Webhook-Signature"],
  *     secret = webhookSigningSecret,
  * )
  * ```

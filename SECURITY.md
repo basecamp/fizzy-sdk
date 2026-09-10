@@ -36,7 +36,7 @@ When debug logging is enabled, the SDK redacts sensitive headers before output. 
 Incoming webhook payloads can be verified using HMAC-SHA256 signatures. The SDK provides a verification function that:
 
 - Computes HMAC-SHA256 over the raw request body using the shared secret
-- Compares the computed signature against the `X-Webhook-Signature` header using constant-time comparison (the TypeScript `WebhookReceiver` still defaults to `x-fizzy-signature`; aligning it is a separate change)
+- Compares the computed signature against the `X-Webhook-Signature` header using constant-time comparison
 - Rejects payloads with missing, malformed, or mismatched signatures
 
 ## Pagination Origin Enforcement
