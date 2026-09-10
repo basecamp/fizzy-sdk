@@ -91,6 +91,32 @@ struct TransportErrorProjectionTests {
         }
     }
 
+    // A follow-up page's transport failure propagates unwrapped, projected.
+    @Test("A pagination transport failure renders no signed query")
+    func paginationTransportFailureRendersNoSignedQuery() async throws {
+        let client = FizzyClient(
+            auth: BearerAuth(tokenProvider: StaticTokenProvider("token")),
+            userAgent: "test/1.0",
+            config: FizzyConfig(baseURL: "http://127.0.0.1:1", enableRetry: false)
+        )
+        do {
+            _ = try await client.httpClient.fetchPage(url: Self.signedURL)
+            Issue.record("expected the dial to a closed port to fail")
+        } catch {
+            let urlError = try #require(error as? URLError, "the failure keeps its type")
+            #expect(urlError.failingURL?.absoluteString == "http://127.0.0.1:1/blob")
+            Self.expectNoSecret(error, "fetchPage error")
+        }
+    }
+
+    // A percent-encoded delimiter in the host stays encoded, never reparsed.
+    @Test("The projection keeps encoded host boundaries")
+    func projectionKeepsEncodedHostBoundaries() throws {
+        let raw = URLError(.timedOut, userInfo: [NSURLErrorFailingURLStringErrorKey: "https://foo%3Fbar/path?secret=SECRETVALUE"])
+        let projected = try #require(HTTPClient.projectedTransportError(raw) as? URLError)
+        #expect(projected.failingURL?.absoluteString == "https://foo%3Fbar/path")
+    }
+
     // A Transport that speaks .network wraps its own URLSession error; the
     // projection reaches through it and keeps the transport's message.
     @Test("A transport-spoken .network is projected through its cause")
