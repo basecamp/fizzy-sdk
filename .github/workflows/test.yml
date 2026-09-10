@@ -12,7 +12,7 @@ permissions:
 jobs:
   smithy:
     name: Smithy Verify
-    uses: ./.github/workflows/smithy-verify.yml
+    uses: $/.github/workflows/smithy-verify.yml
 
   test-go:
     name: Go
