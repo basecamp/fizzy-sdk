@@ -319,6 +319,7 @@ func (c *Client) GetAllWithLimit(ctx context.Context, path string, limit int) ([
 	if err != nil {
 		return nil, err
 	}
+	ctx = markCallerURL(ctx, path)
 	url := baseURL
 	var page int
 
@@ -362,12 +363,17 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body any) (
 	if err != nil {
 		return nil, err
 	}
+	return c.doRequestURL(markCallerURL(ctx, path), method, url, body)
+}
+
+// markCallerURL marks ctx when path is a caller's absolute URL rather than an API
+// path: it can be a signed one, on any origin, and the hooks and the network error
+// see it projected.
+func markCallerURL(ctx context.Context, path string) context.Context {
 	if strings.HasPrefix(path, "https://") {
-		// A caller's absolute URL can be a signed one, on any origin: the hooks and
-		// the network error see it projected.
-		ctx = markProjectedRequest(ctx)
+		return markProjectedRequest(ctx)
 	}
-	return c.doRequestURL(ctx, method, url, body)
+	return ctx
 }
 
 // trustedOrigin is the API origin a network error on this request may keep its cause
@@ -614,7 +620,7 @@ func (c *Client) buildURL(path string) (string, error) {
 		return path, nil
 	}
 	if strings.HasPrefix(path, "http://") {
-		return "", fmt.Errorf("URL must use HTTPS, got: %s", path)
+		return "", fmt.Errorf("URL must use HTTPS, got: %s", describeOrigin(path))
 	}
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path

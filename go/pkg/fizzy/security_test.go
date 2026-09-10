@@ -341,3 +341,68 @@ type opaqueWrapperError struct{ cause error }
 
 func (w *opaqueWrapperError) Error() string { return "request failed" }
 func (w *opaqueWrapperError) Unwrap() error { return w.cause }
+
+// TestCallerAbsoluteURLRendersNoSignedURL dials a closed port through Get and GetAll
+// — the two paths that take a caller's absolute URL through buildURL — with a signed
+// URL on the API origin itself, as the disk service serves, and checks the hooks see
+// its origin alone and the network error keeps the origin and nothing beneath it.
+func TestCallerAbsoluteURLRendersNoSignedURL(t *testing.T) {
+	const origin = "https://127.0.0.1:1"
+	hooks := &requestRecordingHooks{}
+	client := NewClient(&Config{BaseURL: origin}, &StaticTokenProvider{Token: "test"},
+		WithMaxRetries(1), WithBaseDelay(time.Millisecond), WithMaxJitter(time.Millisecond), WithHooks(hooks))
+	signed := origin + "/rails/active_storage/disk/SECRETVALUE/file.txt"
+
+	for name, request := range map[string]func() error{
+		"Get": func() error {
+			_, err := client.Get(context.Background(), signed)
+			return err
+		},
+		"GetAll": func() error {
+			_, err := client.GetAll(context.Background(), signed)
+			return err
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			hooks.infos = nil
+			err := request()
+			var sdkErr *Error
+			if !errors.As(err, &sdkErr) || sdkErr.Code != CodeNetwork {
+				t.Fatalf("expected a network *Error, got %T: %v", err, err)
+			}
+			for _, text := range append(renderings(err), sdkErr.Hint) {
+				if strings.Contains(text, "SECRETVALUE") {
+					t.Errorf("the signed path leaked into %q", text)
+				}
+			}
+			if !strings.Contains(sdkErr.Hint, `"`+origin+`"`) {
+				t.Errorf("hint should keep the origin, got %q", sdkErr.Hint)
+			}
+			if len(hooks.infos) == 0 {
+				t.Fatal("expected the request in the hooks")
+			}
+			for _, info := range hooks.infos {
+				if info.URL != origin {
+					t.Errorf("the request reached the hooks as %q, want the projected URL", info.URL)
+				}
+			}
+		})
+	}
+}
+
+// TestCallerInsecureURLRendersNoSignedURL hands Get a signed http URL, which buildURL
+// rejects, and checks the rejection names the origin alone.
+func TestCallerInsecureURLRendersNoSignedURL(t *testing.T) {
+	client := NewClient(&Config{BaseURL: "https://127.0.0.1:1"}, &StaticTokenProvider{Token: "test"})
+
+	_, err := client.Get(context.Background(), "http://storage.example/blob?signature=SECRETVALUE")
+	if err == nil {
+		t.Fatal("expected the http URL to be rejected")
+	}
+	if strings.Contains(err.Error(), "SECRETVALUE") {
+		t.Errorf("the signed query leaked into %q", err)
+	}
+	if !strings.Contains(err.Error(), "http://storage.example") {
+		t.Errorf("the rejection should name the origin, got %q", err)
+	}
+}
