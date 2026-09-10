@@ -38,6 +38,13 @@ class FizzyClientBuilder {
     /** Enable automatic retry on 429/503. */
     var enableRetry: Boolean = true
 
+    /**
+     * Total attempts per retryable request, the first one included. Floored at
+     * one, and a ceiling on each operation's own retry budget: 0 means no
+     * retries, not no request.
+     */
+    var maxRetries: Int = FizzyConfig.DEFAULT_MAX_RETRIES
+
     /** Observability hooks. */
     var hooks: FizzyHooks = NoopHooks
 
@@ -81,6 +88,7 @@ class FizzyClientBuilder {
             userAgent = userAgent,
             enableCache = enableCache,
             enableRetry = enableRetry,
+            maxRetries = maxRetries,
         )
 
         // Validate HTTPS (allow localhost for testing)

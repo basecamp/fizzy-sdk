@@ -5,6 +5,7 @@ import com.basecamp.fizzy.generated.columns
 import com.basecamp.fizzy.generated.identity
 import com.basecamp.fizzy.generated.pins
 import com.basecamp.fizzy.generated.services.UpdateMyTimezoneBody
+import com.basecamp.fizzy.http.FizzyHttpClient
 import io.ktor.client.engine.mock.*
 import io.ktor.http.*
 import kotlinx.coroutines.test.runTest
@@ -396,6 +397,103 @@ class FizzyTest {
         val column = client.forAccount("999").columns.get("board1", "abc123")
         assertEquals("Blue", column.color?.name)
         assertEquals("var(--color-card-1)", column.color?.value)
+        client.close()
+    }
+
+    // -- retry cap --
+
+    @Test
+    fun testComputeMaxAttemptsFloorsAtOneAndCeilsTheOperationBudget() {
+        assertEquals(1, FizzyHttpClient.computeMaxAttempts(0, 3))
+        assertEquals(1, FizzyHttpClient.computeMaxAttempts(0, null))
+        assertEquals(2, FizzyHttpClient.computeMaxAttempts(2, 3))
+        assertEquals(3, FizzyHttpClient.computeMaxAttempts(5, 3))
+        assertEquals(5, FizzyHttpClient.computeMaxAttempts(5, null))
+    }
+
+    private fun alwaysUnavailableEngine(requests: MutableList<String>) = MockEngine { request ->
+        requests += request.url.toString()
+        respond(
+            content = """{"error":"Service unavailable"}""",
+            status = HttpStatusCode.ServiceUnavailable,
+            headers = headersOf(HttpHeaders.ContentType to listOf("application/json")),
+        )
+    }
+
+    @Test
+    fun testZeroMaxRetriesSendsExactlyOneRequestOnAGovernedOperation() = runTest {
+        // GetBoard carries a retry budget of 3 in the behavior model, and 503 is
+        // in its retry set, so only the client cap stands between one attempt and
+        // three here. A cap of 0 is "no retries", not "no request".
+        val requests = mutableListOf<String>()
+        val client = FizzyClient {
+            accessToken("test-token")
+            baseUrl = "https://fizzy.do"
+            engine = alwaysUnavailableEngine(requests)
+            maxRetries = 0
+        }
+
+        val ex = assertFailsWith<FizzyException.Api> {
+            client.forAccount("999").boards.get("abc123")
+        }
+        assertEquals(503, ex.httpStatus)
+        assertEquals(listOf("https://fizzy.do/999/boards/abc123"), requests)
+        client.close()
+    }
+
+    @Test
+    fun testMaxRetriesIsACeilingOnTheOperationBudget() = runTest {
+        val requests = mutableListOf<String>()
+        val client = FizzyClient {
+            accessToken("test-token")
+            baseUrl = "https://fizzy.do"
+            engine = alwaysUnavailableEngine(requests)
+            maxRetries = 2
+        }
+
+        assertFailsWith<FizzyException.Api> {
+            client.forAccount("999").boards.get("abc123")
+        }
+        assertEquals(2, requests.size)
+        client.close()
+    }
+
+    @Test
+    fun testFollowUpPagesKeepTheOperationBudgetUnderARaisedCap() = runTest {
+        // ListBoards has a modelled budget of 3. The first page carries the
+        // operation name; the pages a Link header leads to must carry it too,
+        // or a cap raised above the model would apply in full to page two.
+        val requests = mutableListOf<String>()
+        val mockEngine = MockEngine { request ->
+            requests += request.url.toString()
+            if (requests.size == 1) {
+                respond(
+                    content = """[{"id":1,"name":"Board","all_access":true,"created_at":"2026-01-01T00:00:00Z","url":"https://fizzy.do/999/boards/1"}]""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(
+                        HttpHeaders.ContentType to listOf("application/json"),
+                        HttpHeaders.Link to listOf("""<https://fizzy.do/999/boards.json?page=2>; rel="next""""),
+                    ),
+                )
+            } else {
+                respond(
+                    content = """{"error":"Service unavailable"}""",
+                    status = HttpStatusCode.ServiceUnavailable,
+                    headers = headersOf(HttpHeaders.ContentType to listOf("application/json")),
+                )
+            }
+        }
+        val client = FizzyClient {
+            accessToken("test-token")
+            baseUrl = "https://fizzy.do"
+            engine = mockEngine
+            maxRetries = 5
+        }
+
+        assertFailsWith<FizzyException.Api> {
+            client.forAccount("999").boards.list()
+        }
+        assertEquals(1 + 3, requests.size)
         client.close()
     }
 }

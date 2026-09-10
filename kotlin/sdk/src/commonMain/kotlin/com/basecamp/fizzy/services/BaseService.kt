@@ -248,7 +248,7 @@ abstract class BaseService(
                     throw FizzyException.Validation("Cross-origin pagination link rejected: $nextUrl (initial: $initialUrl)")
                 }
 
-                currentResponse = http.requestWithRetry(HttpMethod.Get, nextUrl)
+                currentResponse = http.requestWithRetry(HttpMethod.Get, nextUrl, operationName = info.operation)
 
                 if (!currentResponse.status.isSuccess()) {
                     throw errorFromResponse(currentResponse)
@@ -328,7 +328,7 @@ abstract class BaseService(
                     throw FizzyException.Validation("Cross-origin pagination link rejected: $nextUrl (initial: $initialUrl)")
                 }
 
-                currentResponse = http.requestWithRetry(HttpMethod.Get, nextUrl)
+                currentResponse = http.requestWithRetry(HttpMethod.Get, nextUrl, operationName = info.operation)
 
                 if (!currentResponse.status.isSuccess()) {
                     throw errorFromResponse(currentResponse)

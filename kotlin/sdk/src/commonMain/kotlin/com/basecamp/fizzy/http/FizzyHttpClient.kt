@@ -113,7 +113,7 @@ internal class FizzyHttpClient(
         } else {
             status in RETRYABLE_STATUS_CODES
         }
-        val maxAttempts = opRetry?.maxRetries ?: config.maxRetries
+        val maxAttempts = computeMaxAttempts(config.maxRetries, opRetry?.maxRetries)
         val baseDelayMs = opRetry?.baseDelayMs ?: config.baseRetryDelay.inWholeMilliseconds
 
         if (shouldRetry && attempt < maxAttempts) {
@@ -211,6 +211,14 @@ internal class FizzyHttpClient(
 
         /** HTTP methods that are safe to retry (idempotent). */
         val IDEMPOTENT_METHODS = setOf(HttpMethod.Get, HttpMethod.Put, HttpMethod.Patch, HttpMethod.Delete, HttpMethod.Head)
+
+        /**
+         * The attempt budget for one request: the client cap, floored at one so a
+         * cap of 0 still sends the request once, and a ceiling on the operation's
+         * own budget from the behavior model rather than a value it replaces.
+         */
+        internal fun computeMaxAttempts(configuredCap: Int, opMaxRetries: Int?): Int =
+            minOf(configuredCap.coerceAtLeast(1), opMaxRetries ?: Int.MAX_VALUE)
 
         private const val MAX_JITTER_MS = 100L
 

@@ -20,7 +20,10 @@ data class FizzyConfig(
     val enableRetry: Boolean = true,
     /** Request timeout. */
     val timeout: Duration = 30.seconds,
-    /** Maximum retry attempts for GET requests. */
+    /**
+     * Total attempts per retryable request, the first one included. Floored at
+     * one, and a ceiling on each operation's own retry budget.
+     */
     val maxRetries: Int = DEFAULT_MAX_RETRIES,
     /** Maximum pages to follow for pagination (safety cap). */
     val maxPages: Int = DEFAULT_MAX_PAGES,
