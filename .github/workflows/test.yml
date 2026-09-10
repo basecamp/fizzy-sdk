@@ -218,6 +218,7 @@ jobs:
           workspaces: |
             rust
             conformance/runner/rust
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Install cargo-deny
         if: matrix.toolchain == 'stable'
@@ -366,6 +367,7 @@ jobs:
           workspaces: |
             rust
             conformance/runner/rust
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: make conformance-runner-tests-rust
       - run: make conformance-rust
 
