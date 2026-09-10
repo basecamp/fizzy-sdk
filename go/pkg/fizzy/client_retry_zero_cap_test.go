@@ -60,9 +60,11 @@ func TestClient_ZeroMaxRetriesReturnsTheOneAttemptsError(t *testing.T) {
 	}))
 	defer server.Close()
 
+	// Zero jitter is an accepted option; the final attempt must not compute a
+	// backoff it will never sleep, since rand.Int63n(0) panics.
 	hooks := &retryRecordingHooks{}
 	client := NewClient(&Config{BaseURL: server.URL}, &StaticTokenProvider{Token: "test-token"},
-		WithMaxRetries(0), WithBaseDelay(time.Millisecond), WithMaxJitter(time.Millisecond), WithHooks(hooks))
+		WithMaxRetries(0), WithBaseDelay(time.Millisecond), WithMaxJitter(0), WithHooks(hooks))
 
 	_, err := client.Get(context.Background(), "/cards/1")
 	if err == nil {
@@ -111,5 +113,16 @@ func TestClient_ExhaustedAttemptsWrapTheLastError(t *testing.T) {
 	}
 	if len(hooks.next) != 1 || hooks.next[0] != 2 {
 		t.Errorf("OnRetry should announce attempt 2 only, got %v", hooks.next)
+	}
+}
+
+func TestBackoffDelayWithZeroJitterIsDeterministic(t *testing.T) {
+	client := NewClient(&Config{BaseURL: "https://fizzy.example.com"}, &StaticTokenProvider{Token: "test-token"},
+		WithBaseDelay(10*time.Millisecond), WithMaxJitter(0))
+
+	for attempt, want := range map[int]time.Duration{1: 10 * time.Millisecond, 2: 20 * time.Millisecond, 3: 40 * time.Millisecond} {
+		if got := client.backoffDelay(attempt); got != want {
+			t.Errorf("backoffDelay(%d) = %v, want %v", attempt, got, want)
+		}
 	}
 }
