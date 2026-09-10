@@ -62,13 +62,33 @@ fn route(case: &TestCase) -> Result<&'static Route, String> {
         .ok_or_else(|| format!("unknown operation {:?}", case.operation))
 }
 
+/// A case must agree with the generated route it names: same method, same path template
+/// (Fizzy serves each route with or without `.json`, so that suffix is the one allowance).
+/// The request still goes out as the fixture spells it, through the raw verbs; this is
+/// what stops a fixture from testing a request the model does not describe.
 pub fn validate(case: &TestCase) -> Result<(), String> {
-    route(case)?;
+    let route = route(case)?;
     if case.config_overrides.max_pages.is_some() || case.config_overrides.max_items.is_some() {
         return Err("configOverrides.maxPages/maxItems are not supported by this runner".into());
     }
-    method(case)?;
+    let method = method(case)?;
+    if method != route.method {
+        return Err(format!(
+            "fixture sends {method} but the generated route {} is {}",
+            route.id, route.method
+        ));
+    }
+    if !case.path.is_empty() && without_json(&case.path) != without_json(route.path) {
+        return Err(format!(
+            "fixture path {} does not match the generated route {} path {}",
+            case.path, route.id, route.path
+        ));
+    }
     Ok(())
+}
+
+fn without_json(path: &str) -> &str {
+    path.strip_suffix(".json").unwrap_or(path)
 }
 
 fn method(case: &TestCase) -> Result<Method, String> {

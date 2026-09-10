@@ -13,8 +13,8 @@ use tokio::net::TcpListener;
 use tokio::task::JoinHandle;
 use url::Url;
 
-use crate::assertions::next_link;
 use crate::fixtures::MockResponse;
+use fizzy_sdk::pagination::next_link;
 
 /// One request the mock server saw.
 #[derive(Debug, Clone)]
@@ -149,25 +149,36 @@ fn rewrite_link(
     ) else {
         return mock.clone();
     };
-    let rewritten_value = value
-        .split(',')
-        .map(|part| rewrite_target(part, &from, &to, &foreign))
-        .collect::<Vec<_>>()
-        .join(",");
+    let rewritten_value = rewrite_targets(&value, &from, &to, &foreign);
     let mut rewritten = mock.clone();
     rewritten.headers.insert(name, rewritten_value);
     rewritten
 }
 
-fn rewrite_target(part: &str, from: &Url, to: &Url, foreign: &Url) -> String {
-    let Some((prefix, rest)) = part.split_once('<') else {
-        return part.to_string();
-    };
-    let Some((target, suffix)) = rest.split_once('>') else {
-        return part.to_string();
-    };
+/// Walks the header for `<target>` segments and rewrites each target by its own origin. A
+/// URI-reference cannot contain `>`, so the brackets are the only delimiter that matters;
+/// commas inside a target or a quoted parameter are left alone.
+fn rewrite_targets(header: &str, from: &Url, to: &Url, foreign: &Url) -> String {
+    let mut out = String::with_capacity(header.len());
+    let mut rest = header;
+    while let Some((before, after)) = rest.split_once('<') {
+        out.push_str(before);
+        out.push('<');
+        let Some((target, tail)) = after.split_once('>') else {
+            out.push_str(after);
+            return out;
+        };
+        out.push_str(&rewrite_target(target, from, to, foreign));
+        out.push('>');
+        rest = tail;
+    }
+    out.push_str(rest);
+    out
+}
+
+fn rewrite_target(target: &str, from: &Url, to: &Url, foreign: &Url) -> String {
     let Ok(mut url) = Url::parse(target) else {
-        return part.to_string();
+        return target.to_string();
     };
     let destination = if url.origin() == from.origin() {
         to
@@ -177,7 +188,7 @@ fn rewrite_target(part: &str, from: &Url, to: &Url, foreign: &Url) -> String {
     let _ = url.set_scheme(destination.scheme());
     let _ = url.set_host(destination.host_str());
     let _ = url.set_port(destination.port());
-    format!("{prefix}<{url}>{suffix}")
+    url.to_string()
 }
 
 fn header<'a>(mock: &'a MockResponse, name: &str) -> Option<&'a str> {
@@ -321,6 +332,18 @@ mod tests {
             let rewritten = rewrite_link(&mock, "https://fizzy.do", SERVER, FOREIGN);
             assert_eq!(rewritten.headers["Link"], expected, "{link}");
         }
+    }
+
+    #[test]
+    fn keeps_commas_inside_targets_and_quoted_parameters() {
+        let mock = linked(
+            "<https://fizzy.do/a,b?x=1,2>; rel=\"next\"; title=\"one, two\", <https://fizzy.do/c>; rel=\"prev\"",
+        );
+        let rewritten = rewrite_link(&mock, "https://fizzy.do", SERVER, FOREIGN);
+        assert_eq!(
+            rewritten.headers["Link"],
+            "<http://127.0.0.1:4321/a,b?x=1,2>; rel=\"next\"; title=\"one, two\", <http://127.0.0.1:4321/c>; rel=\"prev\""
+        );
     }
 
     #[test]

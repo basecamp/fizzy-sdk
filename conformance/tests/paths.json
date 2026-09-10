@@ -519,7 +519,7 @@
   {
     "name": "UpdateAccountEntropy path",
     "operation": "UpdateAccountEntropy",
-    "method": "PATCH",
+    "method": "PUT",
     "path": "/{accountId}/account/entropy.json",
     "pathParams": { "accountId": "999" },
     "requestBody": { "auto_postpone_period_in_days": 7 },
@@ -635,7 +635,7 @@
   {
     "name": "UpdateBoardEntropy path",
     "operation": "UpdateBoardEntropy",
-    "method": "PATCH",
+    "method": "PUT",
     "path": "/{accountId}/boards/{boardId}/entropy.json",
     "pathParams": { "accountId": "999", "boardId": 42 },
     "requestBody": { "auto_postpone_period_in_days": 14 },

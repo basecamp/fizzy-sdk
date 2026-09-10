@@ -294,13 +294,14 @@ kt-clean:
 # Conformance
 #---
 
-.PHONY: conformance-build conformance-go conformance-kotlin conformance-typescript conformance-ruby conformance-swift conformance
+.PHONY: conformance-build conformance-go conformance-kotlin conformance-typescript conformance-ruby conformance-swift conformance-rust conformance-rs conformance-runner-tests-rust conformance
 
 conformance-build:
 	@echo "==> Building conformance runners..."
 	cd conformance/runner/go && go build -o conformance-runner .
 	cd conformance/runner/typescript && npm ci
 	cd kotlin && ./gradlew :conformance:build
+	cd conformance/runner/rust && cargo build --release --locked
 
 conformance-go: conformance-build
 	@echo "==> Running Go conformance..."
@@ -324,7 +325,17 @@ conformance-swift:
 		cd conformance/runner/swift && swift run ConformanceRunner ../../tests/; \
 	else echo "SKIP: Swift conformance runner not found"; fi
 
-conformance: conformance-go conformance-typescript conformance-ruby conformance-kotlin
+conformance-rust:
+	@echo "==> Running Rust conformance..."
+	cd conformance/runner/rust && cargo run -q --release --locked
+
+conformance-rs: conformance-rust
+
+conformance-runner-tests-rust:
+	@echo "==> Running Rust conformance runner tests..."
+	cd conformance/runner/rust && cargo test --locked
+
+conformance: conformance-go conformance-typescript conformance-ruby conformance-kotlin conformance-rust
 	@echo "==> All conformance tests passed"
 
 #---
@@ -470,6 +481,8 @@ help:
 	@echo "  conformance-typescript Run TypeScript conformance tests"
 	@echo "  conformance-ruby     Run Ruby conformance tests"
 	@echo "  conformance-swift    Run Swift conformance tests"
+	@echo "  conformance-rust     Run Rust conformance tests"
+	@echo "  conformance-runner-tests-rust Run the Rust conformance runner's own tests"
 	@echo "  conformance-build    Build conformance test runners"
 	@echo ""
 	@echo "Provenance:"

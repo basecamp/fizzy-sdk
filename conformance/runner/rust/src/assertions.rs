@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use axum::http::HeaderMap;
+use fizzy_sdk::pagination::next_link;
 use serde_json::Value;
 use url::Url;
 
@@ -114,8 +115,9 @@ fn check_delay_between_requests(run: &Run, assertion: &Assertion) -> Result<(), 
     Ok(())
 }
 
-/// The status the case is about. A failure carries it on the error itself; only a success
-/// has no error to read it from, and there the response's status is the answer.
+/// The status the case is about. A failure has to carry it on the error itself — reading
+/// it off the server instead would pass a case where the SDK dropped the status. Only a
+/// success has no error to read it from, and there the response's status is the answer.
 fn check_status_code(run: &Run, assertion: &Assertion) -> Result<(), String> {
     let expected = expected_int(assertion)?;
     let actual = match run.outcome {
@@ -130,7 +132,7 @@ fn check_status_code(run: &Run, assertion: &Assertion) -> Result<(), String> {
                 "expected status {expected}, but no request was made"
             ));
         }
-        Err(error) => match status_of(error).or_else(|| inferred_status(&code_of(error))) {
+        Err(error) => match status_of(error) {
             Some(status) => i64::from(status),
             None => {
                 return Err(format!(
@@ -143,18 +145,6 @@ fn check_status_code(run: &Run, assertion: &Assertion) -> Result<(), String> {
         Ok(())
     } else {
         Err(format!("expected status {expected}, got {actual}"))
-    }
-}
-
-/// The status an error code implies, for an error the SDK raised without one.
-fn inferred_status(code: &str) -> Option<u16> {
-    match code {
-        "auth_required" => Some(401),
-        "forbidden" => Some(403),
-        "not_found" => Some(404),
-        "validation" => Some(422),
-        "rate_limit" => Some(429),
-        _ => None,
     }
 }
 
@@ -454,19 +444,6 @@ fn header<'a>(headers: &'a HeaderMap, name: &str) -> &'a str {
         .unwrap_or_default()
 }
 
-/// The `rel="next"` target of a `Link` header, if any.
-pub fn next_link(link: &str) -> Option<String> {
-    link.split(',').find_map(|part| {
-        let (target, params) = part.trim().split_once('>')?;
-        let target = target.trim().strip_prefix('<')?;
-        params
-            .split(';')
-            .map(|param| param.trim().replace(['"', '\''], ""))
-            .any(|param| param.eq_ignore_ascii_case("rel=next"))
-            .then(|| target.to_string())
-    })
-}
-
 fn same_origin(a: &Url, b: &Url) -> bool {
     a.scheme().eq_ignore_ascii_case(b.scheme())
         && a.host_str()
@@ -544,14 +521,6 @@ fn display(value: &Value) -> String {
 mod tests {
     use super::*;
     use serde_json::json;
-
-    #[test]
-    fn next_link_reads_the_next_relation_only() {
-        let link = "<https://fizzy.do/999/boards.json?page=1>; rel=\"prev\", </999/boards.json?page=2>; rel=\"next\"";
-        assert_eq!(next_link(link).as_deref(), Some("/999/boards.json?page=2"));
-        assert_eq!(next_link("<https://x/y>; rel=\"prev\""), None);
-        assert_eq!(next_link(""), None);
-    }
 
     #[test]
     fn lookup_walks_objects_and_arrays() {
