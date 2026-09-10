@@ -151,9 +151,15 @@ package final class HTTPClient: Sendable {
                 return (data, httpResponse)
 
             } catch let error as FizzyError {
-                throw error
+                // The transport's own verdict, rethrown — with a .network's
+                // cause projected like a raw failure (SPEC §9), since a
+                // transport wrapping URLSession chains its URLError.
+                throw Self.projectedTransportError(error)
             } catch {
-                // Network-level error
+                // Network-level error. Projected once, before anything
+                // renders it (SPEC §9): the retry hook and the cause chain see
+                // the same URL-free shape.
+                let error = Self.projectedTransportError(error)
                 let durationMs = Int((CFAbsoluteTimeGetCurrent() - startTime) * 1000)
                 safeInvokeHooks {
                     $0.onRequestEnd(info, result: RequestResult(statusCode: 0, durationMs: durationMs))
@@ -205,6 +211,56 @@ package final class HTTPClient: Sendable {
         }
 
         return (data, httpResponse)
+    }
+
+    // MARK: - Transport error projection (SPEC §9)
+
+    /// How far ``projectedTransportError(_:depth:)`` follows a `.network`
+    /// cause chain. Any real chain is one or two links deep; the bound keeps a
+    /// caller-built cycle from spinning.
+    private static let maxCauseChainDepth = 8
+
+    /// Projection of a transport failure before it becomes the SDK's error or
+    /// reaches a hook. `URLError` carries the failing URL in its `userInfo` —
+    /// `NSURLErrorFailingURLErrorKey`, its string twin, and the session task's
+    /// own description — and Swift's default rendering of
+    /// `.network(message:cause:)` prints all of it, query included, which on a
+    /// signed URL is the credential. The error is rebuilt from parts this SDK
+    /// chooses: the same code, so a caller's `URLError` matching classifies it
+    /// as before; the localized description; and the failing URL as origin and
+    /// path — never its query, userinfo or fragment. A transport that already
+    /// speaks `.network` keeps its message and has its cause projected the same
+    /// way. Any other error is the transport's own diagnostic and passes
+    /// through unchanged.
+    static func projectedTransportError(_ error: any Error, depth: Int = 0) -> any Error {
+        if let urlError = error as? URLError {
+            var userInfo: [String: Any] = [NSLocalizedDescriptionKey: urlError.localizedDescription]
+            if let failingURL = urlError.failingURL,
+               let projected = URL(string: stripQueryAndFragment(failingURL.absoluteString)) {
+                userInfo[NSURLErrorFailingURLErrorKey] = projected
+                userInfo[NSURLErrorFailingURLStringErrorKey] = projected.absoluteString
+            }
+            return URLError(urlError.code, userInfo: userInfo)
+        }
+        if let fizzyError = error as? FizzyError, case .network(let message, let cause) = fizzyError {
+            guard let cause, depth < maxCauseChainDepth else { return FizzyError.network(message: message, cause: nil) }
+            return FizzyError.network(message: message, cause: projectedTransportError(cause, depth: depth + 1))
+        }
+        return error
+    }
+
+    /// Renders a URL as origin and path only — no userinfo, no query (where a
+    /// signed credential rides), no fragment. Rebuilt from a parse; a URL with
+    /// no complete origin renders as the fixed token, never as any of its own
+    /// text.
+    private static func stripQueryAndFragment(_ url: String) -> String {
+        guard let components = URLComponents(string: url),
+              let scheme = components.scheme,
+              let host = components.host, !host.isEmpty
+        else { return "unparsable" }
+        let renderedHost = host.contains(":") && !host.hasPrefix("[") ? "[\(host)]" : host
+        let port = components.port.map { ":\($0)" } ?? ""
+        return "\(scheme)://\(renderedHost)\(port)\(components.percentEncodedPath)"
     }
 
     // MARK: - Private
