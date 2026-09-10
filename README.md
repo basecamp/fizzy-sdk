@@ -70,7 +70,7 @@ let account = client.for_account("12345")?;
 let boards = account.boards().list().await?;
 ```
 
-`cargo add fizzy-sdk` — Tokio async, `rustls` TLS, MSRV 1.88. On
+`cargo add fizzy-sdk tokio --features tokio/macros,tokio/rt-multi-thread` — the client is async on Tokio, so the snippet runs inside a `#[tokio::main]` function; `rustls` TLS, MSRV 1.88. On
 [crates.io](https://crates.io/crates/fizzy-sdk) and [docs.rs](https://docs.rs/fizzy-sdk);
 the [crate README](rust/fizzy-sdk/README.md) covers auth, pagination, errors, hooks and the
 develop loop.

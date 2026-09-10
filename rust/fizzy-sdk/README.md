@@ -192,7 +192,8 @@ every page after. `Retry-After` is honored, in seconds or as an HTTP date, up to
 raw call can say so with `RequestOptions::idempotent`, or opt out with
 `RequestOptions::no_retry`. Retries back off exponentially with jitter. On the builder,
 `max_attempts` is a ceiling over every route's budget (3 by default, counting the first
-request), `max_delay` caps a route's backoff and is never lower than `base_delay`,
+request), `max_delay` caps every wait, a route's first backoff included (set it below `base_delay` and
+the first wait shrinks to it),
 `max_jitter` bounds the randomness, and `base_delay` is the first backoff for raw calls,
 which have no route to read one from.
 
