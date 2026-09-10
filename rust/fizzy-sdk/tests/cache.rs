@@ -1,5 +1,6 @@
 //! The ETag cache: a repeated read revalidates and takes a 304 as the body it holds.
 
+#![cfg(feature = "reqwest")]
 #![allow(clippy::unwrap_used, missing_docs)]
 
 mod support;

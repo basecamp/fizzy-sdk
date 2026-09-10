@@ -161,7 +161,7 @@ fn verify(crate_dir: &Path, files: &BTreeMap<PathBuf, String>) -> Result<(), Str
         Ok(())
     } else {
         Err(format!(
-            "{} is out of date. Run `make rs-generate`. Stale files:\n  {}",
+            "{} is out of date. Run `make -C rust generate`. Stale files:\n  {}",
             crate_dir.display(),
             stale.join("\n  ")
         ))

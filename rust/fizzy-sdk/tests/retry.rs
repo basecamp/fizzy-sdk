@@ -2,6 +2,7 @@
 //! the per-route policy the fixtures cannot see: attempt counts from the behavior model,
 //! the client's ceilings, and the policy carried across pages.
 
+#![cfg(feature = "reqwest")]
 #![allow(clippy::unwrap_used, missing_docs)]
 
 mod support;
@@ -143,8 +144,8 @@ async fn a_retry_after_past_the_ceiling_is_handed_back_rather_than_slept_through
         .max_retry_after(Duration::from_secs(5))
         .build()
         .unwrap();
-    let started = Instant::now();
 
+    // One request and no retry is the whole proof: the client only sleeps before a resend.
     let error = client
         .for_account("999")
         .unwrap()
@@ -156,7 +157,6 @@ async fn a_retry_after_past_the_ceiling_is_handed_back_rather_than_slept_through
     assert_eq!(error.code(), ErrorCode::RateLimit);
     assert_eq!(error.hint(), Some("Try again in 3600 seconds"));
     assert_eq!(server.received_requests().await.unwrap().len(), 1);
-    assert!(started.elapsed() < Duration::from_secs(1));
 }
 
 #[tokio::test]

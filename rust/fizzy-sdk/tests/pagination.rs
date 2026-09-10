@@ -1,6 +1,7 @@
 //! The pagination and security fixtures (`conformance/tests/pagination.json`,
 //! `security.json`) as unit tests, plus the typed walks the fixtures cannot see.
 
+#![cfg(feature = "reqwest")]
 #![allow(clippy::unwrap_used, missing_docs)]
 
 mod support;
@@ -224,4 +225,32 @@ async fn get_all_stops_at_the_page_cap() {
         .unwrap();
 
     assert_eq!(items.len(), 2);
+}
+
+#[tokio::test]
+async fn the_page_stream_yields_a_page_before_fetching_the_next() {
+    let server = MockServer::start().await;
+    page(
+        &server,
+        None,
+        json!([board("1")]),
+        Some("/999/boards.json?page=2".to_string()),
+    )
+    .await;
+    page(&server, Some("2"), json!([board("2")]), None).await;
+    let account = account(&server);
+
+    let first = account.boards().list().await.unwrap();
+    let mut pages = std::pin::pin!(account.client().pages(first));
+    let one = pages.next().await.unwrap().unwrap();
+    assert_eq!(one[0].name, "Board 1");
+    assert_eq!(
+        server.received_requests().await.unwrap().len(),
+        1,
+        "page 2 not fetched yet"
+    );
+    let two = pages.next().await.unwrap().unwrap();
+    assert_eq!(two[0].name, "Board 2");
+    assert!(pages.next().await.is_none());
+    assert_eq!(server.received_requests().await.unwrap().len(), 2);
 }

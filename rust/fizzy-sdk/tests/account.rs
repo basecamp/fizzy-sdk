@@ -1,6 +1,7 @@
 //! The account split: paths under `/{accountId}` come from `AccountClient`, the rest from
 //! `Client`, and a route that needs an account says so rather than sending a broken path.
 
+#![cfg(feature = "reqwest")]
 #![allow(clippy::unwrap_used, missing_docs)]
 
 mod support;

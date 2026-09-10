@@ -1,6 +1,7 @@
 //! What the hooks hear: one operation per call, one request per attempt, every retry, and
 //! the gate that can turn a call away before it is sent.
 
+#![cfg(feature = "reqwest")]
 #![allow(clippy::unwrap_used, missing_docs)]
 
 mod support;

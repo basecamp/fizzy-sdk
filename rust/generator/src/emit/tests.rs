@@ -15,7 +15,7 @@ const ACCOUNT: &str = "999";
 /// Renders `main.rs`: the module list and the client every test builds.
 pub fn render_main(model: &Model) -> String {
     let mut out = String::from(HEADER);
-    out.push_str("#![allow(clippy::pedantic, clippy::unwrap_used, missing_docs)]\n\n");
+    out.push_str("#![cfg(feature = \"reqwest\")]\n#![allow(clippy::pedantic, clippy::unwrap_used, missing_docs)]\n\n");
     for service in &model.services {
         let _ = writeln!(out, "mod {};", service.name);
     }
@@ -57,7 +57,7 @@ pub fn render_service(service: &Service) -> String {
     if service
         .operations
         .iter()
-        .any(|operation| operation.query_params.iter().any(|param| param.required))
+        .any(|operation| !operation.query_params.is_empty())
     {
         matchers.push("query_param");
     }
@@ -89,39 +89,32 @@ fn render_test(out: &mut String, service: &Service, operation: &Operation) {
     if let Some(body) = &operation.body {
         let _ = writeln!(out, "    let body = {body}::default();");
     }
+    let optional: Vec<_> = operation
+        .query_params
+        .iter()
+        .filter(|param| !param.required)
+        .collect();
+    if !optional.is_empty() {
+        let _ = writeln!(out, "    let params = {}Params {{", operation.id);
+        for param in &optional {
+            let value = sample_query_argument(param.kind);
+            let value = if param.list {
+                format!("vec![{value}.into()]")
+            } else if param.kind == ParamKind::String {
+                format!("{value}.into()")
+            } else {
+                value
+            };
+            let _ = writeln!(
+                out,
+                "        {}: Some({value}),",
+                field_ident(&param.wire_name)
+            );
+        }
+        out.push_str("    };\n");
+    }
 
-    let _ = writeln!(
-        out,
-        "    Mock::given(method(\"{}\"))",
-        operation.http_method
-    );
-    let _ = writeln!(out, "        .and(path(\"{}\"))", sample_path(operation));
-    for param in operation.query_params.iter().filter(|param| param.required) {
-        let _ = writeln!(
-            out,
-            "        .and(query_param(\"{}\", \"{}\"))",
-            param.wire_name,
-            sample_query(param.kind)
-        );
-    }
-    if operation.body.is_some() {
-        out.push_str("        .and(body_json(serde_json::to_value(&body).unwrap()))\n");
-    }
-    match expected_type {
-        Some(_) => {
-            let _ = writeln!(
-                out,
-                "        .respond_with(ResponseTemplate::new({status}).set_body_json(serde_json::to_value(&expected).unwrap()))"
-            );
-        }
-        None => {
-            let _ = writeln!(
-                out,
-                "        .respond_with(ResponseTemplate::new({status}))"
-            );
-        }
-    }
-    out.push_str("        .expect(1)\n        .mount(&server)\n        .await;\n");
+    render_mock(out, operation, status, expected_type.is_some());
 
     let accessor = if operation.account_scoped {
         format!(
@@ -142,8 +135,8 @@ fn render_test(out: &mut String, service: &Service, operation: &Operation) {
             sample_query_argument(param.kind)
         });
     }
-    if operation.query_params.iter().any(|param| !param.required) {
-        arguments.push(format!("&{}Params::default()", operation.id));
+    if !optional.is_empty() {
+        arguments.push("&params".to_string());
     }
     if operation.body.is_some() {
         arguments.push("&body".to_string());
@@ -168,6 +161,40 @@ fn render_test(out: &mut String, service: &Service, operation: &Operation) {
         (Some(_), false) => out.push_str("    assert_eq!(answer, expected);\n"),
     }
     out.push_str("    server.verify().await;\n}\n\n");
+}
+
+/// The mock every test mounts: the method and path the model names, every query parameter
+/// with its sample value, the body when there is one, and the answer.
+fn render_mock(out: &mut String, operation: &Operation, status: u16, answers_json: bool) {
+    let _ = writeln!(
+        out,
+        "    Mock::given(method(\"{}\"))",
+        operation.http_method
+    );
+    let _ = writeln!(out, "        .and(path(\"{}\"))", sample_path(operation));
+    for param in &operation.query_params {
+        let _ = writeln!(
+            out,
+            "        .and(query_param(\"{}\", \"{}\"))",
+            param.wire_name,
+            sample_query(param.kind)
+        );
+    }
+    if operation.body.is_some() {
+        out.push_str("        .and(body_json(serde_json::to_value(&body).unwrap()))\n");
+    }
+    if answers_json {
+        let _ = writeln!(
+            out,
+            "        .respond_with(ResponseTemplate::new({status}).set_body_json(serde_json::to_value(&expected).unwrap()))"
+        );
+    } else {
+        let _ = writeln!(
+            out,
+            "        .respond_with(ResponseTemplate::new({status}))"
+        );
+    }
+    out.push_str("        .expect(1)\n        .mount(&server)\n        .await;\n");
 }
 
 /// The path the request should land on, with a sample value for every parameter.

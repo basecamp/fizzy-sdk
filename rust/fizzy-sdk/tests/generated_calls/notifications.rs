@@ -2,7 +2,7 @@
 
 use fizzy_sdk::models::*;
 use fizzy_sdk::services::notifications::*;
-use wiremock::matchers::{body_json, method, path};
+use wiremock::matchers::{body_json, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 use crate::client;
@@ -58,8 +58,12 @@ async fn get_settings() {
 async fn get_tray() {
     let server = MockServer::start().await;
     let expected: Vec<Notification> = Default::default();
+    let params = GetNotificationTrayParams {
+        include_read: Some(true),
+    };
     Mock::given(method("GET"))
         .and(path("/999/notifications/tray.json"))
+        .and(query_param("include_read", "true"))
         .respond_with(
             ResponseTemplate::new(200).set_body_json(serde_json::to_value(&expected).unwrap()),
         )
@@ -70,7 +74,7 @@ async fn get_tray() {
         .for_account("999")
         .unwrap()
         .notifications()
-        .get_tray(&GetNotificationTrayParams::default())
+        .get_tray(&params)
         .await
         .unwrap();
     assert_eq!(answer, expected);
@@ -82,8 +86,10 @@ async fn get_tray() {
 async fn list() {
     let server = MockServer::start().await;
     let expected: Vec<Notification> = Default::default();
+    let params = ListNotificationsParams { read: Some(true) };
     Mock::given(method("GET"))
         .and(path("/999/notifications.json"))
+        .and(query_param("read", "true"))
         .respond_with(
             ResponseTemplate::new(200).set_body_json(serde_json::to_value(&expected).unwrap()),
         )
@@ -94,7 +100,7 @@ async fn list() {
         .for_account("999")
         .unwrap()
         .notifications()
-        .list(&ListNotificationsParams::default())
+        .list(&params)
         .await
         .unwrap();
     assert_eq!(answer.value(), &expected);

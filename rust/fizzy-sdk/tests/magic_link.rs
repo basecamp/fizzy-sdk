@@ -1,6 +1,7 @@
 //! The two-step magic-link login against a mock of what upstream Fizzy answers: the pending
 //! token comes back on create, and goes back as a cookie with the code on redeem.
 
+#![cfg(feature = "reqwest")]
 #![allow(clippy::unwrap_used, missing_docs)]
 
 use fizzy_sdk::{Client, Config, ErrorCode, MagicLinkFlow};

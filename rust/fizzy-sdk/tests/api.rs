@@ -22,6 +22,7 @@ fn public_types_are_send_sync_and_clients_are_clone() {
     clone::<Config>();
 }
 
+#[cfg(feature = "reqwest")]
 #[test]
 fn futures_are_send() {
     let client = Client::builder(Config::default())

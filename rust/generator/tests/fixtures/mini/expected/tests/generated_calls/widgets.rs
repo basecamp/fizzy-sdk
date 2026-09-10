@@ -57,8 +57,14 @@ async fn get() {
 async fn list() {
     let server = MockServer::start().await;
     let expected: Vec<Widget> = Default::default();
+    let params = ListWidgetsParams {
+        tag_ids: Some(vec!["x".into()]),
+        sorted_by: Some("x".into()),
+    };
     Mock::given(method("GET"))
         .and(path("/999/widgets.json"))
+        .and(query_param("tag_ids[]", "x"))
+        .and(query_param("sorted_by", "x"))
         .respond_with(
             ResponseTemplate::new(200).set_body_json(serde_json::to_value(&expected).unwrap()),
         )
@@ -69,7 +75,7 @@ async fn list() {
         .for_account("999")
         .unwrap()
         .widgets()
-        .list(&ListWidgetsParams::default())
+        .list(&params)
         .await
         .unwrap();
     assert_eq!(answer.value(), &expected);

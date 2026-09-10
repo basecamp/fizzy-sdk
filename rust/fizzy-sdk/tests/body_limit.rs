@@ -1,5 +1,6 @@
 //! The response body cap: an answer past it is refused, with the status kept on a failure.
 
+#![cfg(feature = "reqwest")]
 #![allow(clippy::unwrap_used, missing_docs)]
 
 mod support;

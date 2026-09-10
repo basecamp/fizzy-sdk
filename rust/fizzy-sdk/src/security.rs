@@ -5,7 +5,13 @@ use url::Url;
 use crate::error::Error;
 use crate::http::{HeaderMap, HeaderValue};
 
-const SENSITIVE_HEADERS: &[&str] = &["authorization", "cookie", "set-cookie", "x-csrf-token"];
+const SENSITIVE_HEADERS: &[&str] = &[
+    "authorization",
+    "proxy-authorization",
+    "cookie",
+    "set-cookie",
+    "x-csrf-token",
+];
 
 /// Refuses an endpoint that would carry credentials over plain HTTP, unless it is on this
 /// machine.
@@ -91,10 +97,15 @@ mod tests {
         let mut headers = HeaderMap::new();
         headers.insert("Authorization", HeaderValue::from_static("Bearer secret"));
         headers.insert("Cookie", HeaderValue::from_static("session_token=secret"));
+        headers.insert(
+            "Proxy-Authorization",
+            HeaderValue::from_static("Basic secret"),
+        );
         headers.insert("Accept", HeaderValue::from_static("application/json"));
         let redacted = redact_headers(&headers);
         assert_eq!(redacted["authorization"], "[REDACTED]");
         assert_eq!(redacted["cookie"], "[REDACTED]");
+        assert_eq!(redacted["proxy-authorization"], "[REDACTED]");
         assert_eq!(redacted["accept"], "application/json");
     }
 }

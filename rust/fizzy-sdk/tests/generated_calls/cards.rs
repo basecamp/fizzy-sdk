@@ -2,7 +2,7 @@
 
 use fizzy_sdk::models::*;
 use fizzy_sdk::services::cards::*;
-use wiremock::matchers::{body_json, method, path};
+use wiremock::matchers::{body_json, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 use crate::client;
@@ -164,8 +164,36 @@ async fn gold() {
 async fn list() {
     let server = MockServer::start().await;
     let expected: Vec<Card> = Default::default();
+    let params = ListCardsParams {
+        board_ids: Some(vec!["x".into()]),
+        tag_ids: Some(vec!["x".into()]),
+        assignee_ids: Some(vec!["x".into()]),
+        creator_ids: Some(vec!["x".into()]),
+        closer_ids: Some(vec!["x".into()]),
+        card_ids: Some(vec!["x".into()]),
+        column_ids: Some(vec!["x".into()]),
+        indexed_by: Some("x".into()),
+        sorted_by: Some("x".into()),
+        assignment_status: Some("x".into()),
+        creation: Some("x".into()),
+        closure: Some("x".into()),
+        terms: Some(vec!["x".into()]),
+    };
     Mock::given(method("GET"))
         .and(path("/999/cards.json"))
+        .and(query_param("board_ids[]", "x"))
+        .and(query_param("tag_ids[]", "x"))
+        .and(query_param("assignee_ids[]", "x"))
+        .and(query_param("creator_ids[]", "x"))
+        .and(query_param("closer_ids[]", "x"))
+        .and(query_param("card_ids[]", "x"))
+        .and(query_param("column_ids[]", "x"))
+        .and(query_param("indexed_by", "x"))
+        .and(query_param("sorted_by", "x"))
+        .and(query_param("assignment_status", "x"))
+        .and(query_param("creation", "x"))
+        .and(query_param("closure", "x"))
+        .and(query_param("terms[]", "x"))
         .respond_with(
             ResponseTemplate::new(200).set_body_json(serde_json::to_value(&expected).unwrap()),
         )
@@ -176,7 +204,7 @@ async fn list() {
         .for_account("999")
         .unwrap()
         .cards()
-        .list(&ListCardsParams::default())
+        .list(&params)
         .await
         .unwrap();
     assert_eq!(answer.value(), &expected);
@@ -189,8 +217,14 @@ async fn list() {
 async fn list_activities() {
     let server = MockServer::start().await;
     let expected: Vec<Activity> = Default::default();
+    let params = ListActivitiesParams {
+        creator_ids: Some(vec!["x".into()]),
+        board_ids: Some(vec!["x".into()]),
+    };
     Mock::given(method("GET"))
         .and(path("/999/activities.json"))
+        .and(query_param("creator_ids[]", "x"))
+        .and(query_param("board_ids[]", "x"))
         .respond_with(
             ResponseTemplate::new(200).set_body_json(serde_json::to_value(&expected).unwrap()),
         )
@@ -201,7 +235,7 @@ async fn list_activities() {
         .for_account("999")
         .unwrap()
         .cards()
-        .list_activities(&ListActivitiesParams::default())
+        .list_activities(&params)
         .await
         .unwrap();
     assert_eq!(answer.value(), &expected);

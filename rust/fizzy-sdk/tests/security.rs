@@ -2,6 +2,7 @@
 //! tests: HTTPS enforcement, the credentials each strategy sends, the `User-Agent`, and
 //! what the hooks are allowed to see.
 
+#![cfg(feature = "reqwest")]
 #![allow(clippy::unwrap_used, missing_docs)]
 
 mod support;
@@ -114,4 +115,33 @@ fn an_empty_token_is_refused_before_anything_is_sent() {
         .block_on(client.identity().get_my_identity())
         .unwrap_err();
     assert_eq!(error.code(), ErrorCode::AuthRequired);
+}
+
+#[tokio::test]
+async fn an_absolute_url_off_the_origin_is_refused_before_credentials_go_anywhere() {
+    let server = MockServer::start().await;
+    let error = account(&server)
+        .get("https://other.example.com/999/boards.json")
+        .await
+        .unwrap_err();
+    assert_eq!(error.code(), ErrorCode::Usage);
+    assert!(server.received_requests().await.unwrap().is_empty());
+    let same = format!("{}/999/boards.json", server.uri());
+    Mock::given(method("GET"))
+        .and(path("/999/boards.json"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!([])))
+        .mount(&server)
+        .await;
+    assert!(account(&server).get(&same).await.is_ok());
+}
+
+#[test]
+fn a_base_url_with_credentials_is_refused() {
+    let error = Client::builder(Config::default().with_base_url("https://user:secret@fizzy.do"))
+        .access_token("t")
+        .build()
+        .err()
+        .unwrap();
+    assert_eq!(error.code(), ErrorCode::Usage);
+    assert!(!error.to_string().contains("secret"));
 }

@@ -1,5 +1,6 @@
 //! The error-mapping fixtures (`conformance/tests/error-mapping.json`) as unit tests.
 
+#![cfg(feature = "reqwest")]
 #![allow(clippy::unwrap_used, missing_docs)]
 
 mod support;

@@ -32,6 +32,16 @@ pub struct Page<T> {
     retry: Option<RetryPolicy>,
 }
 
+/// What it takes to read the page after one already handed out: where it is, what the
+/// read announces itself as, and the policy it goes under. Taken off a page so the page
+/// itself can be yielded before the next is fetched.
+#[derive(Debug, Clone)]
+struct Cursor {
+    next_url: Option<Url>,
+    info: OperationInfo,
+    retry: Option<RetryPolicy>,
+}
+
 impl<T> Page<T> {
     pub(crate) fn new(
         value: T,
@@ -65,12 +75,12 @@ impl<T> Page<T> {
         }
     }
 
-    pub(crate) fn info(&self) -> &OperationInfo {
-        &self.info
-    }
-
-    pub(crate) fn retry(&self) -> Option<&RetryPolicy> {
-        self.retry.as_ref()
+    fn cursor(&self) -> Cursor {
+        Cursor {
+            next_url: self.next_url.clone(),
+            info: self.info.clone(),
+            retry: self.retry.clone(),
+        }
     }
 
     /// The page's contents, owned.
@@ -133,15 +143,22 @@ impl Client {
         &self,
         page: &Page<T>,
     ) -> Result<Option<Page<T>>, Error> {
-        match page.next_url() {
+        self.page_after(&page.cursor()).await
+    }
+
+    async fn page_after<T: DeserializeOwned>(
+        &self,
+        cursor: &Cursor,
+    ) -> Result<Option<Page<T>>, Error> {
+        match &cursor.next_url {
             None => Ok(None),
             Some(next) if !is_same_origin(next, self.base_url()) => Err(Error::usage(format!(
                 "pagination Link header points to a different origin: {next}"
             ))),
             Some(next) => {
                 let mut operation = Operation::at(Method::GET, next.clone());
-                operation.info(page.info().clone());
-                if let Some(retry) = page.retry() {
+                operation.info(cursor.info.clone());
+                if let Some(retry) = &cursor.retry {
                     operation.retry(retry.clone());
                 }
                 self.send_page(operation).await.map(Some)
@@ -169,26 +186,31 @@ impl Client {
     }
 
     /// The first page and every one after it, read lazily as the stream is polled, up to
-    /// the client's page limit. A page that fails to read ends the stream with its error.
+    /// the client's page limit. A page in hand is yielded before the next is fetched, so a
+    /// consumer that stops early never pays for a page it did not read, and a page that
+    /// fails to read ends the stream with its error after the ones before it.
     pub fn pages<'a, T: DeserializeOwned + 'a>(
         &'a self,
         first: Page<T>,
     ) -> impl Stream<Item = Result<Page<T>, Error>> + 'a {
         let max_pages = self.max_pages();
-        stream::try_unfold((Some(first), 0usize), move |(pending, read)| async move {
-            match pending {
-                None => Ok(None),
-                Some(page) => {
-                    let read = read + 1;
-                    let following = if read < max_pages {
-                        self.next_page(&page).await?
-                    } else {
-                        None
-                    };
-                    Ok(Some((page, (following, read))))
-                }
-            }
-        })
+        stream::try_unfold(
+            (Some(first), None::<Cursor>, 0usize),
+            move |(pending, cursor, read)| async move {
+                let page = match (pending, cursor) {
+                    (Some(page), _) => page,
+                    (None, Some(cursor)) if read < max_pages => {
+                        match self.page_after(&cursor).await? {
+                            Some(page) => page,
+                            None => return Ok(None),
+                        }
+                    }
+                    (None, _) => return Ok(None),
+                };
+                let cursor = page.cursor();
+                Ok(Some((page, (None, Some(cursor), read + 1))))
+            },
+        )
     }
 
     /// Every item on every page, read lazily as the stream is polled.

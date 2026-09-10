@@ -7,11 +7,13 @@
 //! may replace with its own; the `reqwest` feature, on by default, ships one.
 //!
 //! ```no_run
-//! use fizzy_sdk::{Client, Config, StaticTokenProvider};
+//! use fizzy_sdk::{Client, Config};
 //!
 //! # async fn run() -> Result<(), fizzy_sdk::Error> {
 //! let token = std::env::var("FIZZY_TOKEN").unwrap_or_default();
-//! let client = Client::new(Config::default(), StaticTokenProvider::new(token))?;
+//! let client = Client::builder(Config::default().with_env())
+//!     .access_token(token)
+//!     .build()?;
 //! let account = client.for_account("999")?;
 //! for board in account.boards().list().await?.iter() {
 //!     println!("{} ({})", board.name, board.id);

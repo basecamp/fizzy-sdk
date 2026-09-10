@@ -1113,6 +1113,11 @@ fn parse_base_url(base_url: &str) -> Result<Url, Error> {
     let mut url = Url::parse(base_url)
         .map_err(|error| Error::usage(format!("base URL {base_url}: {error}")))?;
     require_secure_endpoint(&url)?;
+    if !url.username().is_empty() || url.password().is_some() {
+        return Err(Error::usage(
+            "base URL must not carry credentials; use an access token or a session token",
+        ));
+    }
     if !url.path().ends_with('/') {
         url.set_path(&format!("{}/", url.path()));
     }
@@ -1305,6 +1310,12 @@ mod tests {
         assert!(parse_base_url("http://127.0.0.1:3000").is_ok());
         assert_eq!(
             parse_base_url("http://evil.example.com")
+                .unwrap_err()
+                .code(),
+            ErrorCode::Usage
+        );
+        assert_eq!(
+            parse_base_url("https://user:secret@fizzy.do")
                 .unwrap_err()
                 .code(),
             ErrorCode::Usage

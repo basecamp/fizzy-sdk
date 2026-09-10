@@ -133,7 +133,7 @@ impl ClientBuilder {
 /// case has no counterpart; the nearest thing, an [`ErrorCode::ApiError`] carrying a 5xx, trips.
 pub fn should_trip_circuit(error: &Error) -> bool {
     match error.code() {
-        _ if error.refusal().is_some() => false,
+        _ if error.refusal().is_some() || error.is_cancelled() => false,
         ErrorCode::RateLimit => false,
         ErrorCode::Network => true,
         _ => error.http_status().is_some_and(|status| status >= 500),
@@ -400,6 +400,7 @@ mod tests {
             (Error::bulkhead_full(), false),
             (Error::rate_limited(), false),
             (Error::rate_limit(Some(3)), false),
+            (Error::cancelled(), false),
             (
                 Error::network(std::io::Error::other("connection refused")),
                 true,

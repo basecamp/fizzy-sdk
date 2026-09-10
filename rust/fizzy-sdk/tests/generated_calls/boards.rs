@@ -2,7 +2,7 @@
 
 use fizzy_sdk::models::*;
 use fizzy_sdk::services::boards::*;
-use wiremock::matchers::{body_json, method, path};
+use wiremock::matchers::{body_json, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 use crate::client;
@@ -107,8 +107,10 @@ async fn list() {
 async fn list_board_accesses() {
     let server = MockServer::start().await;
     let expected: BoardAccesses = Default::default();
+    let params = ListBoardAccessesParams { page: Some(7) };
     Mock::given(method("GET"))
         .and(path("/999/boards/x-board_id/accesses.json"))
+        .and(query_param("page", "7"))
         .respond_with(
             ResponseTemplate::new(200).set_body_json(serde_json::to_value(&expected).unwrap()),
         )
@@ -119,7 +121,7 @@ async fn list_board_accesses() {
         .for_account("999")
         .unwrap()
         .boards()
-        .list_board_accesses("x-board_id", &ListBoardAccessesParams::default())
+        .list_board_accesses("x-board_id", &params)
         .await
         .unwrap();
     assert_eq!(answer, expected);

@@ -56,6 +56,6 @@ A session signed in through a magic link uses `.session_token(token)` instead; t
 ## Developing
 
 ```sh
-make rs-generate      # regenerate src/generated and tests/generated_calls from openapi.json
-make rs-check         # fmt, clippy, tests, docs, cargo deny, drift, publish --dry-run
+make -C rust generate   # regenerate src/generated and tests/generated_calls from openapi.json
+make -C rust check      # fmt, clippy, tests, docs, cargo deny, drift, publish --dry-run
 ```
