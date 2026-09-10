@@ -1,5 +1,8 @@
 import Fizzy
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// One outbound request captured by the scripted transport.
 struct CapturedRequest: @unchecked Sendable {

@@ -351,6 +351,7 @@ conformance-build:
 	cd conformance/runner/typescript && npm ci
 	cd kotlin && ./gradlew :conformance:build
 	cd conformance/runner/rust && cargo build --release --locked
+	cd conformance/runner/swift && swift build
 
 conformance-go: conformance-build
 	@echo "==> Running Go conformance..."

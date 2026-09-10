@@ -1,6 +1,9 @@
 import ConformanceSupport
 import Fizzy
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// Outcome of a single conformance test.
 struct TestResult {
@@ -97,10 +100,16 @@ func evaluateAssertions(
     // query string included. Only constrains a hop that actually happened: a
     // walk stopped by a cap, or a link the SDK is meant to refuse
     // (cross-origin, protocol downgrade), simply has no following request.
+    //
+    // A relative target resolves against the request that CARRIED the link,
+    // as the SDK resolves it against the previous response's URL. Resolving
+    // against the follower would make a query-relative target such as
+    // `<?page=2>` self-validating: a follower sent to the wrong endpoint
+    // would supply its own path and satisfy the check.
     for (i, mock) in tc.responses.enumerated() where i + 1 < captured.count {
         guard let target = mock.linkHeader.flatMap(nextLinkTarget) else { continue }
         let follower = captured[i + 1]
-        let resolved = URL(string: target, relativeTo: follower.request.url)
+        let resolved = URL(string: target, relativeTo: captured[i].request.url)
         let wanted = resolved.map { url -> String in
             guard let query = url.query, !query.isEmpty else { return url.path }
             return "\(url.path)?\(query)"

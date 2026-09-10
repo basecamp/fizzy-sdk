@@ -62,50 +62,29 @@ public func withoutJSONSuffix(_ path: String) -> String {
 /// Extracts the `rel="next"` target from a `Link` header value, or nil when the
 /// header names no next page.
 ///
-/// Deliberately tolerant of the surrounding syntax (multiple comma-separated
-/// links, arbitrary parameter order and spacing) and strict about the target
-/// itself, which is returned verbatim between the angle brackets. This
-/// function decides which requests the link-follower exemption covers, so a
-/// parser here that is stricter than the SDK's does not merely miss a bug — it
-/// invents one, by holding a correctly followed link to the fixture's first
-/// path.
+/// A line-for-line mirror of the SDK's `parseNextLink` (swift/Sources/Fizzy/
+/// Pagination.swift): split on commas, trim, require the literal `rel="next"`
+/// somewhere in the part, and take the span between the FIRST `<` and the
+/// FIRST `>` of the part, skipping the part when they are not in that order.
+/// It is deliberately no more and no less tolerant than the SDK. This function
+/// decides which requests are exempt from the path invariant as link
+/// followers, and which advertised URL the link invariant holds them to: a
+/// parser stricter than the SDK's holds a correctly followed link to the
+/// fixture's first path and fails a correct SDK; one more permissive classifies
+/// a header the SDK ignores as a next link, and the exemption it grants then
+/// covers a request the SDK never makes for that reason.
 public func nextLinkTarget(_ headerValue: String) -> String? {
-    for link in headerValue.split(separator: ",") {
-        let parts = link.split(separator: ";")
-        guard let head = parts.first?.trimmingCharacters(in: .whitespaces),
-              let target = angleBracketedTarget(head),
-              parts.dropFirst().contains(where: { isRelNext($0) })
-        else { continue }
-        return target
-    }
-    return nil
-}
+    guard !headerValue.isEmpty else { return nil }
 
-/// The leftmost non-empty `<…>` span in `part`, matching `/<([^>]+)>/`.
-///
-/// Mirrors `parseNextLink` in the SDK: scan for `<`, then for the first `>`
-/// AFTER it, and skip an empty `<>` because `[^>]+` requires a character.
-func angleBracketedTarget(_ part: String) -> String? {
-    var cursor = part.startIndex
-
-    while let start = part[cursor...].firstIndex(of: "<") {
-        let contentStart = part.index(after: start)
-        guard let end = part[contentStart...].firstIndex(of: ">") else { return nil }
-
-        if end > contentStart {
-            return String(part[contentStart..<end])
+    for part in headerValue.split(separator: ",") {
+        let trimmed = part.trimmingCharacters(in: .whitespaces)
+        if trimmed.contains("rel=\"next\"") {
+            guard let start = trimmed.firstIndex(of: "<"),
+                  let end = trimmed.firstIndex(of: ">"),
+                  start < end
+            else { continue }
+            return String(trimmed[trimmed.index(after: start)..<end])
         }
-        cursor = contentStart
     }
-
     return nil
-}
-
-private func isRelNext(_ parameter: Substring) -> Bool {
-    let cleaned = parameter
-        .trimmingCharacters(in: .whitespaces)
-        .replacingOccurrences(of: " ", with: "")
-        .replacingOccurrences(of: "\"", with: "")
-        .lowercased()
-    return cleaned == "rel=next"
 }

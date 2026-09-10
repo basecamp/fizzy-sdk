@@ -103,12 +103,6 @@ struct NextLinkTests {
             nextLinkTarget("</b?page=1>; rel=\"prev\", </b?page=3>; rel=\"next\"") == "/b?page=3")
     }
 
-    @Test("Tolerates unquoted rel and extra spacing")
-    func toleratesSyntax() {
-        #expect(nextLinkTarget("</p?page=2>;rel=next") == "/p?page=2")
-        #expect(nextLinkTarget("</p?page=2> ;  rel = \"NEXT\"") == "/p?page=2")
-    }
-
     @Test("A header without a next rel yields nil")
     func noNext() {
         #expect(nextLinkTarget("</b?page=1>; rel=\"prev\"") == nil)
@@ -116,14 +110,26 @@ struct NextLinkTests {
         #expect(nextLinkTarget("garbage") == nil)
     }
 
-    @Test("Agrees with the SDK parser on malformed parts")
-    func malformedParts() {
-        // An empty <> names no page: skip the part, keep scanning.
-        #expect(nextLinkTarget("<>; rel=\"next\", </b?page=2>; rel=\"next\"") == "/b?page=2")
-        // The ">" delimiting the URL is the first one AFTER the "<".
-        #expect(nextLinkTarget(">x</b?page=2>; rel=\"next\"") == "/b?page=2")
-        // A "<" that never closes yields no target rather than the rest.
+    /// The runner must classify exactly the links the SDK classifies. These
+    /// pin the SDK parser's own edges — `parseNextLink` in Pagination.swift —
+    /// so a "tidy-up" that made this helper more tolerant (unquoted rel, a
+    /// different case, spacing around `=`) would exempt a follower the SDK
+    /// never sends, and one that made it stricter would hold a correctly
+    /// followed link to the fixture's first path.
+    @Test("Is exactly as tolerant as the SDK parser")
+    func matchesTheSDKParser() {
+        // Only the literal quoted, lowercase rel="next" counts.
+        #expect(nextLinkTarget("</p?page=2>; rel=next") == nil)
+        #expect(nextLinkTarget("</p?page=2>; rel=\"NEXT\"") == nil)
+        #expect(nextLinkTarget("</p?page=2>; rel = \"next\"") == nil)
+        // Spacing around the separators is fine; the SDK trims and searches.
+        #expect(nextLinkTarget("</p?page=2>;rel=\"next\"") == "/p?page=2")
+        #expect(nextLinkTarget("  </p?page=2> ;  rel=\"next\"  ") == "/p?page=2")
+        // The SDK takes the FIRST "<" and the FIRST ">" of the part: a ">"
+        // before the "<" means the part names no target, and an empty "<>"
+        // yields an empty target rather than skipping to the next part.
+        #expect(nextLinkTarget(">x</p?page=2>; rel=\"next\"") == nil)
+        #expect(nextLinkTarget("<>; rel=\"next\", </p?page=2>; rel=\"next\"") == "")
         #expect(nextLinkTarget("<; rel=\"next\"") == nil)
-        #expect(nextLinkTarget("<>; rel=\"next\"") == nil)
     }
 }
