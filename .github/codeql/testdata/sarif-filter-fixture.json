@@ -16,6 +16,18 @@
           "locations": [{"physicalLocation": {"artifactLocation": {"uri": "/home/runner/work/fizzy-sdk/fizzy-sdk/go/pkg/generated/client.gen.go"}}}]
         },
         {
+          "ruleId": "drop-go-generated-service",
+          "locations": [{"physicalLocation": {"artifactLocation": {"uri": "go/pkg/fizzy/cards_service.go"}}}]
+        },
+        {
+          "ruleId": "drop-go-generated-registry",
+          "locations": [{"physicalLocation": {"artifactLocation": {"uri": "/home/runner/work/fizzy-sdk/fizzy-sdk/go/pkg/fizzy/operations_registry.go"}}}]
+        },
+        {
+          "ruleId": "keep-go-service-test",
+          "locations": [{"physicalLocation": {"artifactLocation": {"uri": "go/pkg/fizzy/cards_service_test.go"}}}]
+        },
+        {
           "ruleId": "drop-swift-generated",
           "locations": [{"physicalLocation": {"artifactLocation": {"uri": "swift/Sources/Fizzy/Generated/Models.swift"}}}]
         },

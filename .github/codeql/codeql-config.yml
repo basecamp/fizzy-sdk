@@ -17,6 +17,8 @@ paths-ignore:
   # database via build tracing — the workflow's SARIF filter step strips
   # those alerts before upload.
   - go/pkg/generated/
+  - go/pkg/fizzy/*_service.go
+  - go/pkg/fizzy/operations_registry.go
   - typescript/src/generated/
   - typescript/dist/
   - ruby/lib/fizzy/generated/

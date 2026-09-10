@@ -9,7 +9,7 @@ FIXTURE="$DIR/testdata/sarif-filter-fixture.json"
 
 actual=$(jq -f "$DIR/sarif-filter.jq" "$FIXTURE")
 kept=$(echo "$actual" | jq -c '[.runs[].results[].ruleId] | sort')
-expected='["keep-kotlin-generator","keep-kotlin-runtime","keep-no-locations","keep-null-locations","keep-real-go","keep-rust-generator","keep-rust-runtime","keep-swift-generator"]'
+expected='["keep-go-service-test","keep-kotlin-generator","keep-kotlin-runtime","keep-no-locations","keep-null-locations","keep-real-go","keep-rust-generator","keep-rust-runtime","keep-swift-generator"]'
 
 if [ "$kept" = "$expected" ]; then
   echo "PASS: SARIF filter kept correct results"
