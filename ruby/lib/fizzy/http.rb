@@ -160,12 +160,15 @@ module Fizzy
     end
 
     def request_with_retry(method, url, params: {}, body: nil)
+      # max_retries counts total attempts and is floored at one: whether a
+      # request reaches the wire at all must not depend on the retry budget.
+      max_attempts = [ @config.max_retries, 1 ].max
       attempt = 0
       last_error = nil
 
       loop do
         attempt += 1
-        break if attempt > @config.max_retries
+        break if attempt > max_attempts
 
         begin
           return single_request(method, url, params: params, body: body, attempt: attempt)
@@ -175,7 +178,7 @@ module Fizzy
           last_error = e
 
           # Don't sleep if this was the last attempt
-          break if attempt >= @config.max_retries
+          break if attempt >= max_attempts
 
           delay = calculate_delay(attempt, e.retry_after)
 
@@ -187,7 +190,8 @@ module Fizzy
         end
       end
 
-      raise last_error || Fizzy::APIError.new("Request failed after #{@config.max_retries} retries")
+      noun = max_attempts == 1 ? "attempt" : "attempts"
+      raise last_error || Fizzy::APIError.new("Request failed after #{max_attempts} #{noun}")
     end
 
     def single_request(method, url, params:, body:, attempt:, retry_count: 0)
@@ -210,6 +214,10 @@ module Fizzy
           status: response.status,
           headers: response.headers
         )
+      rescue Faraday::TimeoutError => e
+        # Faraday::TimeoutError < Faraday::ServerError: named before the status
+        # clause, or a stalled read classifies as a status-less api_error.
+        transport_failure(e, info: info, start_time: start_time)
       rescue Faraday::ServerError, Faraday::ClientError => e
         duration = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time
         error = handle_error(e)
@@ -229,11 +237,7 @@ module Fizzy
 
         raise error
       rescue Faraday::Error => e
-        duration = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time
-        error = Fizzy::NetworkError.new("Connection failed", cause: e)
-        result = RequestResult.new(duration: duration, error: error)
-        @hooks.on_request_end(info, result)
-        raise error
+        transport_failure(e, info: info, start_time: start_time)
       end
     end
 
@@ -265,6 +269,8 @@ module Fizzy
           status: response.status,
           headers: response.headers
         )
+      rescue Faraday::TimeoutError => e
+        transport_failure(e, info: info, start_time: start_time)
       rescue Faraday::ServerError, Faraday::ClientError => e
         duration = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time
         error = handle_error(e)
@@ -277,12 +283,19 @@ module Fizzy
         @hooks.on_request_end(info, result)
         raise error
       rescue Faraday::Error => e
-        duration = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time
-        error = Fizzy::NetworkError.new("Connection failed", cause: e)
-        result = RequestResult.new(duration: duration, error: error)
-        @hooks.on_request_end(info, result)
-        raise error
+        transport_failure(e, info: info, start_time: start_time)
       end
+    end
+
+    # A transport failure — no HTTP response, so no status to map — as the
+    # network error the caller and on_request_end both see: a timeout by name,
+    # anything else as a connection failure, both retryable.
+    def transport_failure(exception, info:, start_time:)
+      duration = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time
+      message = exception.is_a?(Faraday::TimeoutError) ? "Request timed out" : "Connection failed"
+      error = Fizzy::NetworkError.new(message, cause: exception)
+      @hooks.on_request_end(info, RequestResult.new(duration: duration, error: error))
+      raise error
     end
 
     def handle_error(error)
