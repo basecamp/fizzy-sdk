@@ -95,7 +95,9 @@ fn check_request_count(run: &Run, assertion: &Assertion) -> Result<(), String> {
 }
 
 /// Every interval between consecutive requests, not only the first: a retry loop that
-/// backs off once and then hammers would pass a first-interval check.
+/// backs off once and then hammers would pass a first-interval check. An interval runs from
+/// the moment the previous answer was sent, so a delay the mock added is not credited to
+/// the SDK's backoff.
 fn check_delay_between_requests(run: &Run, assertion: &Assertion) -> Result<(), String> {
     let minimum = if assertion.min > 0 {
         assertion.min
@@ -110,7 +112,7 @@ fn check_delay_between_requests(run: &Run, assertion: &Assertion) -> Result<(), 
         ));
     }
     for (index, pair) in run.recorded.windows(2).enumerate() {
-        let delay = pair[1].time.duration_since(pair[0].time);
+        let delay = pair[1].time.saturating_duration_since(pair[0].served_at);
         if delay < minimum {
             return Err(format!(
                 "delay between request {} and {} was {delay:?}, expected >= {minimum:?}",

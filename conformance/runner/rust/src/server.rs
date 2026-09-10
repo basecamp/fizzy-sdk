@@ -19,7 +19,11 @@ use crate::fixtures::MockResponse;
 /// One request the mock server saw.
 #[derive(Debug, Clone)]
 pub struct RequestRecord {
+    /// When the request arrived.
     pub time: Instant,
+    /// When its answer was sent, after any delay the mock added; the next request's
+    /// backoff is measured from here.
+    pub served_at: Instant,
     pub method: String,
     pub path: String,
     pub query: Vec<(String, String)>,
@@ -188,10 +192,14 @@ fn header<'a>(mock: &'a MockResponse, name: &str) -> Option<&'a str> {
 /// The page the previous response's `Link` told the client to ask for next, as a
 /// path-and-query on this server, resolved against the URL that response answered — a
 /// relative target like `?page=2` names a page under it. `None` when the previous response
-/// had no next link or pointed away from this server, which is the client's problem to
-/// refuse, not ours.
+/// was not a page at all (a 429 carrying a `Link` is retried, not followed), had no next
+/// link, or pointed away from this server, which is the client's problem to refuse, not
+/// ours.
 fn expected_page(mocks: &Mocks, index: usize, previous_request: &str) -> Option<String> {
     let previous = mocks.responses.get(index.checked_sub(1)?)?;
+    if !(200..300).contains(&previous.status) {
+        return None;
+    }
     let target = next_link(header(previous, "link")?)?;
     let base = Url::parse(&mocks.base_url)
         .ok()?
@@ -229,6 +237,7 @@ async fn answer(State(mocks): State<Arc<Mocks>>, request: Request) -> Response<B
         });
         records.push(RequestRecord {
             time: Instant::now(),
+            served_at: Instant::now(),
             method: parts.method.to_string(),
             path: parts.uri.path().to_string(),
             query: url::form_urlencoded::parse(parts.uri.query().unwrap_or_default().as_bytes())
@@ -257,6 +266,15 @@ async fn answer(State(mocks): State<Arc<Mocks>>, request: Request) -> Response<B
         Some(mock) => {
             if mock.delay > 0 {
                 tokio::time::sleep(Duration::from_millis(mock.delay)).await;
+            }
+            if let Some(record) = mocks
+                .records
+                .lock()
+                .ok()
+                .as_deref_mut()
+                .and_then(|records| records.get_mut(index))
+            {
+                record.served_at = Instant::now();
             }
             serve(mock)
         }
@@ -290,6 +308,12 @@ mod tests {
     fn linked(link: &str) -> MockResponse {
         let mut mock = MockResponse::default();
         mock.headers.insert("Link".into(), link.into());
+        mock
+    }
+
+    fn page(link: &str) -> MockResponse {
+        let mut mock = linked(link);
+        mock.status = 200;
         mock
     }
 
@@ -370,10 +394,15 @@ mod tests {
         let mocks = Mocks {
             base_url: SERVER.into(),
             responses: vec![
-                linked("</999/boards.json?page=2>; rel=\"next\""),
+                page("</999/boards.json?page=2>; rel=\"next\""),
                 MockResponse::default(),
-                linked("<https://evil.example.com/x>; rel=\"next\""),
-                MockResponse::default(),
+                page("<https://evil.example.com/x>; rel=\"next\""),
+                page("</999/boards.json?page=9>; rel=\"next\""),
+                {
+                    let mut retry = linked("</999/boards.json?page=9>; rel=\"next\"");
+                    retry.status = 429;
+                    retry
+                },
             ],
             paginated: true,
             records: Arc::new(Mutex::new(Vec::new())),
@@ -386,6 +415,11 @@ mod tests {
         );
         assert_eq!(expected_page(&mocks, 2, "/999/boards.json?page=2"), None);
         assert_eq!(expected_page(&mocks, 3, "/x"), None);
+        assert_eq!(
+            expected_page(&mocks, 4, "/999/boards.json?page=2").as_deref(),
+            Some("/999/boards.json?page=9")
+        );
+        assert_eq!(expected_page(&mocks, 5, "/999/boards.json?page=9"), None);
     }
 
     #[test]
@@ -393,8 +427,8 @@ mod tests {
         let mocks = Mocks {
             base_url: SERVER.into(),
             responses: vec![
-                linked("<?page=2>; rel=\"next\""),
-                linked("<next?page=3>; rel=\"next\""),
+                page("<?page=2>; rel=\"next\""),
+                page("<next?page=3>; rel=\"next\""),
                 MockResponse::default(),
             ],
             paginated: true,
