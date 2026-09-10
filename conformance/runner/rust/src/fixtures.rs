@@ -5,19 +5,28 @@ use serde_json::{Map, Value};
 
 pub type Params = Map<String, Value>;
 
-/// One conformance case, as `conformance/tests/*.json` writes it. Keys the runner does
-/// not read are ignored.
-#[derive(Debug, Default, Deserialize)]
-#[serde(default, rename_all = "camelCase")]
+/// One conformance case, as `conformance/tests/*.json` writes it. `name`, `operation` and
+/// `assertions` are required, as the schema says: a case whose `assertions` key is
+/// misspelled would otherwise load with none and pass on the implicit checks alone. Keys
+/// the runner does not read are ignored.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TestCase {
     pub name: String,
     pub operation: String,
+    #[serde(default)]
     pub method: String,
+    #[serde(default)]
     pub path: String,
+    #[serde(default)]
     pub path_params: Params,
+    #[serde(default)]
     pub query_params: Params,
+    #[serde(default)]
     pub request_body: Option<Value>,
+    #[serde(default)]
     pub config_overrides: ConfigOverrides,
+    #[serde(default)]
     pub mock_responses: Vec<MockResponse>,
     pub assertions: Vec<Assertion>,
 }
@@ -166,6 +175,8 @@ mod tests {
     fn follows_links_only_with_several_linked_responses_or_an_origin_assertion() {
         let mut case: TestCase = serde_json::from_value(json!({
             "name": "x",
+            "operation": "ListBoards",
+            "assertions": [],
             "mockResponses": [{"status": 200, "headers": {"Link": "<a>; rel=\"next\""}}]
         }))
         .unwrap();
@@ -174,9 +185,20 @@ mod tests {
         assert!(case.follows_links());
         let case: TestCase = serde_json::from_value(json!({
             "name": "y",
+            "operation": "ListBoards",
             "assertions": [{"type": "urlOrigin", "expected": "rejected"}]
         }))
         .unwrap();
         assert!(case.follows_links());
+    }
+
+    #[test]
+    fn a_case_without_assertions_does_not_load() {
+        let missing: Result<TestCase, _> = serde_json::from_value(json!({
+            "name": "x",
+            "operation": "ListBoards",
+            "assertionss": [{"type": "noError"}]
+        }));
+        assert!(missing.is_err());
     }
 }

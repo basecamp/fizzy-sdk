@@ -13,6 +13,9 @@ pub struct Run<'a> {
     pub case: &'a TestCase,
     pub outcome: &'a Result<Outcome, SdkError>,
     pub recorded: &'a [RequestRecord],
+    /// Requests that reached the stand-in for every foreign origin. Always a failure: no
+    /// case asks the SDK to leave the configured origin.
+    pub foreign_requests: usize,
     pub base_url: &'a str,
 }
 
@@ -20,6 +23,12 @@ pub struct Run<'a> {
 /// assertion type the runner does not know is a failure too: a case is never passed by
 /// being ignored.
 pub fn check_all(run: &Run) -> Result<(), String> {
+    if run.foreign_requests > 0 {
+        return Err(format!(
+            "[origin] the SDK sent {} request(s) to an origin other than the configured one",
+            run.foreign_requests
+        ));
+    }
     check_request_methods(run)?;
     for assertion in &run.case.assertions {
         check(run, assertion).map_err(|message| format!("[{}] {message}", assertion.kind))?;
@@ -481,8 +490,11 @@ fn expected_string(assertion: &Assertion) -> Result<&str, String> {
 }
 
 /// Walks a decoded JSON value by a dot-separated path, reading integer segments as array
-/// indexes.
+/// indexes. An empty path is the value itself.
 fn lookup<'a>(value: &'a Value, path: &str) -> Option<&'a Value> {
+    if path.is_empty() {
+        return Some(value);
+    }
     path.split('.')
         .try_fold(value, |current, segment| match current {
             Value::Object(fields) => fields.get(segment),
@@ -491,15 +503,33 @@ fn lookup<'a>(value: &'a Value, path: &str) -> Option<&'a Value> {
         })
 }
 
+/// Structural JSON equality, with one allowance: two numbers compare by value, so `1` and
+/// `1.0` agree. A string never equals a number, `null` or an array, so a response that
+/// changed type is caught rather than coerced.
 fn values_match(expected: &Value, actual: &Value) -> bool {
-    if let (Some(expected), Some(actual)) = (expected.as_i64(), actual.as_i64()) {
-        expected == actual
-    } else if let (Some(expected), Some(actual)) = (expected.as_f64(), actual.as_f64()) {
-        (expected - actual).abs() < f64::EPSILON
-    } else if let (Some(expected), Some(actual)) = (expected.as_bool(), actual.as_bool()) {
-        expected == actual
-    } else {
-        display(expected) == display(actual)
+    match (expected, actual) {
+        (Value::Number(expected), Value::Number(actual)) => {
+            match (expected.as_i64(), actual.as_i64()) {
+                (Some(expected), Some(actual)) => expected == actual,
+                _ => expected.as_f64() == actual.as_f64(),
+            }
+        }
+        (Value::Object(expected), Value::Object(actual)) => {
+            expected.len() == actual.len()
+                && expected.iter().all(|(key, value)| {
+                    actual
+                        .get(key)
+                        .is_some_and(|other| values_match(value, other))
+                })
+        }
+        (Value::Array(expected), Value::Array(actual)) => {
+            expected.len() == actual.len()
+                && expected
+                    .iter()
+                    .zip(actual)
+                    .all(|(value, other)| values_match(value, other))
+        }
+        _ => expected == actual,
     }
 }
 
@@ -532,11 +562,24 @@ mod tests {
     }
 
     #[test]
-    fn values_match_compares_by_kind() {
+    fn values_match_is_structural() {
         assert!(values_match(&json!(1), &json!(1)));
-        assert!(values_match(&json!("1"), &json!(1)));
+        assert!(values_match(&json!(1), &json!(1.0)));
+        assert!(values_match(
+            &json!({"a": [1, "b"]}),
+            &json!({"a": [1.0, "b"]})
+        ));
+        assert!(!values_match(&json!("1"), &json!(1)));
+        assert!(!values_match(&json!("null"), &json!(null)));
+        assert!(!values_match(&json!("[1]"), &json!([1])));
         assert!(!values_match(&json!(true), &json!(false)));
-        assert!(!values_match(&json!("a"), &json!("b")));
+        assert!(!values_match(&json!({"a": 1}), &json!({"a": 1, "b": 2})));
+    }
+
+    #[test]
+    fn lookup_of_an_empty_path_is_the_root() {
+        let body = json!([{"id": "b1"}]);
+        assert_eq!(lookup(&body, ""), Some(&body));
     }
 
     #[test]

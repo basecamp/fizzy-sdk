@@ -108,6 +108,7 @@ async fn run_case(case: &TestCase) -> Result<(), String> {
             case,
             outcome: &outcome,
             recorded: &[],
+            foreign_requests: 0,
             base_url: case.link_origin(),
         });
     }
@@ -120,7 +121,8 @@ async fn run_case(case: &TestCase) -> Result<(), String> {
     assertions::check_all(&Run {
         case,
         outcome: &outcome,
-        recorded: &recorded,
+        recorded: &recorded.requests,
+        foreign_requests: recorded.foreign_requests,
         base_url: &base_url,
     })
 }
