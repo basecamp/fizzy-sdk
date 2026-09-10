@@ -14,7 +14,7 @@
           "Link": "<https://fizzy.do/999/boards.json?page=2>; rel=\"next\""
         },
         "body": [
-          { "id": 1, "name": "Board 1", "all_access": true, "created_at": "2026-01-01T00:00:00Z", "url": "https://fizzy.do/999/boards/1" }
+          { "id": "1", "name": "Board 1", "all_access": true, "created_at": "2026-01-01T00:00:00Z", "url": "https://fizzy.do/999/boards/1" }
         ]
       }
     ],
@@ -41,14 +41,14 @@
           "Link": "<http://localhost:3000/999/boards.json?page=2>; rel=\"next\""
         },
         "body": [
-          { "id": 1, "name": "Board 1", "all_access": true, "created_at": "2026-01-01T00:00:00Z", "url": "http://localhost:3000/999/boards/1" }
+          { "id": "1", "name": "Board 1", "all_access": true, "created_at": "2026-01-01T00:00:00Z", "url": "http://localhost:3000/999/boards/1" }
         ]
       },
       {
         "status": 200,
         "headers": { "Content-Type": "application/json" },
         "body": [
-          { "id": 2, "name": "Board 2", "all_access": false, "created_at": "2026-01-02T00:00:00Z", "url": "http://localhost:3000/999/boards/2" }
+          { "id": "2", "name": "Board 2", "all_access": false, "created_at": "2026-01-02T00:00:00Z", "url": "http://localhost:3000/999/boards/2" }
         ]
       }
     ],
