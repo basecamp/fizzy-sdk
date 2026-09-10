@@ -91,6 +91,24 @@ pub struct AccountClient {
     account_id: String,
 }
 
+impl std::fmt::Debug for Client {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Client")
+            .field("base_url", &self.shared.base_url.as_str())
+            .field("user_agent", &self.shared.user_agent)
+            .finish_non_exhaustive()
+    }
+}
+
+impl std::fmt::Debug for AccountClient {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AccountClient")
+            .field("account_id", &self.account_id)
+            .field("client", &self.client)
+            .finish()
+    }
+}
+
 impl AccountClient {
     /// The client underneath.
     pub fn client(&self) -> &Client {
@@ -349,7 +367,7 @@ impl ClientBuilder {
         self
     }
 
-    /// Caches JSON reads by ETag. Without this, `config.cache_enabled` decides whether a
+    /// Caches JSON reads by `ETag`. Without this, `config.cache_enabled` decides whether a
     /// [`FileCache`] in `config.cache_dir` is used.
     pub fn cache(mut self, cache: impl ResponseCache + 'static) -> ClientBuilder {
         self.cache = Some(Arc::new(cache));
@@ -769,7 +787,7 @@ impl Client {
                 None => None,
                 Some(credential) => {
                     let key = cache_key(url.as_str(), &credential);
-                    if !cached.as_ref().is_some_and(|(held, _)| *held == key) {
+                    if cached.as_ref().is_none_or(|(held, _)| *held != key) {
                         *cached = self.look_up(cache, &key).await;
                     }
                     Some(key)
@@ -818,10 +836,10 @@ impl Client {
     /// are held per identity, so a request that goes out without credentials is not
     /// cached: there would be nothing to tell one caller's copy from another's.
     fn cacheable(&self, operation: &Operation) -> Option<&Arc<dyn ResponseCache>> {
-        if !operation.no_cache && operation.method == Method::GET {
-            self.shared.cache.as_ref()
-        } else {
+        if operation.no_cache || operation.method != Method::GET {
             None
+        } else {
+            self.shared.cache.as_ref()
         }
     }
 

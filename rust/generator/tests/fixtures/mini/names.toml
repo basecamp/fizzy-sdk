@@ -1,0 +1,9 @@
+service_suffixes = [
+    { suffix = "Widgets", service = "widgets" },
+    { suffix = "Widget", service = "widgets" },
+    { suffix = "Session", service = "sessions" },
+]
+
+[resource_types]
+sessions = "session"
+widgets = "widget"

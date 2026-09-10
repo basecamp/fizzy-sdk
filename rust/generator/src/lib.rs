@@ -1,5 +1,6 @@
-//! The generator behind `rust/fizzy-sdk/src/generated`: a model read from `openapi.json`
-//! and `behavior-model.json`, named by `names.toml`, and rendered into Rust.
+//! The generator behind `rust/fizzy-sdk/src/generated` and `rust/fizzy-sdk/tests/generated_calls`:
+//! a model read from `openapi.json` and `behavior-model.json`, named by `names.toml`, and
+//! rendered into Rust.
 
 #![allow(clippy::missing_errors_doc)]
 
@@ -15,12 +16,16 @@ use std::{env, fs};
 use model::{Model, ResourceTypes};
 use naming::Naming;
 
+/// The generated directories under the crate, relative to `rust/fizzy-sdk`. Every file the
+/// generator writes lives under one of them, and nothing else may.
+pub const GENERATED_DIRS: &[&str] = &["src/generated", "tests/generated_calls"];
+
 /// Where the generator's output goes.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Mode {
-    /// Replace `rust/fizzy-sdk/src/generated` under the root.
+    /// Replace the generated directories under `rust/fizzy-sdk`.
     Write,
-    /// Write to a directory of the caller's choosing, leaving the checked-in code alone.
+    /// Write to a crate directory of the caller's choosing, leaving the checked-in code alone.
     WriteTo(PathBuf),
     /// Write nothing; fail when the checked-in code differs from what would be generated.
     Check,
@@ -49,88 +54,115 @@ impl Options {
 /// Reads the inputs, builds the model and writes or verifies the generated code.
 pub fn run(options: Options) -> Result<(), String> {
     let files = render_from(&options.root)?;
-    let checked_in = options.root.join("rust/fizzy-sdk/src/generated");
+    let crate_dir = options.root.join("rust/fizzy-sdk");
     match options.mode {
-        Mode::Write => write(&checked_in, &files),
+        Mode::Write => write(&crate_dir, &files),
         Mode::WriteTo(target) => write(&target, &files),
-        Mode::Check => verify(&checked_in, &files),
+        Mode::Check => verify(&crate_dir, &files),
     }
 }
 
-/// Every generated file, keyed by its path under the generated directory, unformatted.
+/// Every generated file, keyed by its path under the crate, unformatted.
 pub fn render_from(root: &Path) -> Result<BTreeMap<PathBuf, String>, String> {
-    let openapi = read_json(&root.join("openapi.json"))?;
-    let behavior = read_json(&root.join("behavior-model.json"))?;
-    let names = read(&root.join("rust/generator/names.toml"))?;
+    render_inputs(
+        &root.join("openapi.json"),
+        &root.join("behavior-model.json"),
+        &root.join("rust/generator/names.toml"),
+    )
+}
+
+/// Every generated file from the three inputs named, unformatted.
+pub fn render_inputs(
+    openapi: &Path,
+    behavior: &Path,
+    names: &Path,
+) -> Result<BTreeMap<PathBuf, String>, String> {
+    let openapi = read_json(openapi)?;
+    let behavior = read_json(behavior)?;
+    let names = read(names)?;
     let naming = Naming::parse(&names)?;
     let resource_types = ResourceTypes::parse(&names)?;
     let model = Model::build(&openapi, &behavior, &naming, &resource_types)?;
     Ok(render(&model))
 }
 
-/// Renders a model into its files, unformatted.
+/// Renders a model into its files, keyed by path under the crate, unformatted.
 pub fn render(model: &Model) -> BTreeMap<PathBuf, String> {
     let mut files = BTreeMap::new();
-    files.insert(PathBuf::from("mod.rs"), emit::render_mod(model));
-    files.insert(PathBuf::from("types.rs"), emit::types::render(model));
-    files.insert(PathBuf::from("routes.rs"), emit::routes::render(model));
+    let generated = Path::new(GENERATED_DIRS[0]);
+    files.insert(generated.join("mod.rs"), emit::render_mod(model));
+    files.insert(generated.join("types.rs"), emit::types::render(model));
+    files.insert(generated.join("routes.rs"), emit::routes::render(model));
     files.insert(
-        PathBuf::from("redaction.rs"),
+        generated.join("redaction.rs"),
         emit::redaction::render(model),
     );
     files.insert(
-        PathBuf::from("accessors.rs"),
+        generated.join("accessors.rs"),
         emit::accessors::render(model),
     );
     files.insert(
-        PathBuf::from("services/mod.rs"),
+        generated.join("services/mod.rs"),
         emit::services::render_mod(model),
     );
+    let tests = Path::new(GENERATED_DIRS[1]);
+    files.insert(tests.join("main.rs"), emit::tests::render_main(model));
     for service in &model.services {
         files.insert(
-            PathBuf::from(format!("services/{}.rs", service.name)),
+            generated.join(format!("services/{}.rs", service.name)),
             emit::services::render_service(service),
+        );
+        files.insert(
+            tests.join(format!("{}.rs", service.name)),
+            emit::tests::render_service(service),
         );
     }
     files
 }
 
-fn write(target: &Path, files: &BTreeMap<PathBuf, String>) -> Result<(), String> {
-    if target.exists() {
-        fs::remove_dir_all(target).map_err(|error| format!("{}: {error}", target.display()))?;
+fn write(crate_dir: &Path, files: &BTreeMap<PathBuf, String>) -> Result<(), String> {
+    for generated in GENERATED_DIRS {
+        let target = crate_dir.join(generated);
+        if target.exists() {
+            fs::remove_dir_all(&target)
+                .map_err(|error| format!("{}: {error}", target.display()))?;
+        }
     }
-    let paths = write_all(target, files)?;
+    let paths = write_all(crate_dir, files)?;
     format(&paths)?;
-    println!("Generated {} files in {}", paths.len(), target.display());
+    println!("Generated {} files in {}", paths.len(), crate_dir.display());
     Ok(())
 }
 
-fn verify(target: &Path, files: &BTreeMap<PathBuf, String>) -> Result<(), String> {
+fn verify(crate_dir: &Path, files: &BTreeMap<PathBuf, String>) -> Result<(), String> {
     let scratch = env::temp_dir().join(format!("fizzy-sdk-generator-{}", std::process::id()));
     let paths = write_all(&scratch, files)?;
     let formatted = format(&paths);
     let mut stale = Vec::new();
     for relative in files.keys() {
         let expected = fs::read_to_string(scratch.join(relative)).unwrap_or_default();
-        let actual = fs::read_to_string(target.join(relative)).unwrap_or_default();
+        let actual = fs::read_to_string(crate_dir.join(relative)).unwrap_or_default();
         if expected != actual {
             stale.push(relative.display().to_string());
         }
     }
-    for existing in list_files(target, target) {
-        if !files.contains_key(&existing) {
-            stale.push(format!("{} (unexpected)", existing.display()));
+    for generated in GENERATED_DIRS {
+        let target = crate_dir.join(generated);
+        for existing in list_files(&target, &target) {
+            if !files.contains_key(&Path::new(generated).join(&existing)) {
+                stale.push(format!("{generated}/{} (unexpected)", existing.display()));
+            }
         }
     }
     let _ = fs::remove_dir_all(&scratch);
     formatted?;
     if stale.is_empty() {
-        println!("{} is up to date", target.display());
+        println!("{} is up to date", crate_dir.display());
         Ok(())
     } else {
         Err(format!(
             "{} is out of date. Run `make rs-generate`. Stale files:\n  {}",
-            target.display(),
+            crate_dir.display(),
             stale.join("\n  ")
         ))
     }

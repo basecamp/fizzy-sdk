@@ -1,4 +1,4 @@
-//! The ETag response cache: a trait, an in-memory implementation and a file-backed one.
+//! The `ETag` response cache: a trait, an in-memory implementation and a file-backed one.
 
 use std::collections::HashMap;
 use std::fs;
@@ -18,7 +18,7 @@ pub struct CachedResponse {
     pub body: Bytes,
 }
 
-/// Stores JSON responses by ETag so a repeated read can be answered from a 304.
+/// Stores JSON responses by `ETag` so a repeated read can be answered from a 304.
 pub trait ResponseCache: Send + Sync {
     /// What is held for the key.
     fn get(&self, key: &str) -> Option<CachedResponse>;
@@ -55,7 +55,7 @@ impl ResponseCache for InMemoryCache {
     fn set(&self, key: &str, response: CachedResponse) {
         self.entries
             .lock()
-            .unwrap()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
             .insert(key.to_string(), response);
     }
 
@@ -194,5 +194,9 @@ pub fn cache_key(url: &str, credential: &str) -> String {
 }
 
 fn hex(bytes: &[u8]) -> String {
-    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+    use std::fmt::Write;
+    bytes.iter().fold(String::new(), |mut out, byte| {
+        let _ = write!(out, "{byte:02x}");
+        out
+    })
 }

@@ -26,7 +26,7 @@ fn parse(mut arguments: impl Iterator<Item = String>) -> Result<Options, String>
         match argument.as_str() {
             "--check" => options.mode = Mode::Check,
             "--root" => {
-                options.root = PathBuf::from(arguments.next().ok_or("--root needs a path")?)
+                options.root = PathBuf::from(arguments.next().ok_or("--root needs a path")?);
             }
             "--out" => {
                 options.mode =

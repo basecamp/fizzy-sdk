@@ -41,6 +41,7 @@ pub type BulkheadPermit = OwnedSemaphorePermit;
 
 impl Bulkhead {
     /// A bulkhead of the configured width.
+    #[allow(clippy::needless_pass_by_value)] // the config is consumed by convention, like the others
     pub fn new(config: BulkheadConfig) -> Bulkhead {
         let max_concurrent = match config.max_concurrent {
             0 => BulkheadConfig::default().max_concurrent,

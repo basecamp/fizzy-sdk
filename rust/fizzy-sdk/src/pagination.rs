@@ -23,7 +23,7 @@ use crate::security::is_same_origin;
 pub struct Page<T> {
     value: T,
     next_url: Option<Url>,
-    next_page: Option<String>,
+    next_cursor: Option<String>,
     total_count: Option<u64>,
     /// What the read that produced this page announced itself as, so the reads that walk
     /// on from it can say the same.
@@ -45,7 +45,7 @@ impl<T> Page<T> {
             .and_then(|value| value.to_str().ok())
             .and_then(next_link)
             .and_then(|target| response.url.join(&target).ok());
-        let next_page = next_url.as_ref().and_then(|url| {
+        let next_cursor = next_url.as_ref().and_then(|url| {
             url.query_pairs()
                 .find(|(name, _)| name == "page")
                 .map(|(_, value)| value.into_owned())
@@ -58,7 +58,7 @@ impl<T> Page<T> {
         Page {
             value,
             next_url,
-            next_page,
+            next_cursor,
             total_count,
             info,
             retry,
@@ -85,7 +85,7 @@ impl<T> Page<T> {
 
     /// The opaque cursor for the page after this one, to pass as `page` on the same read.
     pub fn next_page(&self) -> Option<&str> {
-        self.next_page.as_deref()
+        self.next_cursor.as_deref()
     }
 
     /// The URL of the page after this one, as Fizzy's `Link` header named it.
@@ -108,7 +108,7 @@ impl<T> Page<T> {
         Page {
             value: f(self.value),
             next_url: self.next_url,
-            next_page: self.next_page,
+            next_cursor: self.next_cursor,
             total_count: self.total_count,
             info: self.info,
             retry: self.retry,
@@ -236,7 +236,7 @@ impl Client {
                 collected.truncate(limit);
                 break;
             }
-            match self.next_page_url(&response, &started_at)? {
+            match Client::next_page_url(&response, &started_at)? {
                 Some(next) if pages < self.max_pages() => {
                     operation = Operation::at(Method::GET, next);
                     if let Some(retry) = &retry {
@@ -257,7 +257,7 @@ impl Client {
     /// it came in. A target off the origin the walk started on is refused rather than
     /// followed: the header is the server's to write, and following it would carry the
     /// credentials somewhere they were never meant to go.
-    fn next_page_url(&self, response: &Response, started_at: &Url) -> Result<Option<Url>, Error> {
+    fn next_page_url(response: &Response, started_at: &Url) -> Result<Option<Url>, Error> {
         match response.header("link").and_then(next_link) {
             None => Ok(None),
             Some(target) => {

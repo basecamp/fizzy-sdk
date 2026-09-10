@@ -1,0 +1,88 @@
+{
+  "openapi": "3.0.2",
+  "info": { "title": "Mini", "version": "2026-01-01" },
+  "paths": {
+    "/session.json": {
+      "post": {
+        "operationId": "CreateSession",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateSessionRequestContent" } } }, "required": true },
+        "responses": { "200": { "description": "ok", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateSessionResponseContent" } } } } },
+        "x-fizzy-retry": { "maxAttempts": 1 }
+      },
+      "delete": {
+        "operationId": "DestroySession",
+        "responses": { "204": { "description": "gone" } },
+        "x-fizzy-idempotent": { "natural": true },
+        "x-fizzy-retry": { "maxAttempts": 1 }
+      }
+    },
+    "/{accountId}/widgets.json": {
+      "get": {
+        "operationId": "ListWidgets",
+        "parameters": [
+          { "name": "accountId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "tag_ids[]", "in": "query", "style": "form", "explode": true, "schema": { "type": "array", "items": { "type": "string" } } },
+          { "name": "sorted_by", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "ok", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ListWidgetsResponseContent" } } } } },
+        "x-fizzy-pagination": { "style": "link", "pageParam": "page" },
+        "x-fizzy-retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 500, 503] }
+      }
+    },
+    "/{accountId}/widgets/{widgetNumber}": {
+      "get": {
+        "operationId": "GetWidget",
+        "parameters": [
+          { "name": "accountId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "widgetNumber", "in": "path", "required": true, "schema": { "type": "integer", "format": "int32" } },
+          { "name": "expand", "in": "query", "required": true, "schema": { "type": "boolean" } }
+        ],
+        "responses": { "200": { "description": "ok", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GetWidgetResponseContent" } } } } },
+        "x-fizzy-retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 500, 503] }
+      }
+    },
+    "/{accountId}/widgets/{widgetNumber}/closure.json": {
+      "post": {
+        "operationId": "CloseWidget",
+        "parameters": [
+          { "name": "accountId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "widgetNumber", "in": "path", "required": true, "schema": { "type": "integer", "format": "int32" } }
+        ],
+        "responses": { "204": { "description": "closed" } },
+        "x-fizzy-idempotent": { "natural": true },
+        "x-fizzy-retry": { "maxAttempts": 3, "baseDelayMs": 1000, "backoff": "exponential", "retryOn": [429, 500, 503] }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CreateSessionRequestContent": {
+        "type": "object",
+        "properties": { "email_address": { "type": "string", "format": "password", "x-fizzy-sensitive": { "category": "pii", "redact": true } } },
+        "required": ["email_address"]
+      },
+      "CreateSessionResponseContent": { "$ref": "#/components/schemas/PendingAuthentication" },
+      "GetWidgetResponseContent": { "$ref": "#/components/schemas/Widget" },
+      "ListWidgetsResponseContent": { "type": "array", "items": { "$ref": "#/components/schemas/Widget" } },
+      "PendingAuthentication": {
+        "type": "object",
+        "properties": { "pending_authentication_token": { "type": "string" } },
+        "required": ["pending_authentication_token"]
+      },
+      "Widget": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "number": { "type": "integer", "format": "int32" },
+          "created_at": { "type": "string" },
+          "owner_name": { "type": "string", "format": "password" },
+          "parent": { "$ref": "#/components/schemas/Widget" },
+          "labels": { "type": "array", "items": { "type": "string" } },
+          "type": { "type": "string" },
+          "extra": { "type": "object", "additionalProperties": { "type": "string" } }
+        },
+        "required": ["id", "number", "created_at"]
+      }
+    }
+  }
+}

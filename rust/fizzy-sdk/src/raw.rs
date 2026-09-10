@@ -105,9 +105,7 @@ impl Client {
     fn absolute(&self, path: &str) -> Result<Option<Url>, Error> {
         if path.starts_with("https://") || path.starts_with("http://") {
             let url = Url::parse(path)?;
-            if is_same_origin(&url, self.base_url()) {
-                Ok(Some(url))
-            } else if url.scheme() == "https" {
+            if url.scheme() == "https" || is_same_origin(&url, self.base_url()) {
                 Ok(Some(url))
             } else {
                 Err(Error::usage(format!("URL must use HTTPS, got: {path}")))

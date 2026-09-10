@@ -399,7 +399,7 @@ mod tests {
     }
 
     impl Recorder {
-        fn record(&self, event: String) {
+        fn record(&self, event: &str) {
             self.entries
                 .lock()
                 .unwrap()
@@ -410,12 +410,12 @@ mod tests {
     #[async_trait]
     impl Hooks for Recorder {
         async fn on_operation_gate(&self, op: &OperationInfo) -> Result<(), Error> {
-            self.record(format!("gate {}.{}", op.service, op.operation));
+            self.record(&format!("gate {}.{}", op.service, op.operation));
             Ok(())
         }
 
         fn on_operation_start(&self, op: &OperationInfo) -> OperationState {
-            self.record(format!("start {}.{}", op.service, op.operation));
+            self.record(&format!("start {}.{}", op.service, op.operation));
             Some(Box::new(self.name.to_string()))
         }
 
@@ -430,22 +430,22 @@ mod tests {
                 Some(name) => *name,
                 None => "nothing".to_string(),
             };
-            self.record(format!(
+            self.record(&format!(
                 "end {}.{} carrying {carried}",
                 op.service, op.operation
             ));
         }
 
         fn on_request_start(&self, info: &RequestInfo) {
-            self.record(format!("request start {}", info.attempt));
+            self.record(&format!("request start {}", info.attempt));
         }
 
         fn on_request_end(&self, _info: &RequestInfo, result: &RequestResult<'_>) {
-            self.record(format!("request end {}", result.status.unwrap().as_u16()));
+            self.record(&format!("request end {}", result.status.unwrap().as_u16()));
         }
 
         fn on_retry(&self, _info: &RequestInfo, next_attempt: u32, _cause: &Error) {
-            self.record(format!("retry {next_attempt}"));
+            self.record(&format!("retry {next_attempt}"));
         }
     }
 

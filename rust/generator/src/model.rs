@@ -629,8 +629,8 @@ fn response_of(operation: &Value, naming: &Naming, schemas: &[Schema]) -> Result
 fn idempotent(http_method: &str, operation: &Value, semantics: &Value) -> bool {
     operation["x-fizzy-idempotent"]["natural"]
         .as_bool()
-        .or_else(|| semantics["idempotent"].as_bool())
-        .unwrap_or_else(|| matches!(http_method, "get" | "head" | "put" | "delete"))
+        .or(semantics["idempotent"].as_bool())
+        .unwrap_or(matches!(http_method, "get" | "head" | "put" | "delete"))
 }
 
 fn pagination(semantics: &Value, id: &str) -> Result<Option<String>, String> {

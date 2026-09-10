@@ -19,7 +19,7 @@ pub struct Config {
     pub account: Option<String>,
     /// Where the response cache keeps its files.
     pub cache_dir: PathBuf,
-    /// Whether reads are cached by ETag.
+    /// Whether reads are cached by `ETag`.
     pub cache_enabled: bool,
 }
 
@@ -71,7 +71,7 @@ impl Config {
         self
     }
 
-    /// Turns the ETag cache on or off.
+    /// Turns the `ETag` cache on or off.
     pub fn with_cache_enabled(mut self, enabled: bool) -> Config {
         self.cache_enabled = enabled;
         self
