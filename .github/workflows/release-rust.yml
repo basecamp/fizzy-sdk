@@ -184,6 +184,9 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  # Trusted publishing can only be configured on a crate that already exists, so the
+  # very first version is published by hand from the commit about to be tagged (see
+  # CONTRIBUTING.md); this job then finds it already published and skips the upload.
   publish:
     name: Publish to crates.io
     needs: package

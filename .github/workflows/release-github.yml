@@ -43,6 +43,7 @@ jobs:
                 --repo "$GITHUB_REPOSITORY" \
                 --workflow "$WF" \
                 --branch "$TAG" \
+                --event push \
                 --limit 5 \
                 --json conclusion,headSha \
                 --jq "[.[] | select(.headSha == \"$GITHUB_SHA\")] | .[0] // empty")
