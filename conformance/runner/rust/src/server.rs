@@ -27,14 +27,28 @@ pub struct RequestRecord {
     pub headers: HeaderMap,
 }
 
+/// What the servers saw once the case ran.
+pub struct Recorded {
+    pub requests: Vec<RequestRecord>,
+    /// Requests that reached the stand-in for every origin other than the configured one.
+    pub foreign_requests: usize,
+}
+
 /// A loopback server that answers each request with the case's next mock response, in
 /// order, and records what it was asked. A request that follows a `Link` must ask for
 /// exactly the page the link named; past the last response it answers as the Go runner
 /// does: an empty page when the case was paginating, a 500 otherwise.
+///
+/// A second loopback listener stands in for every origin that is not the configured one.
+/// A `Link` to `evil.example.com` is served pointing there, so an SDK that wrongly follows
+/// it hits the stand-in and is counted, rather than sending a bearer token off the machine
+/// and waiting on the network.
 pub struct MockServer {
     base_url: String,
     records: Arc<Mutex<Vec<RequestRecord>>>,
+    foreign_requests: Arc<Mutex<usize>>,
     server: JoinHandle<()>,
+    foreign: JoinHandle<()>,
 }
 
 struct Mocks {
@@ -45,20 +59,23 @@ struct Mocks {
 }
 
 impl MockServer {
-    /// Starts the server. `link_origin` is the origin the fixture's `Link` headers are
-    /// written against; a link on exactly that origin is rewritten to the server's so a
-    /// same-origin next page resolves here, and a link on any other origin is served
-    /// untouched.
+    /// Starts the servers. `link_origin` is the origin the fixture's `Link` headers are
+    /// written against: an absolute link on exactly that origin is rewritten to the main
+    /// server so a same-origin next page resolves here; an absolute link on any other
+    /// origin — foreign, another scheme, or merely sharing a prefix — is rewritten to the
+    /// stand-in; a relative link is served as written.
     pub async fn start(
         responses: &[MockResponse],
         link_origin: &str,
     ) -> Result<MockServer, io::Error> {
         let listener = TcpListener::bind("127.0.0.1:0").await?;
         let base_url = format!("http://{}", listener.local_addr()?);
+        let foreign_listener = TcpListener::bind("127.0.0.1:0").await?;
+        let foreign_url = format!("http://{}", foreign_listener.local_addr()?);
         let paginated = responses.iter().any(|mock| header(mock, "link").is_some());
         let responses = responses
             .iter()
-            .map(|mock| rewrite_link(mock, link_origin, &base_url))
+            .map(|mock| rewrite_link(mock, link_origin, &base_url, &foreign_url))
             .collect();
         let records = Arc::new(Mutex::new(Vec::new()));
         let mocks = Arc::new(Mocks {
@@ -71,10 +88,19 @@ impl MockServer {
         let server = tokio::spawn(async move {
             let _ = axum::serve(listener, router).await;
         });
+        let foreign_requests = Arc::new(Mutex::new(0));
+        let foreign_router = Router::new()
+            .fallback(refuse_foreign)
+            .with_state(foreign_requests.clone());
+        let foreign = tokio::spawn(async move {
+            let _ = axum::serve(foreign_listener, foreign_router).await;
+        });
         Ok(MockServer {
             base_url,
             records,
+            foreign_requests,
             server,
+            foreign,
         })
     }
 
@@ -82,19 +108,32 @@ impl MockServer {
         &self.base_url
     }
 
-    pub fn shutdown(self) -> Vec<RequestRecord> {
+    pub fn shutdown(self) -> Recorded {
         self.server.abort();
-        self.records
-            .lock()
-            .map(|records| records.clone())
-            .unwrap_or_default()
+        self.foreign.abort();
+        Recorded {
+            requests: self
+                .records
+                .lock()
+                .map(|records| records.clone())
+                .unwrap_or_default(),
+            foreign_requests: self
+                .foreign_requests
+                .lock()
+                .map(|count| *count)
+                .unwrap_or_default(),
+        }
     }
 }
 
-/// Rewrites a `Link` header's targets whose origin is exactly the fixture origin to the
-/// server's origin, and leaves every other target — relative, foreign, or merely
-/// sharing a prefix with the fixture origin — as written.
-fn rewrite_link(mock: &MockResponse, link_origin: &str, server_url: &str) -> MockResponse {
+/// Rewrites a `Link` header's absolute targets: those on exactly the fixture origin to the
+/// server, every other one to the foreign stand-in. Relative targets are left as written.
+fn rewrite_link(
+    mock: &MockResponse,
+    link_origin: &str,
+    server_url: &str,
+    foreign_url: &str,
+) -> MockResponse {
     let Some((name, value)) = mock
         .headers
         .iter()
@@ -103,12 +142,16 @@ fn rewrite_link(mock: &MockResponse, link_origin: &str, server_url: &str) -> Moc
     else {
         return mock.clone();
     };
-    let (Ok(from), Ok(to)) = (Url::parse(link_origin), Url::parse(server_url)) else {
+    let (Ok(from), Ok(to), Ok(foreign)) = (
+        Url::parse(link_origin),
+        Url::parse(server_url),
+        Url::parse(foreign_url),
+    ) else {
         return mock.clone();
     };
     let rewritten_value = value
         .split(',')
-        .map(|part| rewrite_target(part, &from, &to))
+        .map(|part| rewrite_target(part, &from, &to, &foreign))
         .collect::<Vec<_>>()
         .join(",");
     let mut rewritten = mock.clone();
@@ -116,7 +159,7 @@ fn rewrite_link(mock: &MockResponse, link_origin: &str, server_url: &str) -> Moc
     rewritten
 }
 
-fn rewrite_target(part: &str, from: &Url, to: &Url) -> String {
+fn rewrite_target(part: &str, from: &Url, to: &Url, foreign: &Url) -> String {
     let Some((prefix, rest)) = part.split_once('<') else {
         return part.to_string();
     };
@@ -126,12 +169,14 @@ fn rewrite_target(part: &str, from: &Url, to: &Url) -> String {
     let Ok(mut url) = Url::parse(target) else {
         return part.to_string();
     };
-    if url.origin() != from.origin() {
-        return part.to_string();
-    }
-    let _ = url.set_scheme(to.scheme());
-    let _ = url.set_host(to.host_str());
-    let _ = url.set_port(to.port());
+    let destination = if url.origin() == from.origin() {
+        to
+    } else {
+        foreign
+    };
+    let _ = url.set_scheme(destination.scheme());
+    let _ = url.set_host(destination.host_str());
+    let _ = url.set_port(destination.port());
     format!("{prefix}<{url}>{suffix}")
 }
 
@@ -204,6 +249,17 @@ async fn answer(State(mocks): State<Arc<Mocks>>, request: Request) -> Response<B
     }
 }
 
+async fn refuse_foreign(State(count): State<Arc<Mutex<usize>>>) -> Response<Body> {
+    if let Ok(mut count) = count.lock() {
+        *count += 1;
+    }
+    (
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "the SDK followed a link off the configured origin",
+    )
+        .into_response()
+}
+
 fn serve(mock: &MockResponse) -> Response<Body> {
     let mut response = Response::builder().status(mock.status);
     for (name, value) in &mock.headers {
@@ -222,6 +278,9 @@ fn serve(mock: &MockResponse) -> Response<Body> {
 mod tests {
     use super::*;
 
+    const SERVER: &str = "http://127.0.0.1:4321";
+    const FOREIGN: &str = "http://127.0.0.1:9999";
+
     fn linked(link: &str) -> MockResponse {
         let mut mock = MockResponse::default();
         mock.headers.insert("Link".into(), link.into());
@@ -231,7 +290,7 @@ mod tests {
     #[test]
     fn rewrites_the_fixture_origin_to_the_server() {
         let mock = linked("<http://localhost:3000/999/boards.json?page=2>; rel=\"next\"");
-        let rewritten = rewrite_link(&mock, "http://localhost:3000", "http://127.0.0.1:4321");
+        let rewritten = rewrite_link(&mock, "http://localhost:3000", SERVER, FOREIGN);
         assert_eq!(
             rewritten.headers["Link"],
             "<http://127.0.0.1:4321/999/boards.json?page=2>; rel=\"next\""
@@ -239,40 +298,59 @@ mod tests {
     }
 
     #[test]
-    fn leaves_foreign_relative_and_prefix_sharing_links_alone() {
-        for link in [
-            "<https://evil.example.com/999/boards.json?page=2>; rel=\"next\"",
-            "</999/boards.json?page=2>; rel=\"next\"",
-            "<http://fizzy.do/999/boards.json?page=2>; rel=\"next\"",
-            "<https://fizzy.do:444/999/boards.json?page=2>; rel=\"next\"",
-            "<https://fizzy.do.evil.example/999/boards.json?next=https://fizzy.do/x>; rel=\"next\"",
+    fn sends_foreign_and_prefix_sharing_links_to_the_stand_in() {
+        for (link, expected) in [
+            (
+                "<https://evil.example.com/999/boards.json?page=2>; rel=\"next\"",
+                "<http://127.0.0.1:9999/999/boards.json?page=2>; rel=\"next\"",
+            ),
+            (
+                "<http://fizzy.do/999/boards.json?page=2>; rel=\"next\"",
+                "<http://127.0.0.1:9999/999/boards.json?page=2>; rel=\"next\"",
+            ),
+            (
+                "<https://fizzy.do:444/999/boards.json?page=2>; rel=\"next\"",
+                "<http://127.0.0.1:9999/999/boards.json?page=2>; rel=\"next\"",
+            ),
+            (
+                "<https://fizzy.do.evil.example/x?next=https://fizzy.do/x>; rel=\"next\"",
+                "<http://127.0.0.1:9999/x?next=https://fizzy.do/x>; rel=\"next\"",
+            ),
         ] {
             let mock = linked(link);
-            let rewritten = rewrite_link(&mock, "https://fizzy.do", "http://127.0.0.1:4321");
-            assert_eq!(rewritten.headers["Link"], link);
+            let rewritten = rewrite_link(&mock, "https://fizzy.do", SERVER, FOREIGN);
+            assert_eq!(rewritten.headers["Link"], expected, "{link}");
         }
     }
 
     #[test]
-    fn rewrites_only_the_matching_target_in_a_multi_link_header() {
+    fn leaves_relative_links_alone() {
+        let link = "</999/boards.json?page=2>; rel=\"next\"";
+        let mock = linked(link);
+        let rewritten = rewrite_link(&mock, "https://fizzy.do", SERVER, FOREIGN);
+        assert_eq!(rewritten.headers["Link"], link);
+    }
+
+    #[test]
+    fn rewrites_each_target_of_a_multi_link_header_by_its_own_origin() {
         let mock = linked(
             "<https://fizzy.do/999/boards.json?page=2>; rel=\"next\", <https://other.example/x>; rel=\"prev\"",
         );
-        let rewritten = rewrite_link(&mock, "https://fizzy.do", "http://127.0.0.1:4321");
+        let rewritten = rewrite_link(&mock, "https://fizzy.do", SERVER, FOREIGN);
         assert_eq!(
             rewritten.headers["Link"],
-            "<http://127.0.0.1:4321/999/boards.json?page=2>; rel=\"next\", <https://other.example/x>; rel=\"prev\""
+            "<http://127.0.0.1:4321/999/boards.json?page=2>; rel=\"next\", <http://127.0.0.1:9999/x>; rel=\"prev\""
         );
     }
 
     #[test]
     fn expects_the_page_the_previous_link_named() {
         let mocks = Mocks {
-            base_url: "http://127.0.0.1:4321".into(),
+            base_url: SERVER.into(),
             responses: vec![
                 linked("</999/boards.json?page=2>; rel=\"next\""),
                 MockResponse::default(),
-                linked("<https://evil.example.com/x>; rel=\"next\""),
+                linked("<http://127.0.0.1:9999/x>; rel=\"next\""),
                 MockResponse::default(),
             ],
             paginated: true,
