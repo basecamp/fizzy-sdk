@@ -797,6 +797,12 @@ impl Client {
                 self.shared.base_url.origin().ascii_serialization()
             )));
         }
+        if !url.username().is_empty() || url.password().is_some() {
+            return Err(Error::usage(format!(
+                "{} names a URL carrying credentials; use an access token or a session token",
+                operation.id
+            )));
+        }
         Ok(url)
     }
 
@@ -1339,6 +1345,21 @@ mod tests {
                 .unwrap_err();
             assert_eq!(error.code(), ErrorCode::Usage, "{path}");
         }
+        assert!(http.sent().is_empty());
+    }
+
+    #[tokio::test]
+    async fn a_url_carrying_userinfo_is_refused_without_echoing_it() {
+        let http = Canned::new(|_| answer(200, "{}"));
+        let client = client_over(http.clone());
+
+        let error = client
+            .get("https://user:s3cret@fizzy.test/x")
+            .await
+            .unwrap_err();
+
+        assert_eq!(error.code(), ErrorCode::Usage);
+        assert!(!error.to_string().contains("s3cret"));
         assert!(http.sent().is_empty());
     }
 
