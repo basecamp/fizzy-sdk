@@ -1,0 +1,13 @@
+{
+  "operations": {
+    "CreateSession": { "retry": { "max": 1, "base_delay_ms": null, "backoff": null, "retry_on": null } },
+    "DestroySession": { "idempotent": true, "retry": { "max": 1, "base_delay_ms": null, "backoff": null, "retry_on": null } },
+    "ListWidgets": { "readonly": true, "pagination": { "style": "link", "page_param": "page", "max_page_size": null }, "retry": { "max": 3, "base_delay_ms": 1000, "backoff": "exponential", "retry_on": [429, 500, 503] } },
+    "GetWidget": { "readonly": true, "retry": { "max": 3, "base_delay_ms": 1000, "backoff": "exponential", "retry_on": [429, 500, 503] } },
+    "CloseWidget": { "idempotent": true, "retry": { "max": 3, "base_delay_ms": 1000, "backoff": "exponential", "retry_on": [429, 500, 503] } }
+  },
+  "redaction": {
+    "CreateSessionInput": [ { "path": "$.email_address", "category": "pii", "redact": true } ]
+  },
+  "sensitiveTypes": ["EmailAddress", "PersonName"]
+}

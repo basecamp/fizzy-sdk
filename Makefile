@@ -88,6 +88,7 @@ sync-api-version-check:
 	grep -q "API_VERSION = \"$$API_VER\"" ruby/lib/fizzy/version.rb || ok=false; \
 	grep -q "API_VERSION = \"$$API_VER\"" kotlin/sdk/src/commonMain/kotlin/com/basecamp/fizzy/FizzyConfig.kt || ok=false; \
 	grep -q "apiVersion = \"$$API_VER\"" swift/Sources/Fizzy/FizzyConfig.swift || ok=false; \
+	grep -q "API_VERSION: &str = \"$$API_VER\"" rust/fizzy-sdk/src/generated/mod.rs || ok=false; \
 	if [ "$$ok" = false ]; then echo "ERROR: API_VERSION constants out of sync. Run 'make sync-api-version'"; exit 1; fi
 	@echo "  API version is in sync"
 
@@ -291,16 +292,65 @@ kt-clean:
 	cd kotlin && ./gradlew clean
 
 #---
+# Rust SDK (delegates to rust/Makefile)
+#---
+
+.PHONY: rs-generate rs-generate-services rs-build rs-test rs-test-lib rs-test-features rs-lint rs-doc rs-deny rs-check rs-check-drift rs-publish-check rs-clean
+
+rs-generate:
+	@echo "==> Generating Rust types, routes and services..."
+	@$(MAKE) -C rust generate
+
+rs-generate-services: rs-generate
+
+rs-build:
+	@$(MAKE) -C rust build
+
+rs-test:
+	@$(MAKE) -C rust test
+
+rs-test-lib:
+	@$(MAKE) -C rust test-lib
+
+rs-test-features:
+	@$(MAKE) -C rust test-features
+
+rs-lint:
+	@$(MAKE) -C rust lint
+
+rs-doc:
+	@$(MAKE) -C rust doc
+
+rs-deny:
+	@$(MAKE) -C rust deny
+
+rs-check-drift:
+	@echo "==> Checking Rust service drift..."
+	@$(MAKE) -C rust generate-check
+	./scripts/check-rs-service-drift.sh
+
+rs-publish-check:
+	@$(MAKE) -C rust publish-check
+
+rs-check:
+	@$(MAKE) -C rust check
+	@echo "==> Rust SDK checks passed"
+
+rs-clean:
+	@$(MAKE) -C rust clean
+
+#---
 # Conformance
 #---
 
-.PHONY: conformance-build conformance-go conformance-kotlin conformance-typescript conformance-ruby conformance-swift conformance
+.PHONY: conformance-build conformance-go conformance-kotlin conformance-typescript conformance-ruby conformance-swift conformance-rust conformance-rs conformance-runner-tests-rust conformance
 
 conformance-build:
 	@echo "==> Building conformance runners..."
 	cd conformance/runner/go && go build -o conformance-runner .
 	cd conformance/runner/typescript && npm ci
 	cd kotlin && ./gradlew :conformance:build
+	cd conformance/runner/rust && cargo build --release --locked
 
 conformance-go: conformance-build
 	@echo "==> Running Go conformance..."
@@ -324,7 +374,17 @@ conformance-swift:
 		cd conformance/runner/swift && swift run ConformanceRunner ../../tests/; \
 	else echo "SKIP: Swift conformance runner not found"; fi
 
-conformance: conformance-go conformance-typescript conformance-ruby conformance-kotlin
+conformance-rust: conformance-runner-tests-rust
+	@echo "==> Running Rust conformance..."
+	cd conformance/runner/rust && cargo run -q --release --locked
+
+conformance-rs: conformance-rust
+
+conformance-runner-tests-rust:
+	@echo "==> Running Rust conformance runner tests..."
+	cd conformance/runner/rust && cargo test --locked
+
+conformance: conformance-go conformance-typescript conformance-ruby conformance-kotlin conformance-rust
 	@echo "==> All conformance tests passed"
 
 #---
@@ -362,6 +422,14 @@ endif
 		{ echo "ERROR: Kotlin Gradle project version does not match."; exit 1; }
 	@grep -qF 'VERSION = "$(VERSION)"' typescript/src/client.ts || \
 		{ echo "ERROR: TypeScript client.ts version does not match."; exit 1; }
+	@RS_VERSION=$$(cargo metadata --no-deps --format-version 1 --manifest-path rust/Cargo.toml | \
+		jq -r '.packages[] | select(.name == "fizzy-sdk") | .version'); \
+		[ "$$RS_VERSION" = "$(VERSION)" ] || \
+		{ echo "ERROR: Rust crate version ($$RS_VERSION) does not match."; exit 1; }
+	@cargo metadata --locked --format-version 1 --manifest-path rust/Cargo.toml > /dev/null || \
+		{ echo "ERROR: rust/Cargo.lock is stale. Run 'make bump VERSION=$(VERSION)' first."; exit 1; }
+	@cargo metadata --locked --format-version 1 --manifest-path conformance/runner/rust/Cargo.toml > /dev/null || \
+		{ echo "ERROR: conformance/runner/rust/Cargo.lock is stale. Run 'make bump VERSION=$(VERSION)' first."; exit 1; }
 	@git diff --quiet && git diff --cached --quiet && \
 		test -z "$$(git status --porcelain)" || \
 		{ echo "ERROR: Working tree has uncommitted or untracked changes."; git status --short; exit 1; }
@@ -395,13 +463,13 @@ audit-check:
 check-mvp: smithy-check behavior-model-check url-routes-check sync-api-version-check go-check
 	@echo "==> MVP checks passed"
 
-check-full: check-mvp provenance-check audit-check ts-check rb-check swift-check kt-check conformance
+check-full: check-mvp provenance-check audit-check ts-check rb-check swift-check kt-check rs-check conformance
 	@echo "==> Full checks passed"
 
-check: smithy-check behavior-model-check url-routes-check sync-api-version-check provenance-check audit-check go-check go-check-drift ts-check ts-check-drift rb-check rb-check-drift swift-check swift-check-drift kt-check kt-check-drift conformance
+check: smithy-check behavior-model-check url-routes-check sync-api-version-check provenance-check audit-check go-check go-check-drift ts-check ts-check-drift rb-check rb-check-drift swift-check swift-check-drift kt-check kt-check-drift rs-check rs-check-drift conformance
 	@echo "==> All checks passed"
 
-clean: smithy-clean go-clean ts-clean rb-clean swift-clean kt-clean
+clean: smithy-clean go-clean ts-clean rb-clean swift-clean kt-clean rs-clean
 	@echo "==> Cleaned"
 
 help:
@@ -463,6 +531,21 @@ help:
 	@echo "  kt-check-drift       Check service drift vs OpenAPI spec"
 	@echo "  kt-clean             Remove Kotlin build artifacts"
 	@echo ""
+	@echo "Rust SDK:"
+	@echo "  rs-generate          Generate types, routes and services from openapi.json"
+	@echo "  rs-generate-services Alias for rs-generate (the fleet vocabulary)"
+	@echo "  rs-build             Build the Rust workspace"
+	@echo "  rs-test              Run Rust tests (SDK, generator, conformance runner)"
+	@echo "  rs-test-lib          Run the SDK tests alone (the MSRV leg)"
+	@echo "  rs-test-features     Test with no default features; build the examples"
+	@echo "  rs-lint              Run rustfmt and clippy"
+	@echo "  rs-doc               Build the crate docs"
+	@echo "  rs-deny              Run cargo deny (advisories, licenses, bans, sources)"
+	@echo "  rs-check             Run all Rust checks"
+	@echo "  rs-check-drift       Check generated code and route drift vs OpenAPI"
+	@echo "  rs-publish-check     Run cargo publish --dry-run"
+	@echo "  rs-clean             Remove Rust build artifacts"
+	@echo ""
 	@echo "Conformance:"
 	@echo "  conformance          Run all conformance tests"
 	@echo "  conformance-go       Run Go conformance tests"
@@ -470,6 +553,8 @@ help:
 	@echo "  conformance-typescript Run TypeScript conformance tests"
 	@echo "  conformance-ruby     Run Ruby conformance tests"
 	@echo "  conformance-swift    Run Swift conformance tests"
+	@echo "  conformance-rust     Run Rust conformance tests"
+	@echo "  conformance-runner-tests-rust Run the Rust conformance runner's own tests"
 	@echo "  conformance-build    Build conformance test runners"
 	@echo ""
 	@echo "Provenance:"

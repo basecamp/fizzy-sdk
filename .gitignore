@@ -40,6 +40,10 @@ ruby/pkg/
 .swiftpm/
 Package.resolved
 
+# Rust
+rust/target/
+conformance/runner/rust/target/
+
 # Kotlin
 .gradle/
 kotlin/sdk/build/
@@ -56,3 +60,4 @@ conformance/runner/typescript/node_modules/
 .claude/*
 !.claude/skills/
 !.claude/CLAUDE.md
+

@@ -1,7 +1,7 @@
 # Fizzy SDK -- Agent Instructions
 
-Multi-language client for the Fizzy API (Go, TypeScript, Ruby, Swift, Kotlin), generated
-from the Smithy spec in `spec/`.
+Multi-language client for the Fizzy API (Go, TypeScript, Ruby, Swift, Kotlin, Rust),
+generated from the Smithy spec in `spec/`.
 
 ## Hard Rules
 
@@ -28,7 +28,7 @@ spec/fizzy.smithy -> openapi.json -> behavior-model.json -> per-language generat
 2. Edit the Smithy spec in `spec/`
 3. `make smithy-build` to regenerate OpenAPI
 4. Regenerate **every** language, not just the one you were working in.
-   `make smithy-build` rewrites the shared `openapi.json`, so all five generated
+   `make smithy-build` rewrites the shared `openapi.json`, so all six generated
    service layers go stale at once, and `make check` runs a drift check for each of
    them. This repo has no aggregate `generate-services` target, so name them
    individually:
@@ -39,7 +39,13 @@ spec/fizzy.smithy -> openapi.json -> behavior-model.json -> per-language generat
    make rb-generate-services
    make kt-generate-services
    make swift-generate
+   make rs-generate-services
    ```
+
+   Rust's generator (`rust/generator`) emits types, the route table and the services
+   into `rust/fizzy-sdk/src/generated/`; naming overrides live in
+   `rust/generator/names.toml`, and `make rs-check-drift` is the generator's own
+   `--check` plus the operationId census.
 5. Add or update tests
 6. `make check`
 

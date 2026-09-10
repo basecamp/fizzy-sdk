@@ -32,4 +32,8 @@ sedi "s/API_VERSION = \"[^\"]*\"/API_VERSION = \"$API_VERSION\"/" kotlin/sdk/src
 # Swift
 sedi "s/apiVersion = \"[^\"]*\"/apiVersion = \"$API_VERSION\"/" swift/Sources/Fizzy/FizzyConfig.swift
 
+# Rust — the constant lives in generated code; the generator emits the same value from
+# openapi.json, and rs-check-drift catches any disagreement between the two.
+sedi "s/API_VERSION: &str = \"[^\"]*\"/API_VERSION: \&str = \"$API_VERSION\"/" rust/fizzy-sdk/src/generated/mod.rs
+
 echo "API version synced to all SDKs"

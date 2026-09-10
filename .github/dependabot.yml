@@ -52,6 +52,26 @@ updates:
     cooldown:
       default-days: 10
 
+  - package-ecosystem: cargo
+    directory: /rust
+    schedule:
+      interval: weekly
+    groups:
+      rust-deps:
+        patterns: ["*"]
+    cooldown:
+      default-days: 10
+
+  - package-ecosystem: cargo
+    directory: /conformance/runner/rust
+    schedule:
+      interval: weekly
+    groups:
+      rust-conformance-deps:
+        patterns: ["*"]
+    cooldown:
+      default-days: 10
+
   - package-ecosystem: github-actions
     directory: /
     schedule:

@@ -8,6 +8,7 @@
 - Ruby 3.2+
 - Swift 6.0+
 - JDK 17+
+- Rust 1.88+ (the MSRV; `rust/rust-toolchain.toml` pins the dev toolchain, and `cargo deny` is needed for `make rs-check`)
 - Make
 - [mise](https://mise.jdx.dev/) (recommended)
 
@@ -64,3 +65,29 @@ Recommended sync workflow:
 ## Release Process
 
 Releases are managed via `make release VERSION=x.y.z`. See the Makefile for details.
+
+### Publishing the Rust crate for the first time
+
+`release-rust.yml` publishes `fizzy-sdk` to crates.io through [trusted
+publishing](https://crates.io/docs/trusted-publishing), which can only be configured on a
+crate that already exists. The first version is therefore published by hand, once, from
+the exact commit about to be tagged:
+
+1. On `main`, with a clean tree and `HEAD == origin/main`, run `make check` — the same
+   preflight `make release` runs, so the bytes published by hand are the bytes the tag
+   will point at.
+2. Mint a [crates.io API token](https://crates.io/settings/tokens/new) scoped
+   `publish-new` and `change-owners`, crate-name pattern `fizzy-sdk`, one-day expiry.
+3. Hand the token to Cargo for the next two commands without writing it to disk:
+   `export CARGO_REGISTRY_TOKEN=<token>`.
+4. `cd rust && cargo publish -p fizzy-sdk --locked`
+5. `cargo owner --add github:basecamp:cli fizzy-sdk`, then `unset CARGO_REGISTRY_TOKEN`.
+6. On the crate's settings page, add a Trusted Publisher: repository owner `basecamp`,
+   repository `fizzy-sdk`, workflow `release-rust.yml` (the exact basename; a rename breaks
+   the token exchange), environment `release-crates`.
+7. Revoke the token.
+8. In the repository settings, create the `release-crates` environment, restrict it to tag
+   refs matching `v*`, and add required reviewers.
+9. `make release VERSION=x.y.z` from the same commit. The workflow finds the version
+   already published with a matching checksum and skips the upload; every later release
+   publishes through OIDC with no token anywhere.

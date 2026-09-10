@@ -1,0 +1,71 @@
+[package]
+name = "fizzy-sdk"
+version = "0.2.4"
+description = "Official client for Fizzy - https://fizzy.do"
+readme = "README.md"
+documentation = "https://docs.rs/fizzy-sdk"
+keywords = ["fizzy", "37signals", "api", "sdk"]
+categories = ["api-bindings", "web-programming::http-client"]
+include = ["src/**", "examples/**", "README.md"]
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+rust-version.workspace = true
+
+[lib]
+name = "fizzy_sdk"
+path = "src/lib.rs"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[lints]
+workspace = true
+
+[features]
+default = ["reqwest", "rustls", "tracing"]
+# The HTTP client the SDK ships. Off, an application supplies its own `http::HttpClient`.
+reqwest = ["dep:reqwest"]
+# TLS for the shipped client. The only backend: a native-tls feature would link OpenSSL.
+rustls = ["reqwest?/rustls"]
+# One `tracing` span per operation, with the attempt, status and request id on it.
+tracing = ["dep:tracing"]
+
+[dependencies]
+async-trait = "0.1"
+bytes = "1"
+chrono = { version = "0.4", default-features = false, features = ["clock", "serde", "std"] }
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
+http = "1"
+percent-encoding = "2"
+rand = "0.10"
+reqwest = { version = "0.13", default-features = false, features = ["http2"], optional = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = "0.11"
+# `rt` for the blocking pool the response cache's file reads go to.
+tokio = { version = "1", features = ["io-util", "rt", "time", "sync"] }
+tracing = { version = "0.1", optional = true }
+url = "2"
+
+[dev-dependencies]
+reqwest = { version = "0.13", default-features = false }
+tokio = { version = "1", features = ["macros", "net", "rt-multi-thread", "time", "sync"] }
+wiremock = "0.6"
+
+# The examples that talk to Fizzy need the shipped HTTP client; `cargo test
+# --no-default-features` still builds the examples, so they say so.
+[[example]]
+name = "list_boards"
+required-features = ["reqwest"]
+
+[[example]]
+name = "magic_link_login"
+required-features = ["reqwest"]
+
+[[example]]
+name = "request_log"
+required-features = ["reqwest"]

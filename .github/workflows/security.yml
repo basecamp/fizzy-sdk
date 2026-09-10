@@ -138,6 +138,79 @@ jobs:
           sarif_file: trivy-ruby.sarif
           category: trivy-ruby
 
+  trivy-rust:
+    name: Trivy (Rust)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: ./rust
+          severity: HIGH,CRITICAL
+          limit-severities-for-sarif: true
+          exit-code: 1
+          ignore-unfixed: true
+          format: sarif
+          output: trivy-rust.sarif
+      - uses: github/codeql-action/upload-sarif@d1ba80a13dd99fba24a470575428917156a28b43 # v4.37.5
+        if: always()
+        with:
+          sarif_file: trivy-rust.sarif
+          category: trivy-rust
+      # The conformance runner is its own workspace with its own Cargo.lock.
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        if: always()
+        env:
+          TRIVY_SKIP_DB_UPDATE: true
+        with:
+          scan-type: fs
+          scan-ref: ./conformance/runner/rust
+          severity: HIGH,CRITICAL
+          limit-severities-for-sarif: true
+          exit-code: 1
+          ignore-unfixed: true
+          format: sarif
+          output: trivy-rust-conformance.sarif
+          skip-setup-trivy: true
+      - uses: github/codeql-action/upload-sarif@d1ba80a13dd99fba24a470575428917156a28b43 # v4.37.5
+        if: always()
+        with:
+          sarif_file: trivy-rust-conformance.sarif
+          category: trivy-rust-conformance
+
+  # RustSec advisories, licenses, bans and sources over both Cargo workspaces. This is
+  # the same `make rs-deny` the test workflow runs on every PR; the weekly schedule is
+  # what catches an advisory published against a lockfile nobody touched.
+  cargo-deny:
+    name: cargo deny
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Resolve toolchain
+        id: toolchain
+        run: |
+          CHANNEL=$(sed -n 's/^channel = "\(.*\)"$/\1/p' rust/rust-toolchain.toml)
+          test -n "$CHANNEL"
+          echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
+          echo "RUSTUP_TOOLCHAIN=$CHANNEL" >> "$GITHUB_ENV"
+      - uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
+        with:
+          toolchain: ${{ steps.toolchain.outputs.channel }}
+      - uses: taiki-e/install-action@c3ec0de9ae7f1019cea21aa96aa0a895b9552063 # v2.87.9
+        with:
+          tool: cargo-deny
+      - run: make rs-deny
+
   gosec:
     name: Go Security Check
     runs-on: ubuntu-latest
