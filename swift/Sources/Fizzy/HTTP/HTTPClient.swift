@@ -227,16 +227,20 @@ package final class HTTPClient: Sendable {
     /// `.network(message:cause:)` prints all of it, query included, which on a
     /// signed URL is the credential. The error is rebuilt from parts this SDK
     /// chooses: the same code, so a caller's `URLError` matching classifies it
-    /// as before; the localized description; and the failing URL as origin and
+    /// as before, and the failing URL as origin and
     /// path — never its query, userinfo or fragment. A transport that already
     /// speaks `.network` keeps its message and has its cause projected the same
     /// way. Any other error is the transport's own diagnostic and passes
     /// through unchanged.
     static func projectedTransportError(_ error: any Error, depth: Int = 0) -> any Error {
         if let urlError = error as? URLError {
-            var userInfo: [String: Any] = [NSLocalizedDescriptionKey: urlError.localizedDescription]
-            if let failingURL = urlError.failingURL,
-               let projected = URL(string: stripQueryAndFragment(failingURL.absoluteString)) {
+            // Nothing the transport wrote survives — not even its description,
+            // which a custom Transport can build around the URL; the code is
+            // the diagnostic, and Foundation describes it on its own.
+            var userInfo: [String: Any] = [:]
+            let failingURL = urlError.failingURL?.absoluteString
+                ?? urlError.userInfo[NSURLErrorFailingURLStringErrorKey] as? String
+            if let failingURL, let projected = URL(string: stripQueryAndFragment(failingURL)) {
                 userInfo[NSURLErrorFailingURLErrorKey] = projected
                 userInfo[NSURLErrorFailingURLStringErrorKey] = projected.absoluteString
             }

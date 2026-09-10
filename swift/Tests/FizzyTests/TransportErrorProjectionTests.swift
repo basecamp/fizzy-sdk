@@ -112,6 +112,20 @@ struct TransportErrorProjectionTests {
         Self.expectNoSecret(projected, "projected transport error")
     }
 
+    // A custom Transport can build its URLError's own description around the
+    // URL; nothing the transport wrote survives, only the code.
+    @Test("A transport-written description is dropped")
+    func transportWrittenDescriptionIsDropped() throws {
+        let raw = URLError(.timedOut, userInfo: [
+            NSLocalizedDescriptionKey: "Timed out fetching \(Self.signedURL)",
+            NSURLErrorFailingURLStringErrorKey: Self.signedURL,
+        ])
+        let projected = try #require(HTTPClient.projectedTransportError(raw) as? URLError)
+        #expect(projected.code == .timedOut)
+        #expect(projected.failingURL?.absoluteString == "http://127.0.0.1:1/blob")
+        Self.expectNoSecret(projected, "projected description")
+    }
+
     // An error that is not a URLError is the transport's own and passes through untouched.
     @Test("A foreign transport error passes through")
     func foreignTransportErrorPassesThrough() {
