@@ -59,20 +59,36 @@ val account = client.forAccount("12345")
 val boards = account.boards.list()
 ```
 
+### Rust
+
+```rust
+use fizzy_sdk::{Client, Config, StaticTokenProvider};
+
+let client = Client::new(Config::default(), StaticTokenProvider::new("tok_..."))?;
+let account = client.for_account("12345")?;
+
+let boards = account.boards().list().await?;
+```
+
+`cargo add fizzy-sdk tokio --features tokio/macros,tokio/rt-multi-thread` — the client is async on Tokio, so the snippet runs inside a `#[tokio::main]` function; `rustls` TLS, MSRV 1.88. On
+[crates.io](https://crates.io/crates/fizzy-sdk) and [docs.rs](https://docs.rs/fizzy-sdk);
+the [crate README](rust/fizzy-sdk/README.md) covers auth, pagination, errors, hooks and the
+develop loop.
+
 ## Features
 
-| Feature | Go | TS | Ruby | Swift | Kotlin |
-|---------|----|----|------|-------|--------|
-| Bearer token auth | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Cookie session auth | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Magic link flow | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Retry + backoff | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Pagination | ✓ | ✓ | ✓ | ✓ | ✓ |
-| ETag caching | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Webhook verification | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Observability hooks | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Structured errors | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Circuit breaker | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Feature | Go | TS | Ruby | Swift | Kotlin | Rust |
+|---------|----|----|------|-------|--------|------|
+| Bearer token auth | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Cookie session auth | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Magic link flow | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Retry + backoff | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Pagination | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| ETag caching | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Webhook verification | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Observability hooks | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Structured errors | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Circuit breaker | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 ## License
 

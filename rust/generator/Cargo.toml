@@ -4,6 +4,7 @@ version = "0.0.0"
 description = "Generates the Rust Fizzy SDK's types, services and route table from openapi.json"
 publish = false
 edition.workspace = true
+authors.workspace = true
 license.workspace = true
 rust-version.workspace = true
 

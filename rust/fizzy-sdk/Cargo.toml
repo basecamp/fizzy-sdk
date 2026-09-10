@@ -8,6 +8,7 @@ keywords = ["fizzy", "37signals", "api", "sdk"]
 categories = ["api-bindings", "web-programming::http-client"]
 include = ["src/**", "examples/**", "README.md"]
 edition.workspace = true
+authors.workspace = true
 license.workspace = true
 repository.workspace = true
 homepage.workspace = true
@@ -54,3 +55,17 @@ url = "2"
 reqwest = { version = "0.13", default-features = false }
 tokio = { version = "1", features = ["macros", "net", "rt-multi-thread", "time", "sync"] }
 wiremock = "0.6"
+
+# The examples that talk to Fizzy need the shipped HTTP client; `cargo test
+# --no-default-features` still builds the examples, so they say so.
+[[example]]
+name = "list_boards"
+required-features = ["reqwest"]
+
+[[example]]
+name = "magic_link_login"
+required-features = ["reqwest"]
+
+[[example]]
+name = "request_log"
+required-features = ["reqwest"]
