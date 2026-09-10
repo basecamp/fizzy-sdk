@@ -21,9 +21,10 @@ type HTTPOptions struct {
 	// Timeout is the request timeout (default: 30s).
 	Timeout time.Duration
 
-	// MaxRetries is the maximum retry attempts for retryable requests (default: 3).
-	// GET, PUT, PATCH, DELETE, and HEAD are always retryable. POST is retryable
-	// only when marked idempotent via WithIdempotent(ctx).
+	// MaxRetries is the total attempt count for retryable requests (default: 3;
+	// 0 means no retry — exactly one attempt). GET, PUT, PATCH, DELETE, and HEAD
+	// are always retryable. POST is retryable only when marked idempotent via
+	// WithIdempotent(ctx).
 	MaxRetries int
 
 	// BaseDelay is the initial backoff delay (default: 1s).
@@ -58,7 +59,9 @@ func WithTimeout(d time.Duration) ClientOption {
 	}
 }
 
-// WithMaxRetries sets the maximum number of retry attempts for retryable requests.
+// WithMaxRetries sets the total attempt count for retryable requests: the initial
+// request plus its retries. A cap of 0 is floored to one attempt; a negative cap is a
+// configuration error.
 func WithMaxRetries(n int) ClientOption {
 	return func(c *Client) {
 		c.httpOpts.MaxRetries = n
