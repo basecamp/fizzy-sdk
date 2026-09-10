@@ -24,6 +24,10 @@ internal class FizzyHttpClient(
     private val hooks: FizzyHooks,
     internal val json: Json,
 ) {
+    /** The per-attempt budget HttpTimeout enforces, rendered into a projected timeout. */
+    private val requestTimeoutMillis: Long? =
+        config.timeout.takeIf { it.isFinite() }?.inWholeMilliseconds
+
     /**
      * Executes an HTTP request with authentication, returning the raw [HttpResponse].
      *
@@ -74,15 +78,18 @@ internal class FizzyHttpClient(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            // Projected once, before the request-end hook, so hooks and the
+            // caller see the same URL-free shape.
+            val projected = redactTransportError(e, url, config.baseUrl, requestTimeoutMillis)
             val duration = currentTimeMillis() - startTime
             hooks.safeOnRequestEnd(info, RequestResult(
                 statusCode = 0,
                 duration = duration.millisToDuration(),
-                error = e,
+                error = projected,
             ))
             throw FizzyException.Network(
-                message = "Network error: ${e.message}",
-                cause = e,
+                message = "Network error: ${projected.message}",
+                cause = projected,
             )
         }
 
@@ -171,15 +178,18 @@ internal class FizzyHttpClient(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            // Projected once, before the request-end hook, so hooks and the
+            // caller see the same URL-free shape.
+            val projected = redactTransportError(e, url, config.baseUrl, requestTimeoutMillis)
             val duration = currentTimeMillis() - startTime
             hooks.safeOnRequestEnd(info, RequestResult(
                 statusCode = 0,
                 duration = duration.millisToDuration(),
-                error = e,
+                error = projected,
             ))
             throw FizzyException.Network(
-                message = "Network error: ${e.message}",
-                cause = e,
+                message = "Network error: ${projected.message}",
+                cause = projected,
             )
         }
 
