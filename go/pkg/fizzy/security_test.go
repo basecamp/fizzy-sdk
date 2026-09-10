@@ -167,6 +167,32 @@ func TestRedactTransportError(t *testing.T) {
 		}
 	})
 
+	t.Run("builds a projected transport error from fixed parts alone", func(t *testing.T) {
+		const signedURL = "https://storage.example.com/blob/1?sig=SECRETVALUE"
+		cancelledTimeout := &url.Error{Op: "fetch " + signedURL, URL: signedURL, Err: cancelledTimeoutError{}}
+		got := redactTransportError(cancelledTimeout, "")
+		if want := `Request "https://storage.example.com/blob/1": context canceled`; got.Error() != want {
+			t.Errorf("got %q, want %q", got.Error(), want)
+		}
+		for _, text := range renderings(got) {
+			if strings.Contains(text, "SECRETVALUE") {
+				t.Errorf("the signed query leaked into %q", text)
+			}
+		}
+		var netErr net.Error
+		if !errors.Is(got, context.Canceled) || !errors.As(got, &netErr) || !netErr.Timeout() {
+			t.Errorf("the cancellation and the timeout classification should both survive, got %v", got)
+		}
+
+		joined := redactTransportError(errors.Join(signed, fmt.Errorf("request %s failed", signedURL), context.DeadlineExceeded), "")
+		if want := "Get \"https://storage.example.com/blob/1\": context canceled\ncontext deadline exceeded"; joined.Error() != want {
+			t.Errorf("got %q, want %q", joined.Error(), want)
+		}
+		if !errors.Is(joined, context.Canceled) || !errors.Is(joined, context.DeadlineExceeded) {
+			t.Error("the sentinel siblings should still be reachable through the chain")
+		}
+	})
+
 	t.Run("keeps the cause beneath a URL on the API origin", func(t *testing.T) {
 		api := &url.Error{Op: "Get", URL: "https://api.example.com/boxes?page=2", Err: errors.New("connection refused")}
 		got := redactTransportError(api, "https://api.example.com")
@@ -226,6 +252,15 @@ func (timeoutError) Error() string {
 }
 func (timeoutError) Timeout() bool   { return true }
 func (timeoutError) Temporary() bool { return true }
+
+// cancelledTimeoutError is a custom transport's failure that wraps a cancellation and
+// classifies as a timeout at once.
+type cancelledTimeoutError struct{}
+
+func (cancelledTimeoutError) Error() string   { return "cancelled: " + context.Canceled.Error() }
+func (cancelledTimeoutError) Unwrap() error   { return context.Canceled }
+func (cancelledTimeoutError) Timeout() bool   { return true }
+func (cancelledTimeoutError) Temporary() bool { return false }
 
 // opaqueWrapperError wraps an error without rendering it.
 type opaqueWrapperError struct{ cause error }
