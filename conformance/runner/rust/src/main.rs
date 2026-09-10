@@ -9,6 +9,7 @@ mod assertions;
 mod fixtures;
 mod operations;
 mod server;
+mod transport;
 
 use std::io;
 use std::path::{Path, PathBuf};
@@ -109,6 +110,7 @@ async fn run_case(case: &TestCase) -> Result<(), String> {
             outcome: &outcome,
             recorded: &[],
             foreign_requests: 0,
+            wrong_pages: 0,
             base_url: case.link_origin(),
         });
     }
@@ -116,13 +118,17 @@ async fn run_case(case: &TestCase) -> Result<(), String> {
         .await
         .map_err(|error| format!("Failed to start the mock server: {error}"))?;
     let base_url = server.base_url().to_string();
-    let outcome = operations::execute(case, &base_url).await;
+    let (outcome, foreign_requests) = match operations::execute(case, &base_url).await {
+        Ok((outcome, refused)) => (Ok(outcome), refused),
+        Err(error) => (Err(error), 0),
+    };
     let recorded = server.shutdown();
     assertions::check_all(&Run {
         case,
         outcome: &outcome,
         recorded: &recorded.requests,
-        foreign_requests: recorded.foreign_requests,
+        foreign_requests,
+        wrong_pages: recorded.wrong_pages,
         base_url: &base_url,
     })
 }

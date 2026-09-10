@@ -14,7 +14,9 @@ name = "fizzy-conformance"
 path = "src/main.rs"
 
 [dependencies]
+async-trait = "0.1"
 axum = "0.8"
+bytes = "1"
 fizzy-sdk = { path = "../../../rust/fizzy-sdk" }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["arbitrary_precision"] }

@@ -14,9 +14,12 @@ pub struct Run<'a> {
     pub case: &'a TestCase,
     pub outcome: &'a Result<Outcome, SdkError>,
     pub recorded: &'a [RequestRecord],
-    /// Requests that reached the stand-in for every foreign origin. Always a failure: no
-    /// case asks the SDK to leave the configured origin.
+    /// Requests the transport refused because they were bound anywhere but the mock server.
+    /// Always a failure: no case asks the SDK to leave the configured origin.
     pub foreign_requests: usize,
+    /// Follow-on requests for a page other than the one the previous `Link` named. Always
+    /// a failure, whatever the SDK made of the answer.
+    pub wrong_pages: usize,
     pub base_url: &'a str,
 }
 
@@ -28,6 +31,12 @@ pub fn check_all(run: &Run) -> Result<(), String> {
         return Err(format!(
             "[origin] the SDK sent {} request(s) to an origin other than the configured one",
             run.foreign_requests
+        ));
+    }
+    if run.wrong_pages > 0 {
+        return Err(format!(
+            "[pagination] the SDK asked for a page other than the one the Link named, {} time(s)",
+            run.wrong_pages
         ));
     }
     check_request_methods(run)?;
@@ -121,6 +130,11 @@ fn check_delay_between_requests(run: &Run, assertion: &Assertion) -> Result<(), 
 fn check_status_code(run: &Run, assertion: &Assertion) -> Result<(), String> {
     let expected = expected_int(assertion)?;
     let actual = match run.outcome {
+        Ok(Outcome::Response { status, .. }) if *status >= 400 => {
+            return Err(format!(
+                "the SDK answered success for a {status} response; a non-2xx status is an error"
+            ));
+        }
         Ok(Outcome::Response { status, .. }) => i64::from(*status),
         Ok(Outcome::Items(_)) => {
             return Err(format!(
@@ -486,9 +500,10 @@ fn lookup<'a>(value: &'a Value, path: &str) -> Option<&'a Value> {
 fn values_match(expected: &Value, actual: &Value) -> bool {
     match (expected, actual) {
         (Value::Number(expected), Value::Number(actual)) => {
-            match (expected.as_i64(), actual.as_i64()) {
-                (Some(expected), Some(actual)) => expected == actual,
-                _ => expected.as_f64() == actual.as_f64(),
+            if expected.is_f64() || actual.is_f64() {
+                expected.as_f64() == actual.as_f64()
+            } else {
+                expected.as_i64() == actual.as_i64() && expected.as_u64() == actual.as_u64()
             }
         }
         (Value::Object(expected), Value::Object(actual)) => {
@@ -543,6 +558,9 @@ mod tests {
         assert!(!values_match(&json!("[1]"), &json!([1])));
         assert!(!values_match(&json!(true), &json!(false)));
         assert!(!values_match(&json!({"a": 1}), &json!({"a": 1, "b": 2})));
+        assert!(values_match(&json!(u64::MAX), &json!(u64::MAX)));
+        assert!(!values_match(&json!(u64::MAX), &json!(u64::MAX - 1)));
+        assert!(!values_match(&json!(-1), &json!(u64::MAX)));
     }
 
     #[test]

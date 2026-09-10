@@ -2,6 +2,7 @@
 //! raw verbs, and reading errors back. The rest of the runner sees `Outcome` and the
 //! accessor functions here, so an SDK API change lands in one file.
 
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use fizzy_sdk::http::Method;
@@ -12,6 +13,7 @@ use fizzy_sdk::{
 use serde_json::Value;
 
 use crate::fixtures::TestCase;
+use crate::transport::Intercept;
 
 pub type SdkError = Error;
 
@@ -102,29 +104,42 @@ fn method(case: &TestCase) -> Result<Method, String> {
     }
 }
 
-fn build_client(case: &TestCase, base_url: &str) -> Result<Client, Error> {
+/// The client and the count of requests its transport refused to send off the mock server.
+fn build_client(
+    case: &TestCase,
+    base_url: &str,
+    reachable: Option<&str>,
+) -> Result<(Client, Arc<Mutex<usize>>), Error> {
+    let (transport, foreign) = Intercept::new(reachable)?;
     let mut builder = ClientBuilder::new(Config::default().with_base_url(base_url))
-        .token_provider(StaticTokenProvider::new(TOKEN));
+        .token_provider(StaticTokenProvider::new(TOKEN))
+        .http_client(transport);
     // Fast retries unless the case measures the delay itself.
     if !case.has_assertion("delayBetweenRequests") {
         builder = builder
             .base_delay(Duration::from_millis(1))
             .max_jitter(Duration::from_millis(1));
     }
-    builder.build()
+    builder.build().map(|client| (client, foreign))
 }
 
 /// Builds the client the case configures and reports whether that succeeded, for the
 /// cases that never reach a server.
 pub fn construct_client(case: &TestCase) -> Result<Outcome, Error> {
-    build_client(case, case.link_origin()).map(|_| Outcome::Client)
+    build_client(case, case.link_origin(), None).map(|_| Outcome::Client)
 }
 
 /// Runs the case against the mock server through the raw verbs, the way the Go,
 /// TypeScript and Ruby runners do: the account-scoped client for a path under an
 /// account, the bare client otherwise.
-pub async fn execute(case: &TestCase, base_url: &str) -> Result<Outcome, Error> {
-    let client = build_client(case, base_url)?;
+pub async fn execute(case: &TestCase, base_url: &str) -> Result<(Outcome, usize), Error> {
+    let (client, foreign) = build_client(case, base_url, Some(base_url))?;
+    let outcome = dispatch(&client, case).await;
+    let refused = foreign.lock().map(|count| *count).unwrap_or_default();
+    outcome.map(|outcome| (outcome, refused))
+}
+
+async fn dispatch(client: &Client, case: &TestCase) -> Result<Outcome, Error> {
     let route = route(case).map_err(Error::usage)?;
     let method = method(case).map_err(Error::usage)?;
     let full_path = case.request_path();
@@ -154,7 +169,7 @@ pub async fn execute(case: &TestCase, base_url: &str) -> Result<Outcome, Error> 
             (Method::POST, Some(body)) => client.post_with(&full_path, body, &options).await?,
             (Method::PUT, Some(body)) => client.put_with(&full_path, body, &options).await?,
             (Method::PATCH, Some(body)) => client.patch_with(&full_path, body, &options).await?,
-            (method, None) => bodiless(&client, method, &full_path, &options).await?,
+            (method, None) => bodiless(client, method, &full_path, &options).await?,
             (method, _) => return Err(Error::usage(format!("unsupported method {method}"))),
         };
         return Ok(outcome(&response));
