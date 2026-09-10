@@ -93,7 +93,7 @@ async fn the_circuit_breaker_opens_on_repeated_server_failures_per_operation() {
         .mount(&server)
         .await;
     let client = builder(&server)
-        .max_retries(0)
+        .max_attempts(1)
         .circuit_breaker(CircuitBreakerConfig {
             failure_threshold: 2,
             ..CircuitBreakerConfig::default()

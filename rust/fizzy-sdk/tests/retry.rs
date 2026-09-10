@@ -258,7 +258,7 @@ async fn destroy_session_is_a_delete_the_model_sends_once() {
 }
 
 #[tokio::test]
-async fn the_clients_max_retries_is_a_ceiling_on_the_routes_attempts() {
+async fn the_clients_max_attempts_is_a_ceiling_on_the_routes_attempts() {
     let server = MockServer::start().await;
     mount_sequence(
         &server,
@@ -268,7 +268,7 @@ async fn the_clients_max_retries_is_a_ceiling_on_the_routes_attempts() {
         json!([]),
     )
     .await;
-    let client = builder(&server).max_retries(1).build().unwrap();
+    let client = builder(&server).max_attempts(2).build().unwrap();
 
     let error = client
         .for_account("999")
@@ -280,6 +280,24 @@ async fn the_clients_max_retries_is_a_ceiling_on_the_routes_attempts() {
 
     assert_eq!(error.http_status(), Some(503));
     assert_eq!(server.received_requests().await.unwrap().len(), 2);
+}
+
+#[tokio::test]
+async fn a_raw_get_makes_three_attempts_by_default_and_the_last_429_is_a_rate_limit() {
+    let server = MockServer::start().await;
+    mount_sequence(
+        &server,
+        "GET",
+        "/999/boards/b1",
+        &[429, 429, 429, 200],
+        board(),
+    )
+    .await;
+
+    let error = account(&server).get("/boards/b1").await.unwrap_err();
+
+    assert_eq!(error.code(), ErrorCode::RateLimit);
+    assert_eq!(server.received_requests().await.unwrap().len(), 3);
 }
 
 #[tokio::test]

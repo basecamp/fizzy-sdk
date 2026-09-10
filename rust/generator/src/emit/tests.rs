@@ -25,7 +25,7 @@ pub fn render_main(model: &Model) -> String {
     out.push_str("fn client(server: &MockServer) -> Client {\n");
     out.push_str("    Client::builder(Config::default().with_base_url(server.uri()))\n");
     out.push_str("        .access_token(\"test-token\")\n");
-    out.push_str("        .max_retries(0)\n");
+    out.push_str("        .max_attempts(1)\n");
     out.push_str("        .max_jitter(Duration::ZERO)\n");
     out.push_str("        .build()\n        .unwrap()\n}\n");
     out
