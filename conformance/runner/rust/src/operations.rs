@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use fizzy_sdk::http::Method;
-use fizzy_sdk::routes::Route;
+use fizzy_sdk::routes::{Pagination, Route};
 use fizzy_sdk::{
     Client, ClientBuilder, Config, Error, RequestOptions, Response, StaticTokenProvider, routes,
 };
@@ -154,7 +154,9 @@ async fn dispatch(client: &Client, case: &TestCase) -> Result<Outcome, Error> {
         options = options.idempotent();
     }
 
-    let paginate = case.operation.starts_with("List") && case.follows_links();
+    // Paginated by the route table's say-so, not by the operation's name: SearchCards
+    // walks Link headers too.
+    let paginate = !matches!(route.pagination, Pagination::None) && case.follows_links();
     let body = case.request_body.as_ref();
     let Some(account) = case.account_id() else {
         if paginate {
