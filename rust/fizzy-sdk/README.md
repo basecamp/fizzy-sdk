@@ -128,7 +128,8 @@ Responses are `#[non_exhaustive]`: a field Fizzy adds later is not a breaking ch
 ### Pages and streams
 
 A list operation answers a `Page<T>`: the decoded body, plus the `Link` header Fizzy sent.
-Walk pages one at a time, or as a `Stream` of pages or items that reads lazily as it is polled.
+Walk pages one at a time, or as a `Stream` of pages or items that reads lazily as it is polled
+(`cargo add futures-util` for the stream adapters).
 
 ```rust,no_run
 use fizzy_sdk::{Client, Config, StaticTokenProvider};
@@ -191,15 +192,19 @@ every page after. `Retry-After` is honored, in seconds or as an HTTP date, up to
 raw call can say so with `RequestOptions::idempotent`, or opt out with
 `RequestOptions::no_retry`. Retries back off exponentially with jitter. On the builder,
 `max_attempts` is a ceiling over every route's budget (3 by default, counting the first
-request), `max_delay` caps a route's backoff, `max_jitter` bounds the randomness, and
-`base_delay` is the first backoff for raw calls, which have no route to read one from.
+request), `max_delay` caps a route's backoff and is never lower than `base_delay`,
+`max_jitter` bounds the randomness, and `base_delay` is the first backoff for raw calls,
+which have no route to read one from.
 
 ## Hooks and tracing
 
 `Hooks` is told when an operation starts and ends, when each request goes out and what it
 answered, and before each resend; `on_operation_gate` may refuse a call before it is sent.
-Whatever a hook sees is redacted: `Authorization` and `Cookie` never appear in a hook, a log
-line or an error. `NoopHooks` does nothing and `ChainHooks` runs several in order.
+Credentials stay out of it: a hook is handed the method, URL, attempt, status and timing,
+never the `Authorization` or `Cookie` header, and the crate's own logging redacts both. A
+URL can still carry something the application considers sensitive — a confirmation token in
+a path, say — so log the parts you mean to. `NoopHooks` does nothing and `ChainHooks` runs
+several in order.
 
 ```rust,no_run
 use fizzy_sdk::observability::{Hooks, RequestInfo, RequestResult};
@@ -209,7 +214,7 @@ struct LogStatuses;
 
 impl Hooks for LogStatuses {
     fn on_request_end(&self, info: &RequestInfo, result: &RequestResult<'_>) {
-        println!("{} {} -> {:?} in {:?}", info.method, info.url, result.status, result.duration);
+        println!("{} {} -> {:?} in {:?}", info.method, info.url.path(), result.status, result.duration);
     }
 }
 

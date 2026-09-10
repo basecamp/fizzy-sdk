@@ -17,7 +17,7 @@
     "3C.2": { "pass": true, "note": "Response body limited to 10MB in all languages" },
     "3C.3": { "pass": true, "note": "Error messages truncated to prevent unbounded memory" },
     "3C.4": { "pass": true, "note": "Authorization and Cookie headers redacted in all logging hooks" },
-    "4B.5": { "pass": true, "note": "All 112 operations have corresponding conformance tests (127 test cases across 5 runners: Go, TypeScript, Ruby, Kotlin, Rust)" },
+    "4B.5": { "pass": true, "note": "AGENTS.md rule 3 requires unit and conformance tests for every new operation; the shared fixtures hold 127 cases across 5 runners (Go, TypeScript, Ruby, Kotlin, Rust) naming 69 of the 112 operations, with paths, status mapping, retry, idempotency and security behaviors covered for the rest by family" },
     "4C.4": { "pass": true, "note": "Release workflows are idempotent; Go sub-tag creation checks for existing tags; crates.io publish skips a version already present with the same checksum" }
   }
 }

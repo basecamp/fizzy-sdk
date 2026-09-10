@@ -1,7 +1,8 @@
 //! Customizes the client: hooks that log every request and resend, and the retry and page
 //! bounds set by hand rather than left at their defaults. A modelled call keeps its own
 //! retry policy; the builder's knobs cap it — `max_attempts` over the route's budget,
-//! `max_delay` over its backoff — and `max_jitter` zero makes the waits exact.
+//! `max_delay` over its backoff (it is floored at `base_delay`, so both are set) — and
+//! `max_jitter` zero makes the waits exact.
 //!
 //! ```sh
 //! FIZZY_TOKEN=tok_... FIZZY_ACCOUNT=999 cargo run --example request_log
@@ -39,6 +40,7 @@ async fn main() -> Result<(), Error> {
         .access_token(std::env::var("FIZZY_TOKEN").unwrap_or_default())
         .hooks(RequestLog)
         .max_attempts(2)
+        .base_delay(Duration::from_millis(250))
         .max_delay(Duration::from_millis(500))
         .max_jitter(Duration::ZERO)
         .max_pages(50)

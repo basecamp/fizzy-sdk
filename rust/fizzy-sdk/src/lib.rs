@@ -77,3 +77,9 @@ pub mod services {
 pub mod redaction {
     pub use crate::generated::redaction::PATHS;
 }
+
+/// Runs the README's code fences as doctests, so the crates.io landing page cannot drift
+/// from the API it describes.
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+pub struct ReadmeDoctests;
