@@ -413,31 +413,43 @@ func (c *Client) doRequestURL(ctx context.Context, method, url string, body any)
 	var attempt int
 	var lastErr error
 
-	for attempt = 1; attempt <= c.httpOpts.MaxRetries; attempt++ {
+	// MaxRetries is the total attempt count, floored at one: a cap of 0 means "no
+	// retries", not "no request". The floor lives here because this loop is pre-check
+	// and a directly-struct-built Client never passes through NewClient's validation.
+	maxAttempts := max(c.httpOpts.MaxRetries, 1)
+
+	for attempt = 1; attempt <= maxAttempts; attempt++ {
 		resp, err := c.singleRequest(ctx, method, url, body, attempt)
 		if err == nil {
 			return resp, nil
 		}
 
-		var delay time.Duration
-		if re, ok := err.(*retryableError); ok {
-			lastErr = re.err
-			if re.retryAfter > 0 {
-				delay = re.retryAfter
-			} else {
-				delay = c.backoffDelay(attempt)
-			}
-		} else if apiErr, ok := err.(*Error); ok {
-			if !apiErr.Retryable {
+		var retryAfter time.Duration
+		switch e := err.(type) {
+		case *retryableError:
+			lastErr = e.err
+			retryAfter = e.retryAfter
+		case *Error:
+			if !e.Retryable {
 				return nil, err
 			}
 			lastErr = err
-			delay = c.backoffDelay(attempt)
-		} else {
+		default:
 			return nil, err
 		}
 
-		c.logger.Debug("retrying request", "attempt", attempt, "maxRetries", c.httpOpts.MaxRetries, "delay", delay, "error", lastErr)
+		// After the final attempt there is no retry: don't compute or sleep a
+		// backoff, or announce an attempt that will never be made.
+		if attempt >= maxAttempts {
+			break
+		}
+
+		delay := retryAfter
+		if delay <= 0 {
+			delay = c.backoffDelay(attempt)
+		}
+
+		c.logger.Debug("retrying request", "attempt", attempt, "maxAttempts", maxAttempts, "delay", delay, "error", lastErr)
 
 		info := RequestInfo{Method: method, URL: displayURL, Attempt: attempt}
 		c.hooks.OnRetry(ctx, info, attempt+1, lastErr)
@@ -450,7 +462,11 @@ func (c *Client) doRequestURL(ctx context.Context, method, url string, body any)
 		}
 	}
 
-	return nil, fmt.Errorf("request failed after %d retries: %w", c.httpOpts.MaxRetries, lastErr)
+	noun := "attempts"
+	if maxAttempts == 1 {
+		noun = "attempt"
+	}
+	return nil, fmt.Errorf("request failed after %d %s: %w", maxAttempts, noun, lastErr)
 }
 
 func (c *Client) singleRequest(ctx context.Context, method, url string, body any, attempt int) (*Response, error) {
@@ -631,6 +647,9 @@ func (c *Client) buildURL(path string) (string, error) {
 
 func (c *Client) backoffDelay(attempt int) time.Duration {
 	delay := c.httpOpts.BaseDelay * time.Duration(1<<(attempt-1))
+	if c.httpOpts.MaxJitter <= 0 {
+		return delay
+	}
 	jitter := time.Duration(rand.Int63n(int64(c.httpOpts.MaxJitter))) // #nosec G404 -- jitter doesn't need cryptographic randomness
 	return delay + jitter
 }
