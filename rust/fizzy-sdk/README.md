@@ -198,13 +198,14 @@ which have no route to read one from.
 
 ## Hooks and tracing
 
-`Hooks` is told when an operation starts and ends, when each request goes out and what it
+`Hooks` is told when an operation starts and ends, when each attempt goes out and what it
 answered, and before each resend; `on_operation_gate` may refuse a call before it is sent.
-Credentials stay out of it: a hook is handed the method, URL, attempt, status and timing,
-never the `Authorization` or `Cookie` header, and the crate's own logging redacts both. A
-URL can still carry something the application considers sensitive — a confirmation token in
-a path, say — so log the parts you mean to. `NoopHooks` does nothing and `ChainHooks` runs
-several in order.
+An attempt is one exchange as the SDK sees it: the redirect hops it follows inside are not
+reported one by one. Credentials stay out of it: a hook is handed the method, URL, attempt,
+status and timing, never the `Authorization` or `Cookie` header, and the crate's own logging
+redacts both. A URL can still carry something the application considers sensitive — a
+confirmation token in a path, say — so log the parts you mean to. `NoopHooks` does nothing
+and `ChainHooks` runs several in order.
 
 ```rust,no_run
 use fizzy_sdk::observability::{Hooks, RequestInfo, RequestResult};
@@ -214,7 +215,7 @@ struct LogStatuses;
 
 impl Hooks for LogStatuses {
     fn on_request_end(&self, info: &RequestInfo, result: &RequestResult<'_>) {
-        println!("{} {} -> {:?} in {:?}", info.method, info.url.path(), result.status, result.duration);
+        println!("{} attempt {} -> {:?} in {:?}", info.method, info.attempt, result.status, result.duration);
     }
 }
 
