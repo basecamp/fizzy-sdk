@@ -21,8 +21,8 @@ jobs:
 
       - name: Install zizmor
         env:
-          ZIZMOR_VERSION: 1.24.1
-          ZIZMOR_SHA256: a8000f3c683319a523d3b20df0e75457ba591f049cfcbfa98966631b56733c03
+          ZIZMOR_VERSION: 1.30.1
+          ZIZMOR_SHA256: e65324f4430c2717591937edcec90ccbefaf14c174f8ec9415e03ca875b46e1a
         run: |
           cd "$RUNNER_TEMP"
           curl -fsSL -o zizmor.tar.gz \
