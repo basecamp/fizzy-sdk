@@ -40,6 +40,10 @@ pub struct ConfigOverrides {
     pub base_url: Option<String>,
     pub max_pages: Option<u64>,
     pub max_items: Option<u64>,
+    /// The client-wide retry cap as a TOTAL attempt count. An `Option` because `0` is
+    /// the value this override exists for — "no retries, exactly one attempt" — and a
+    /// plain integer would make it indistinguishable from absent.
+    pub max_retries: Option<u32>,
 }
 
 #[derive(Debug, Default, Clone, Deserialize)]
@@ -247,5 +251,24 @@ mod tests {
             "assertionss": [{"type": "noError"}]
         }));
         assert!(missing.is_err());
+    }
+
+    #[test]
+    fn max_retries_zero_survives_as_zero() {
+        let case: TestCase = serde_json::from_value(json!({
+            "name": "a",
+            "operation": "GetBoard",
+            "configOverrides": {"maxRetries": 0},
+            "assertions": []
+        }))
+        .unwrap();
+        assert_eq!(case.config_overrides.max_retries, Some(0));
+        let absent: TestCase = serde_json::from_value(json!({
+            "name": "a",
+            "operation": "GetBoard",
+            "assertions": []
+        }))
+        .unwrap();
+        assert_eq!(absent.config_overrides.max_retries, None);
     }
 }

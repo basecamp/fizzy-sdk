@@ -36,7 +36,12 @@ interface TestCase {
   pathParams?: Record<string, unknown>;
   requestBody?: Record<string, unknown>;
   queryParams?: Record<string, string | string[]>;
-  configOverrides?: Record<string, unknown>;
+  configOverrides?: {
+    baseUrl?: string;
+    maxPages?: number;
+    maxItems?: number;
+    maxRetries?: number;
+  };
   mockResponses: MockResponse[];
   assertions: Assertion[];
   tags?: string[];
@@ -64,7 +69,23 @@ function freshLog(): RequestLog {
 
 const RETRY_ENABLED_FILES = new Set(["retry.json", "idempotency.json", "error-mapping.json", "status-codes.json"]);
 
-function shouldEnableRetry(filename: string): boolean {
+/**
+ * A case carrying configOverrides.maxRetries decides for itself and wins over
+ * the per-file rule. TypeScript exposes no numeric cap — its retry middleware
+ * is driven by the per-operation retry.max ceiling — so the cap maps onto the
+ * on/off knob that is its spelling of the same contract.
+ *
+ * The cutoff is `> 1`, not `> 0`, because the key is a TOTAL attempt count: 0
+ * and 1 both mean exactly one attempt, and one attempt is what
+ * enableRetry: false spells here. Mapping 1 to enabled would hand this runner
+ * the per-operation ceiling of 3 attempts while the numeric SDKs made exactly
+ * one. A cap above 1 only re-asserts the default policy here.
+ */
+function shouldEnableRetry(tc: TestCase, filename: string): boolean {
+  const cap = tc.configOverrides?.maxRetries;
+  if (cap != null) {
+    return cap > 1;
+  }
   return RETRY_ENABLED_FILES.has(filename);
 }
 
@@ -644,7 +665,7 @@ for (const file of testFiles) {
         const client = createFizzyClient({
           accessToken: "test-token",
           baseUrl: accountId ? `${baseUrl}/${accountId}` : baseUrl,
-          enableRetry: shouldEnableRetry(filename),
+          enableRetry: shouldEnableRetry(tc, filename),
         });
 
         // Dispatch operation
