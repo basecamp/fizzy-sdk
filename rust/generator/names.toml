@@ -8,6 +8,17 @@
 # the ones Go names differently. The generator fails when an id matches no rule, when two
 # operations in one service end up with the same method name, or when a name is a keyword.
 
+# Fields the model leaves as plain strings but which are credentials all the same: access
+# and session tokens, the pending-authentication token, a magic-link code, a webhook's
+# signing secret. Each becomes a SensitiveString until the Smithy model annotates it.
+sensitive_fields = [
+    "AccessToken.token",
+    "PendingAuthentication.pending_authentication_token",
+    "RedeemMagicLinkRequestContent.token",
+    "SessionAuthorization.session_token",
+    "Webhook.signing_secret",
+]
+
 service_suffixes = [
     { suffix = "CommentReactions", service = "reactions" },
     { suffix = "CommentReaction", service = "reactions" },
@@ -113,6 +124,7 @@ ConfirmEmailAddressChange = "confirm_email_address_change"
 ListWebhookDeliveries = "list_webhook_deliveries"
 SearchCards = "search"
 MoveCard = "move_to_board"
+
 
 # The noun each service's operations act on, as the hooks report it. Nothing in OpenAPI
 # says it, so it is written down here; the generator fails when a service has no entry.

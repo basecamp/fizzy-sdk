@@ -310,7 +310,10 @@ impl Error {
             code => {
                 let error = Error::api(code, format!("API error: {status}"));
                 if status.is_server_error() {
-                    error.retryable()
+                    match retry_after_seconds(headers) {
+                        Some(seconds) => error.with_hint(retry_hint(Some(seconds))).retryable(),
+                        None => error.retryable(),
+                    }
                 } else {
                     error
                 }

@@ -307,7 +307,10 @@ pub fn next_link(header: &str) -> Option<String> {
         let target = &after_start[..end];
         let rest = &after_start[end + 1..];
         let params_end = rest.find('<').unwrap_or(rest.len());
-        if link_is_next(&rest[..params_end]) {
+        // The link-values are comma-separated, so the parameters of this one end at the
+        // comma before the next `<`, however the header is spaced.
+        let params = rest[..params_end].trim().trim_end_matches(',');
+        if link_is_next(params) {
             return Some(target.to_string());
         }
         remaining = &rest[params_end..];
@@ -338,6 +341,19 @@ mod tests {
             next_link(header).as_deref(),
             Some("https://fizzy.do/999/boards.json?page=3")
         );
+    }
+
+    #[test]
+    fn finds_the_next_link_whichever_order_the_relations_come_in() {
+        assert_eq!(
+            next_link(r#"</p2>; rel="next", </p9>; rel="last""#).as_deref(),
+            Some("/p2")
+        );
+        assert_eq!(
+            next_link(r#"</p9>; rel="last",</p2>; rel="next""#).as_deref(),
+            Some("/p2")
+        );
+        assert_eq!(next_link(r#"</p9>; rel="last", </p1>; rel="first""#), None);
     }
 
     #[test]

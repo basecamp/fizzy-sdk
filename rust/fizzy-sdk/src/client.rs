@@ -15,8 +15,7 @@ use crate::cache::{CachedResponse, FileCache, ResponseCache, cache_key};
 use crate::config::Config;
 use crate::error::{Error, ErrorCode, retry_after_seconds};
 use crate::http::header::{
-    ACCEPT, AUTHORIZATION, CONTENT_LENGTH, CONTENT_TYPE, COOKIE, IF_NONE_MATCH,
-    PROXY_AUTHORIZATION, USER_AGENT,
+    ACCEPT, AUTHORIZATION, CONTENT_LENGTH, CONTENT_TYPE, COOKIE, IF_NONE_MATCH, USER_AGENT,
 };
 use crate::http::{
     Body, HeaderMap, HeaderValue, HttpClient, Method, Request, Response as HttpResponse, StatusCode,
@@ -166,12 +165,12 @@ impl<'a> Scope<'a> {
         } else {
             None
         };
-        Ok(Operation::for_route(route, account_id, params))
+        Operation::for_route(route, account_id, params)
     }
 }
 
 /// What came back from Fizzy, before it is decoded.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 #[non_exhaustive]
 pub struct Response {
     /// The status.
@@ -187,14 +186,40 @@ pub struct Response {
     pub from_cache: bool,
 }
 
+/// The body never prints, and the headers print redacted: an answer may carry a session
+/// cookie or a person's details, and `{:?}` of a response is the kind of thing that ends
+/// up in a log.
+impl std::fmt::Debug for Response {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Response")
+            .field("status", &self.status)
+            .field("headers", &crate::security::redact_headers(&self.headers))
+            .field("body_len", &self.body.len())
+            .field("url", &self.url.as_str())
+            .field("from_cache", &self.from_cache)
+            .finish()
+    }
+}
+
 impl Response {
-    /// Decodes the body as JSON.
+    /// Decodes the body as JSON. A body that does not read as `T` is an API error carrying
+    /// the answer's status and request id, so the failure can still be traced.
     pub fn json<T: DeserializeOwned>(&self) -> Result<T, Error> {
-        if self.body.is_empty() {
-            Err(Error::api(self.status.as_u16(), "empty response body"))
+        let status = self.status.as_u16();
+        let error = if self.body.is_empty() {
+            Error::api(status, "empty response body")
         } else {
-            Ok(serde_json::from_slice(&self.body)?)
-        }
+            match serde_json::from_slice(&self.body) {
+                Ok(value) => return Ok(value),
+                Err(error) => Error::api(status, "unexpected JSON")
+                    .with_hint(error.to_string())
+                    .with_source(error),
+            }
+        };
+        Err(match self.header("x-request-id") {
+            Some(request_id) => error.with_request_id(request_id),
+            None => error,
+        })
     }
 
     /// A header, when it is there and reads as text.
@@ -418,8 +443,8 @@ impl ClientBuilder {
             auth,
             user_agent: self.user_agent,
             max_attempts: self.max_attempts,
-            base_delay: self.base_delay,
-            max_delay: self.max_delay.max(self.base_delay),
+            base_delay: self.base_delay.min(self.max_delay),
+            max_delay: self.max_delay,
             max_retry_after: self.max_retry_after,
             max_jitter: self.max_jitter,
             max_pages: self.max_pages,
@@ -464,10 +489,17 @@ impl Client {
     }
 
     /// A client scoped to one account. The id is checked for shape here — it goes into
-    /// every path — and against Fizzy on the first call.
+    /// every path as one segment — and against Fizzy on the first call.
     pub fn for_account(&self, account_id: impl Into<String>) -> Result<AccountClient, Error> {
         let account_id = account_id.into();
-        if account_id.is_empty() || account_id.contains('/') {
+        if account_id.is_empty()
+            || account_id == "."
+            || account_id == ".."
+            || account_id.contains(['/', '?', '#', '%'])
+            || account_id
+                .chars()
+                .any(|c| c.is_whitespace() || c.is_control())
+        {
             return Err(Error::usage(format!("invalid account id {account_id:?}")));
         }
         Ok(AccountClient {
@@ -681,11 +713,11 @@ impl Client {
                             duration,
                             error: Some(&error),
                             from_cache: false,
-                            retryable: true,
+                            retryable: error.is_retryable(),
                             retry_after: None,
                         },
                     );
-                    if attempt < policy.attempts {
+                    if error.is_retryable() && attempt < policy.attempts {
                         crate::trace::debug(&operation.id, attempt, "request failed, retrying");
                         hooks.on_retry(&info, attempt + 1, &error);
                         self.wait(delay).await;
@@ -743,6 +775,9 @@ impl Client {
         }
     }
 
+    /// Where an operation goes. Whatever the path was — relative, absolute, pasted — the
+    /// resolved URL has to sit on the Fizzy origin the client was built for: every request
+    /// carries the credentials, and this is the one place all of them pass through.
     pub(crate) fn url_for(&self, operation: &Operation) -> Result<Url, Error> {
         let mut url = match &operation.url {
             Some(url) => url.clone(),
@@ -753,6 +788,14 @@ impl Client {
         };
         if !operation.query.is_empty() {
             url.query_pairs_mut().extend_pairs(&operation.query);
+        }
+        require_secure_endpoint(&url)?;
+        if !is_same_origin(&url, &self.shared.base_url) {
+            return Err(Error::usage(format!(
+                "{} resolves off the Fizzy origin {}: {url}",
+                operation.id,
+                self.shared.base_url.origin().ascii_serialization()
+            )));
         }
         Ok(url)
     }
@@ -846,11 +889,12 @@ impl Client {
     }
 
     /// Sends one request and follows the redirects it is answered with, up to
-    /// [`MAX_REDIRECTS`] hops. Hands back the URL the answer came from along with the
-    /// answer.
+    /// [`MAX_REDIRECTS`] hops, as long as they stay on the Fizzy origin. Hands back the
+    /// URL the answer came from along with the answer.
     ///
-    /// Credentials stay on the origin they were meant for: a hop to another origin goes out
-    /// without the `Authorization` or `Cookie`, the way a browser would send it. A 301, 302
+    /// A hop off the origin is refused rather than followed: Fizzy's API never sends one,
+    /// and following it would carry the credentials — the ones the client puts on, and any
+    /// the transport adds of its own — somewhere they were never meant to go. A 301, 302
     /// or 303 turns anything but a GET or HEAD into a GET without its body; a 307 or 308
     /// keeps both.
     async fn transmit(
@@ -881,7 +925,13 @@ impl Client {
                 }
                 Some(next) => {
                     require_secure_endpoint(&next)?;
-                    request = redirected(outgoing, response.status(), &url, &next)?;
+                    if !is_same_origin(&next, &self.shared.base_url) {
+                        return Err(Error::usage(format!(
+                            "{} redirected off the Fizzy origin to {next}",
+                            operation.id
+                        )));
+                    }
+                    request = redirected(outgoing, response.status(), &next)?;
                     url = next;
                     hops += 1;
                 }
@@ -899,6 +949,9 @@ impl Client {
     ) -> Result<Response, Error> {
         let status = response.status();
         let headers = response.headers().clone();
+        // An answer that arrived from somewhere other than where the request went is not
+        // the document the cache holds under the request's key, and is not stored there.
+        let cached = if final_url == *url { cached } else { None };
 
         if status == StatusCode::NOT_MODIFIED {
             return match cached {
@@ -1076,14 +1129,14 @@ fn redirect_target(url: &Url, response: &HttpResponse<Body>) -> Option<Url> {
     }
 }
 
-/// The request to send to `next` on the way there from `from`: the same one, less the
-/// credentials when the origin changes, and reduced to a GET when the status asks for it.
+/// The request to send to `next`: the same one, reduced to a GET when the status asks for
+/// it, and without the cache validator, which belonged to the URL the request left.
 fn redirected(
     (method, mut headers, body): (Method, HeaderMap, Bytes),
     status: StatusCode,
-    from: &Url,
     next: &Url,
 ) -> Result<Request<Bytes>, Error> {
+    headers.remove(IF_NONE_MATCH);
     let keeps_method = method == Method::GET
         || method == Method::HEAD
         || status == StatusCode::TEMPORARY_REDIRECT
@@ -1095,11 +1148,6 @@ fn redirected(
         headers.remove(CONTENT_LENGTH);
         (Method::GET, Bytes::new())
     };
-    if !is_same_origin(next, from) {
-        headers.remove(AUTHORIZATION);
-        headers.remove(COOKIE);
-        headers.remove(PROXY_AUTHORIZATION);
-    }
     let mut request = Request::builder()
         .method(method)
         .uri(next.as_str())
@@ -1263,23 +1311,80 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn a_redirect_off_the_origin_is_followed_without_credentials() {
-        let http = Canned::new(|request| {
-            if request.uri().host() == Some("fizzy.test") {
-                redirect("https://storage.test/blobs/1")
-            } else {
-                answer(200, "the bytes")
-            }
-        });
+    async fn a_redirect_off_the_origin_is_refused_with_nothing_sent_there() {
+        let http = Canned::new(|_| redirect("https://storage.test/blobs/1"));
         let client = client_over(http.clone());
 
-        let response = client.get("/blobs/1").await.unwrap();
+        let error = client.get("/blobs/1").await.unwrap_err();
 
-        assert_eq!(response.body, "the bytes");
-        let sent = http.sent();
-        assert_eq!(sent.len(), 2);
-        assert_eq!(sent[1].1, "https://storage.test/blobs/1");
-        assert!(sent[1].2.get(AUTHORIZATION).is_none());
+        assert_eq!(error.code(), ErrorCode::Usage);
+        assert_eq!(http.sent().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn a_path_that_resolves_off_the_origin_is_refused_before_anything_is_sent() {
+        let http = Canned::new(|_| answer(200, "{}"));
+        let client = client_over(http.clone());
+
+        for path in [
+            "http://evil.test/x",
+            "HTTP://evil.test/x",
+            "https://evil.test/x",
+        ] {
+            let error = client.get(path).await.unwrap_err();
+            assert_eq!(error.code(), ErrorCode::Usage, "{path}");
+            let error = client
+                .execute(client.request(Method::GET, path))
+                .await
+                .unwrap_err();
+            assert_eq!(error.code(), ErrorCode::Usage, "{path}");
+        }
+        assert!(http.sent().is_empty());
+    }
+
+    #[tokio::test]
+    async fn a_refused_redirect_is_not_retried() {
+        let http = Canned::new(|_| redirect("http://evil.test/"));
+        let client = Client::builder(Config::default().with_base_url("https://fizzy.test"))
+            .token_provider(StaticTokenProvider::new("secret"))
+            .http_client(http.clone())
+            .max_jitter(Duration::ZERO)
+            .base_delay(Duration::from_millis(1))
+            .build()
+            .unwrap();
+
+        let error = client.get("/anything").await.unwrap_err();
+
+        assert_eq!(error.code(), ErrorCode::Usage);
+        assert_eq!(http.sent().len(), 1);
+    }
+
+    #[test]
+    fn a_response_and_an_operation_print_without_their_secrets() {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            "set-cookie",
+            HeaderValue::from_static("session_token=s3cret; HttpOnly"),
+        );
+        let response = Response {
+            status: StatusCode::OK,
+            headers,
+            body: Bytes::from_static(br#"{"email_address":"jane@example.com"}"#),
+            url: Url::parse("https://fizzy.test/x").unwrap(),
+            from_cache: false,
+        };
+        let printed = format!("{response:?}");
+        assert!(!printed.contains("s3cret"));
+        assert!(!printed.contains("jane@example.com"));
+        assert!(printed.contains("[REDACTED]"));
+
+        let mut operation = Operation::raw(Method::POST, "/session.json".into());
+        operation
+            .json(&serde_json::json!({"email_address": "jane@example.com"}))
+            .unwrap();
+        let printed = format!("{operation:?}");
+        assert!(!printed.contains("jane@example.com"));
+        assert!(printed.contains("len"));
     }
 
     #[tokio::test]

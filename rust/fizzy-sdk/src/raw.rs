@@ -229,7 +229,11 @@ impl AccountClient {
         if path.starts_with("https://") || path.starts_with("http://") {
             path.to_string()
         } else {
-            format!("/{}/{}", self.account_id(), path.trim_start_matches('/'))
+            format!(
+                "/{}/{}",
+                crate::route::encode(self.account_id()),
+                path.trim_start_matches('/')
+            )
         }
     }
 }

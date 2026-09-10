@@ -95,3 +95,20 @@ async fn the_configured_account_is_the_default_scope() {
         ErrorCode::Usage
     );
 }
+
+#[test]
+fn an_account_id_is_one_path_segment() {
+    let client = fizzy_sdk::Client::builder(Config::default())
+        .access_token("t")
+        .build()
+        .unwrap();
+    for bad in ["", ".", "..", "999?x=y", "a/b", "a#b", "a b", "a%2Fb"] {
+        assert_eq!(
+            client.for_account(bad).unwrap_err().code(),
+            ErrorCode::Usage,
+            "{bad:?}"
+        );
+    }
+    assert!(client.for_account("999").is_ok());
+    assert!(client.for_account("acme-co").is_ok());
+}

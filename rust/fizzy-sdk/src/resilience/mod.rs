@@ -258,6 +258,19 @@ impl Hooks for ResilienceHooks {
         Ok(())
     }
 
+    /// A later gate in the chain turned the operation away, so the permit this one set
+    /// aside goes back to the scope rather than waiting for a start that never comes.
+    fn on_operation_abandoned(&self, op: &OperationInfo) {
+        let permit = self
+            .pending
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .get_mut(&scope_of(op))
+            .and_then(Vec::pop);
+        drop(permit);
+        self.inner.on_operation_abandoned(op);
+    }
+
     fn on_operation_start(&self, op: &OperationInfo) -> OperationState {
         let permit = self
             .pending

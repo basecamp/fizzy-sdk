@@ -151,3 +151,35 @@ async fn a_full_bulkhead_gives_its_permit_back_when_the_call_ends() {
 
     account.boards().list().await.unwrap();
 }
+
+#[tokio::test]
+async fn a_gate_refused_later_in_the_chain_gives_the_bulkhead_its_permit_back() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/999/boards.json"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!([])))
+        .mount(&server)
+        .await;
+    let chain = ChainHooks::of(vec![Arc::new(Refusing)]);
+    let client = builder(&server)
+        .hooks(chain)
+        .resilience(ResilienceConfig {
+            bulkhead: Some(BulkheadConfig {
+                max_concurrent: 1,
+                max_wait: Duration::ZERO,
+            }),
+            ..ResilienceConfig::none()
+        })
+        .build()
+        .unwrap();
+    let account = client.for_account("999").unwrap();
+
+    // The resilience layer wraps the refusing hook: its gate admits, the inner refuses.
+    // Without the permit going back, the second call would be turned away as bulkhead-full.
+    for _ in 0..3 {
+        let error = account.boards().list().await.unwrap_err();
+        assert_eq!(error.code(), ErrorCode::Usage);
+        assert_eq!(error.refusal(), None);
+    }
+    assert!(server.received_requests().await.unwrap().is_empty());
+}

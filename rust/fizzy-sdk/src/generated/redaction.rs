@@ -4,15 +4,20 @@
 /// typed as [`SensitiveString`](crate::types::SensitiveString) and prints redacted; this
 /// table is for anything that handles the JSON itself.
 pub static PATHS: &[(&str, &[&str])] = &[
+    ("AccessToken", &["$.token"]),
     ("BoardAccessUser", &["$.name", "$.email_address"]),
     ("CompleteJoinRequestContent", &["$.name"]),
     ("CompleteSignupRequestContent", &["$.full_name"]),
     ("CreateSessionRequestContent", &["$.email_address"]),
     ("Identity", &["$.name", "$.email_address"]),
+    ("PendingAuthentication", &["$.pending_authentication_token"]),
+    ("RedeemMagicLinkRequestContent", &["$.token"]),
     (
         "RequestEmailAddressChangeRequestContent",
         &["$.email_address"],
     ),
+    ("SessionAuthorization", &["$.session_token"]),
     ("User", &["$.name", "$.email_address"]),
+    ("Webhook", &["$.signing_secret"]),
     ("WebhookDeliveryEventCreator", &["$.name"]),
 ];

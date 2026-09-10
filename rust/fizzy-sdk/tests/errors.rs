@@ -124,3 +124,39 @@ async fn nothing_answering_is_a_network_error() {
     assert_eq!(error.exit_code(), 6);
     assert!(error.is_retryable());
 }
+
+#[tokio::test]
+async fn a_decode_failure_keeps_the_status_and_request_id() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/999/boards/b1"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("X-Request-Id", "req-decode")
+                .set_body_string("not json"),
+        )
+        .mount(&server)
+        .await;
+
+    let error = account(&server).boards().get("b1").await.unwrap_err();
+
+    assert_eq!(error.code(), ErrorCode::ApiError);
+    assert_eq!(error.http_status(), Some(200));
+    assert_eq!(error.request_id(), Some("req-decode"));
+}
+
+#[tokio::test]
+async fn a_503_past_the_retry_after_ceiling_still_says_how_long() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/999/boards/b1"))
+        .respond_with(ResponseTemplate::new(503).insert_header("Retry-After", "3600"))
+        .mount(&server)
+        .await;
+
+    let error = account(&server).boards().get("b1").await.unwrap_err();
+
+    assert_eq!(error.http_status(), Some(503));
+    assert_eq!(error.hint(), Some("Try again in 3600 seconds"));
+    assert_eq!(server.received_requests().await.unwrap().len(), 1);
+}

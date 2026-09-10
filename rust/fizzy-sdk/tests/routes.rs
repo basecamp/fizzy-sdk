@@ -81,3 +81,16 @@ fn the_router_names_the_operation_a_pasted_url_refers_to() {
     assert_eq!(matched.account_id(), Some("999"));
     assert_eq!(matched.resource_id(), Some("c9"));
 }
+
+#[test]
+fn a_route_filled_by_hand_answers_usage_errors_rather_than_panicking() {
+    assert!(routes::GET_BOARD.try_fill(Some("999"), &[]).is_err());
+    assert!(routes::GET_BOARD.try_fill(None, &[&"b1"]).is_err());
+    assert!(routes::GET_MY_IDENTITY.try_fill(Some("999"), &[]).is_err());
+    assert!(routes::GET_BOARD.try_fill(Some("999"), &[&".."]).is_err());
+    assert!(routes::GET_BOARD.try_fill(Some("999"), &[&""]).is_err());
+    assert_eq!(
+        routes::GET_BOARD.try_fill(Some("999"), &[&"b1"]).unwrap(),
+        "/999/boards/b1"
+    );
+}

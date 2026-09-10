@@ -37,11 +37,11 @@ async fn the_flow_carries_the_pending_token_from_create_to_redeem() {
     let flow = MagicLinkFlow::new(Config::default().with_base_url(server.uri())).unwrap();
 
     let pending = flow.create_session("jane@example.com").await.unwrap();
-    assert_eq!(pending.pending_authentication_token, "pend-1");
+    assert_eq!(pending.pending_authentication_token.expose(), "pend-1");
     assert_eq!(flow.pending_token().unwrap().expose(), "pend-1");
 
     let session = flow.redeem("ABC123").await.unwrap();
-    assert_eq!(session.session_token, "sess-1");
+    assert_eq!(session.session_token.expose(), "sess-1");
     assert!(!session.requires_signup_completion);
     assert!(flow.pending_token().is_none(), "the pending token is spent");
     let requests = server.received_requests().await.unwrap();

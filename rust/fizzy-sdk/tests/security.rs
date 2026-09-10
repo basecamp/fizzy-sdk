@@ -145,3 +145,56 @@ fn a_base_url_with_credentials_is_refused() {
     assert_eq!(error.code(), ErrorCode::Usage);
     assert!(!error.to_string().contains("secret"));
 }
+
+#[tokio::test]
+async fn cookie_values_are_escaped_the_way_rack_reads_them() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/my/identity.json"))
+        .and(header("Cookie", "session_token=a%2Bb%2Fc%3D%3D"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(
+            json!({"id": "i1", "name": "Jane", "email_address": "jane@example.com"}),
+        ))
+        .expect(1)
+        .mount(&server)
+        .await;
+    let client = Client::builder(Config::default().with_base_url(server.uri()))
+        .session_token("a+b/c==")
+        .build()
+        .unwrap();
+
+    client.identity().get_my_identity().await.unwrap();
+
+    server.verify().await;
+}
+
+#[tokio::test]
+async fn an_uppercase_scheme_or_a_scheme_relative_path_does_not_slip_past_the_origin_check() {
+    let server = MockServer::start().await;
+    let client = account(&server).client().clone();
+    for path in ["HTTPS://evil.example.com/x", "Http://evil.example.com/x"] {
+        let error = client.get(path).await.unwrap_err();
+        assert_eq!(error.code(), ErrorCode::Usage, "{path}");
+    }
+    assert!(server.received_requests().await.unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn a_session_answer_prints_without_its_token() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/session/magic_link.json"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(
+            json!({"session_token": "sess-secret", "requires_signup_completion": false}),
+        ))
+        .mount(&server)
+        .await;
+    let flow =
+        fizzy_sdk::MagicLinkFlow::resume(Config::default().with_base_url(server.uri()), "pend")
+            .unwrap();
+
+    let session = flow.redeem("CODE").await.unwrap();
+
+    assert_eq!(session.session_token.expose(), "sess-secret");
+    assert!(!format!("{session:?}").contains("sess-secret"));
+}

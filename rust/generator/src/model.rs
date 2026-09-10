@@ -360,7 +360,12 @@ fn build_schemas(
                 .ok_or(format!("{name}.properties is not an object"))?;
             let mut fields = Vec::new();
             for (wire_name, property) in properties {
-                let kind = field_type(wire_name, property, naming)?;
+                let kind = match field_type(wire_name, property, naming)? {
+                    FieldType::String if naming.is_sensitive(schema_name, wire_name) => {
+                        FieldType::SensitiveString
+                    }
+                    kind => kind,
+                };
                 fields.push(Field {
                     wire_name: wire_name.clone(),
                     recursive: kind.mentions(&name),

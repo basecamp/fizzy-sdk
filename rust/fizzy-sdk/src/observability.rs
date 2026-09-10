@@ -119,6 +119,11 @@ pub trait Hooks: Send + Sync {
         None
     }
 
+    /// Told that an operation this implementation admitted through its gate will not start
+    /// after all: a later member of a [`ChainHooks`] refused it. Whatever the gate set aside
+    /// for the operation is given back here.
+    fn on_operation_abandoned(&self, _op: &OperationInfo) {}
+
     /// Told how the operation ended and how long the whole of it took, requests, waits
     /// and all.
     fn on_operation_end(
@@ -155,6 +160,10 @@ impl<H: Hooks + ?Sized> Hooks for Arc<H> {
 
     fn on_operation_start(&self, op: &OperationInfo) -> OperationState {
         (**self).on_operation_start(op)
+    }
+
+    fn on_operation_abandoned(&self, op: &OperationInfo) {
+        (**self).on_operation_abandoned(op);
     }
 
     fn on_operation_end(
@@ -224,10 +233,21 @@ impl Hooks for ChainHooks {
     /// member that implements its separate gating interface; here gating is part of
     /// [`Hooks`] itself, so the chain stops at whichever member refuses.
     async fn on_operation_gate(&self, op: &OperationInfo) -> Result<(), Error> {
-        for hook in &self.hooks {
-            hook.on_operation_gate(op).await?;
+        for (admitted, hook) in self.hooks.iter().enumerate() {
+            if let Err(refusal) = hook.on_operation_gate(op).await {
+                for earlier in self.hooks[..admitted].iter().rev() {
+                    earlier.on_operation_abandoned(op);
+                }
+                return Err(refusal);
+            }
         }
         Ok(())
+    }
+
+    fn on_operation_abandoned(&self, op: &OperationInfo) {
+        for hook in self.hooks.iter().rev() {
+            hook.on_operation_abandoned(op);
+        }
     }
 
     /// Keeps each member's own state, so [`ChainHooks::on_operation_end`] can hand every
