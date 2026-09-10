@@ -40,6 +40,26 @@ Alternatively, prefix commands with `mise exec --`.
 5. Add conformance tests if the operation has behavioral requirements
 6. Run `make check`
 
+## Conformance Suite
+
+`conformance/tests/*.json` holds the language-agnostic behaviour fixtures (retry, pagination,
+error mapping, request shapes, ...), validated by `conformance/schema.json`. Each SDK has a
+runner that drives every case through its own client against a scripted transport, so a
+behavioural claim is pinned in all six languages at once:
+
+| Runner | Location | Run |
+|--------|----------|-----|
+| Go | `conformance/runner/go` | `make conformance-go` |
+| TypeScript | `conformance/runner/typescript` | `make conformance-typescript` |
+| Ruby | `conformance/runner/ruby` | `make conformance-ruby` |
+| Swift | `conformance/runner/swift` | `make conformance-swift` (needs a Swift toolchain; CI runs it on macOS) |
+| Kotlin | `kotlin/conformance` | `make conformance-kotlin` |
+| Rust | `conformance/runner/rust` | `make conformance-rust` |
+
+`make conformance` runs all six. The Swift and Rust runners carry unit tests for their own
+assertion helpers (`make conformance-runner-tests-swift`, `make conformance-runner-tests-rust`),
+which the conformance targets run first.
+
 ## Syncing to Upstream Fizzy
 
 The SDK generators read the Smithy spec, but the Smithy spec should be maintained against upstream Fizzy API sources:
