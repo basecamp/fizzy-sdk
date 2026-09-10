@@ -429,7 +429,7 @@
       {
         "status": 200,
         "headers": { "Content-Type": "application/json" },
-        "body": { "name": "My Account" }
+        "body": { "id": "999", "name": "My Account", "cards_count": 0, "created_at": "2026-01-01T00:00:00Z" }
       }
     ],
     "assertions": [
@@ -468,7 +468,7 @@
       {
         "status": 200,
         "headers": { "Content-Type": "application/json" },
-        "body": { "code": "abc123", "usage_limit": 10 }
+        "body": { "code": "abc123", "url": "https://fizzy.do/join/abc123", "usage_limit": 10 }
       }
     ],
     "assertions": [
@@ -527,7 +527,7 @@
       {
         "status": 200,
         "headers": { "Content-Type": "application/json" },
-        "body": { "name": "My Account", "auto_postpone_period_in_days": 7 }
+        "body": { "id": "999", "name": "My Account", "cards_count": 0, "created_at": "2026-01-01T00:00:00Z", "auto_postpone_period_in_days": 7 }
       }
     ],
     "assertions": [

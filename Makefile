@@ -343,7 +343,7 @@ rs-clean:
 # Conformance
 #---
 
-.PHONY: conformance-build conformance-go conformance-kotlin conformance-typescript conformance-ruby conformance-swift conformance-rust conformance-rs conformance-runner-tests-rust conformance
+.PHONY: conformance-build conformance-go conformance-kotlin conformance-typescript conformance-ruby conformance-swift conformance-runner-tests-swift conformance-rust conformance-rs conformance-runner-tests-rust conformance
 
 conformance-build:
 	@echo "==> Building conformance runners..."
@@ -368,11 +368,13 @@ conformance-kotlin:
 	@echo "==> Running Kotlin conformance..."
 	cd kotlin && ./gradlew :conformance:run
 
-conformance-swift:
-	@if [ -f conformance/runner/swift/Package.swift ]; then \
-		echo "==> Running Swift conformance..."; \
-		cd conformance/runner/swift && swift run ConformanceRunner ../../tests/; \
-	else echo "SKIP: Swift conformance runner not found"; fi
+conformance-swift: conformance-runner-tests-swift
+	@echo "==> Running Swift conformance..."
+	cd conformance/runner/swift && swift run ConformanceRunner ../../tests/
+
+conformance-runner-tests-swift:
+	@echo "==> Running Swift conformance runner tests..."
+	cd conformance/runner/swift && swift test
 
 conformance-rust: conformance-runner-tests-rust
 	@echo "==> Running Rust conformance..."
@@ -384,7 +386,7 @@ conformance-runner-tests-rust:
 	@echo "==> Running Rust conformance runner tests..."
 	cd conformance/runner/rust && cargo test --locked
 
-conformance: conformance-go conformance-typescript conformance-ruby conformance-kotlin conformance-rust
+conformance: conformance-go conformance-typescript conformance-ruby conformance-swift conformance-kotlin conformance-rust
 	@echo "==> All conformance tests passed"
 
 #---
@@ -553,6 +555,7 @@ help:
 	@echo "  conformance-typescript Run TypeScript conformance tests"
 	@echo "  conformance-ruby     Run Ruby conformance tests"
 	@echo "  conformance-swift    Run Swift conformance tests"
+	@echo "  conformance-runner-tests-swift Run the Swift conformance runner's own tests"
 	@echo "  conformance-rust     Run Rust conformance tests"
 	@echo "  conformance-runner-tests-rust Run the Rust conformance runner's own tests"
 	@echo "  conformance-build    Build conformance test runners"
