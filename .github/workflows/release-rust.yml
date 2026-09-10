@@ -1,0 +1,318 @@
+name: Release Rust SDK
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:  # Manual trigger is always dry-run (rehearsal mode)
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  smithy:
+    uses: ./.github/workflows/smithy-verify.yml
+    permissions:
+      contents: read
+
+  test:
+    name: Test Rust SDK
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # rust-toolchain.toml pins the dev toolchain; RUSTUP_TOOLCHAIN makes the pin explicit
+      # for every cargo invocation, including the runner workspace outside rust/.
+      - name: Resolve toolchain
+        id: toolchain
+        run: |
+          CHANNEL=$(sed -n 's/^channel = "\(.*\)"$/\1/p' rust/rust-toolchain.toml)
+          test -n "$CHANNEL"
+          echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
+          echo "RUSTUP_TOOLCHAIN=$CHANNEL" >> "$GITHUB_ENV"
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
+        with:
+          toolchain: ${{ steps.toolchain.outputs.channel }}
+          components: clippy, rustfmt
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2 # zizmor: ignore[cache-poisoning] -- cached deps are for testing, not release artifact generation
+        with:
+          workspaces: |
+            rust
+            conformance/runner/rust
+
+      - name: Install cargo-deny
+        uses: taiki-e/install-action@c3ec0de9ae7f1019cea21aa96aa0a895b9552063 # v2.87.9
+        with:
+          tool: cargo-deny
+
+      - name: Lint
+        run: make rs-lint
+
+      - name: Test
+        run: make rs-test rs-test-features
+
+      - name: Docs
+        run: make rs-doc
+
+      - name: Deny
+        run: make rs-deny
+
+      - name: Check generated code drift
+        run: make rs-check-drift
+
+      - name: Conformance
+        run: make conformance-rust
+
+  # Packaging is deliberately separate from publishing: this job carries no
+  # `environment:`, so a workflow_dispatch rehearsal runs it from any ref without
+  # the release-crates approval, and it holds no publishing credentials. Cargo
+  # cannot upload a pre-built .crate, so the artifact is evidence rather than
+  # input: the publish job repackages the same commit under the same
+  # SOURCE_DATE_EPOCH and toolchain and refuses to publish unless the bytes match.
+  package:
+    name: Package crate
+    needs: [smithy, test]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      sha256: ${{ steps.package.outputs.sha256 }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify tag is on main
+        if: github.event_name == 'push'
+        run: |
+          git fetch origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+
+      - name: Resolve toolchain
+        id: toolchain
+        run: |
+          CHANNEL=$(sed -n 's/^channel = "\(.*\)"$/\1/p' rust/rust-toolchain.toml)
+          test -n "$CHANNEL"
+          echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
+          echo "RUSTUP_TOOLCHAIN=$CHANNEL" >> "$GITHUB_ENV"
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
+        with:
+          toolchain: ${{ steps.toolchain.outputs.channel }}
+
+      - name: Extract version
+        id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          CRATE_VERSION=$(cargo metadata --no-deps --format-version 1 --manifest-path rust/Cargo.toml \
+            | jq -r '.packages[] | select(.name == "fizzy-sdk") | .version')
+          if [ -z "$CRATE_VERSION" ] || [ "$CRATE_VERSION" = null ]; then
+            echo "::error::Could not read the fizzy-sdk crate version from rust/Cargo.toml"
+            exit 1
+          fi
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            echo "version=$CRATE_VERSION" >> "$GITHUB_OUTPUT"
+            echo "Rehearsal for version: $CRATE_VERSION"
+          else
+            VERSION="${GITHUB_REF#refs/tags/v}"
+            if [ "$CRATE_VERSION" != "$VERSION" ]; then
+              echo "::error::Crate version ($CRATE_VERSION) does not match tag version ($VERSION)"
+              exit 1
+            fi
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+            echo "Releasing version: $VERSION"
+          fi
+
+      # SOURCE_DATE_EPOCH pins the tarball's timestamps to the commit, so the publish
+      # job's repackage of the same commit is byte-identical. .cargo_vcs_info.json is
+      # the only provenance crates.io records, so it is asserted here, before anything
+      # irreversible happens.
+      - name: Package crate
+        id: package
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          SOURCE_DATE_EPOCH=$(git log -1 --format=%ct HEAD)
+          export SOURCE_DATE_EPOCH
+          HEAD_SHA=$(git rev-parse HEAD)
+          cd rust
+          cargo package -p fizzy-sdk --locked
+          CRATE="target/package/fizzy-sdk-${VERSION}.crate"
+          test -f "$CRATE" || { echo "::error::Expected $CRATE after cargo package"; exit 1; }
+          VCS_INFO=$(tar -xOzf "$CRATE" "fizzy-sdk-${VERSION}/.cargo_vcs_info.json")
+          echo "$VCS_INFO"
+          if [ "$(echo "$VCS_INFO" | jq -r '.git.sha1')" != "$HEAD_SHA" ]; then
+            echo "::error::.cargo_vcs_info.json sha1 does not match $HEAD_SHA"
+            exit 1
+          fi
+          if [ "$(echo "$VCS_INFO" | jq -r '.path_in_vcs')" != "rust/fizzy-sdk" ]; then
+            echo "::error::.cargo_vcs_info.json path_in_vcs is not rust/fizzy-sdk"
+            exit 1
+          fi
+          SHA256=$(sha256sum "$CRATE" | cut -d' ' -f1)
+          echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
+          echo "Packaged $CRATE ($SHA256)"
+
+      - name: Dry-run publish
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          cd rust
+          cargo publish -p fizzy-sdk --dry-run --locked
+          echo "::notice::Dry run mode - not actually publishing"
+          echo "Would publish: $(ls target/package/*.crate)"
+
+      - name: Upload crate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: rust-crate
+          path: rust/target/package/*.crate
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish to crates.io
+    needs: package
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    environment: release-crates
+    env:
+      VERSION: ${{ needs.package.outputs.version }}
+      EXPECTED_SHA256: ${{ needs.package.outputs.sha256 }}
+      CRATES_IO_USER_AGENT: fizzy-sdk release workflow (https://github.com/basecamp/fizzy-sdk)
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Resolve toolchain
+        id: toolchain
+        run: |
+          CHANNEL=$(sed -n 's/^channel = "\(.*\)"$/\1/p' rust/rust-toolchain.toml)
+          test -n "$CHANNEL"
+          echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
+          echo "RUSTUP_TOOLCHAIN=$CHANNEL" >> "$GITHUB_ENV"
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
+        with:
+          toolchain: ${{ steps.toolchain.outputs.channel }}
+
+      - name: Download crate
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: rust-crate
+          path: dist/
+
+      # `cargo publish` packages the checkout itself; it cannot upload the artifact. The
+      # repackage below must reproduce the package job's bytes exactly, or the release
+      # stops here — before the irreversible upload, not after it.
+      - name: Repackage and compare with the packaged artifact
+        run: |
+          ARTIFACT_SHA256=$(sha256sum "dist/fizzy-sdk-${VERSION}.crate" | cut -d' ' -f1)
+          if [ "$ARTIFACT_SHA256" != "$EXPECTED_SHA256" ]; then
+            echo "::error::Downloaded artifact ($ARTIFACT_SHA256) does not match the package job's sha256 ($EXPECTED_SHA256)"
+            exit 1
+          fi
+          SOURCE_DATE_EPOCH=$(git log -1 --format=%ct HEAD)
+          export SOURCE_DATE_EPOCH
+          echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> "$GITHUB_ENV"
+          cd rust
+          cargo package -p fizzy-sdk --locked
+          LOCAL_SHA256=$(sha256sum "target/package/fizzy-sdk-${VERSION}.crate" | cut -d' ' -f1)
+          if [ "$LOCAL_SHA256" != "$EXPECTED_SHA256" ]; then
+            echo "::error::Repackaged crate ($LOCAL_SHA256) does not reproduce the package job's artifact ($EXPECTED_SHA256)"
+            exit 1
+          fi
+          echo "Repackaged crate matches the artifact ($LOCAL_SHA256)"
+
+      # Publishes only on 404. A version that already exists must carry this exact
+      # checksum (a rerun after a partial failure), and any other answer — a 5xx, a
+      # yanked version, a checksum from a different build — fails closed rather than
+      # becoming a publish attempt.
+      - name: Check crates.io for this version
+        id: registry
+        run: |
+          RESPONSE=$(mktemp)
+          STATUS=$(curl -sS -o "$RESPONSE" -w '%{http_code}' -A "$CRATES_IO_USER_AGENT" \
+            "https://crates.io/api/v1/crates/fizzy-sdk/${VERSION}")
+          case "$STATUS" in
+            404)
+              echo "publish=true" >> "$GITHUB_OUTPUT"
+              echo "fizzy-sdk ${VERSION} is not on crates.io yet"
+              ;;
+            200)
+              YANKED=$(jq -r '.version.yanked' "$RESPONSE")
+              CHECKSUM=$(jq -r '.version.checksum' "$RESPONSE")
+              if [ "$YANKED" = "true" ]; then
+                echo "::error::fizzy-sdk ${VERSION} is published and yanked; release the next patch instead"
+                exit 1
+              fi
+              if [ "$CHECKSUM" != "$EXPECTED_SHA256" ]; then
+                echo "::error::fizzy-sdk ${VERSION} is already published with checksum $CHECKSUM, not $EXPECTED_SHA256"
+                exit 1
+              fi
+              echo "publish=false" >> "$GITHUB_OUTPUT"
+              echo "::notice::fizzy-sdk ${VERSION} is already published with a matching checksum"
+              ;;
+            *)
+              echo "::error::crates.io answered $STATUS for fizzy-sdk ${VERSION}; not publishing"
+              cat "$RESPONSE"
+              exit 1
+              ;;
+          esac
+
+      - name: Authenticate with crates.io
+        if: steps.registry.outputs.publish == 'true'
+        id: auth
+        uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18 # v1.0.5
+
+      - name: Publish to crates.io
+        if: steps.registry.outputs.publish == 'true'
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+        run: |
+          cd rust
+          cargo publish -p fizzy-sdk --locked
+
+      # The upload can stand even when cargo times out waiting for the index, so a rerun
+      # takes the already-published branch above. This compares what crates.io actually
+      # stored with the bytes verified before the upload.
+      - name: Verify the published checksum
+        if: steps.registry.outputs.publish == 'true'
+        run: |
+          RESPONSE=$(mktemp)
+          for attempt in $(seq 1 20); do
+            STATUS=$(curl -sS -o "$RESPONSE" -w '%{http_code}' -A "$CRATES_IO_USER_AGENT" \
+              "https://crates.io/api/v1/crates/fizzy-sdk/${VERSION}")
+            if [ "$STATUS" = "200" ]; then
+              CHECKSUM=$(jq -r '.version.checksum' "$RESPONSE")
+              if [ "$CHECKSUM" = "$EXPECTED_SHA256" ]; then
+                echo "crates.io stores fizzy-sdk ${VERSION} with checksum $CHECKSUM"
+                exit 0
+              fi
+              echo "::error::crates.io stores fizzy-sdk ${VERSION} with checksum $CHECKSUM, not $EXPECTED_SHA256"
+              exit 1
+            fi
+            echo "crates.io answered $STATUS (attempt $attempt); waiting for the index..."
+            sleep 15
+          done
+          echo "::error::fizzy-sdk ${VERSION} did not appear on crates.io in time"
+          exit 1
