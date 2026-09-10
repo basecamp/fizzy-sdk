@@ -472,12 +472,11 @@ fn retry_hint(retry_after: Option<u64>) -> String {
 /// all.
 pub(crate) fn retry_after_seconds(headers: &HeaderMap) -> Option<u64> {
     let asked = headers.get("retry-after")?.to_str().ok()?.trim();
-    match asked.parse::<i64>() {
-        Ok(seconds) => u64::try_from(seconds).ok(),
-        Err(_) => {
-            let until = chrono::DateTime::parse_from_rfc2822(asked).ok()?;
-            seconds_until(until.with_timezone(&chrono::Utc), chrono::Utc::now())
-        }
+    if let Ok(seconds) = asked.parse::<i64>() {
+        u64::try_from(seconds).ok()
+    } else {
+        let until = chrono::DateTime::parse_from_rfc2822(asked).ok()?;
+        seconds_until(until.with_timezone(&chrono::Utc), chrono::Utc::now())
     }
 }
 

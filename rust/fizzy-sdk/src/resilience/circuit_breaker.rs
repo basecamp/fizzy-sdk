@@ -196,6 +196,7 @@ impl Inner {
 
     /// The share of the window that failed, as a percentage. A window that has not been
     /// round once yet has nothing to say, so it answers zero.
+    #[allow(clippy::cast_precision_loss)] // window sizes are small counts, exact in an f64
     fn failure_rate(&self) -> f64 {
         if self.filled {
             let failures = self.window.iter().filter(|success| !**success).count();

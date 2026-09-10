@@ -4,6 +4,7 @@ pub mod accessors;
 pub mod redaction;
 pub mod routes;
 pub mod services;
+pub mod tests;
 pub mod types;
 
 use std::fmt::Write;

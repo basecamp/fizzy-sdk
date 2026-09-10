@@ -185,7 +185,11 @@ mod tests {
     fn a_method_that_comes_out_empty_or_a_keyword_needs_an_override() {
         let naming = Naming::default();
         assert!(naming.method_for("Boards", "boards").is_err());
-        assert!(naming.method_for("MoveCard", "cards").unwrap() == "move");
+        assert!(naming.method_for("MoveCard", "cards").is_err());
+        assert_eq!(
+            naming.method_for("MoveColumnLeft", "columns").unwrap(),
+            "move_left"
+        );
     }
 
     #[test]
