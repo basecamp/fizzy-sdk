@@ -32,9 +32,10 @@ use crate::version::default_user_agent;
 
 /// How long the shipped HTTP client gives an answer to arrive.
 pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(30);
-/// How many resends a raw call gets after its first attempt, and the ceiling on what a
-/// modelled route may ask for.
-pub const DEFAULT_MAX_RETRIES: u32 = 3;
+/// How many times a raw call is sent, the first attempt included, and the ceiling on what a
+/// modelled route may ask for. Three, as the behavior model gives every retried operation
+/// and as the Go client counts its `MaxRetries`.
+pub const DEFAULT_MAX_ATTEMPTS: u32 = 3;
 /// The first backoff for a raw call.
 pub const DEFAULT_BASE_DELAY: Duration = Duration::from_secs(1);
 /// The longest the client waits between attempts, however many it has made. The backoff's
@@ -72,7 +73,7 @@ pub(crate) struct Shared {
     pub(crate) http: Arc<dyn HttpClient>,
     pub(crate) auth: Arc<dyn AuthStrategy>,
     pub(crate) user_agent: String,
-    pub(crate) max_retries: u32,
+    pub(crate) max_attempts: u32,
     pub(crate) base_delay: Duration,
     pub(crate) max_delay: Duration,
     pub(crate) max_retry_after: Duration,
@@ -247,7 +248,7 @@ pub struct ClientBuilder {
     http: Option<Arc<dyn HttpClient>>,
     user_agent: String,
     timeout: Duration,
-    max_retries: u32,
+    max_attempts: u32,
     base_delay: Duration,
     max_delay: Duration,
     max_retry_after: Duration,
@@ -267,7 +268,7 @@ impl ClientBuilder {
             http: None,
             user_agent: default_user_agent(),
             timeout: DEFAULT_TIMEOUT,
-            max_retries: DEFAULT_MAX_RETRIES,
+            max_attempts: DEFAULT_MAX_ATTEMPTS,
             base_delay: DEFAULT_BASE_DELAY,
             max_delay: DEFAULT_MAX_DELAY,
             max_retry_after: DEFAULT_MAX_RETRY_AFTER,
@@ -322,10 +323,11 @@ impl ClientBuilder {
         self
     }
 
-    /// How many times a raw call is resent after a transient failure, and the most a
-    /// modelled route may be resent whatever the behavior model says.
-    pub fn max_retries(mut self, max_retries: u32) -> ClientBuilder {
-        self.max_retries = max_retries;
+    /// How many times a raw call is sent, the first attempt included, and the most a
+    /// modelled route may be sent whatever the behavior model says. One sends everything
+    /// once; zero reads as one.
+    pub fn max_attempts(mut self, max_attempts: u32) -> ClientBuilder {
+        self.max_attempts = max_attempts.max(1);
         self
     }
 
@@ -415,7 +417,7 @@ impl ClientBuilder {
             http,
             auth,
             user_agent: self.user_agent,
-            max_retries: self.max_retries,
+            max_attempts: self.max_attempts,
             base_delay: self.base_delay,
             max_delay: self.max_delay.max(self.base_delay),
             max_retry_after: self.max_retry_after,
@@ -636,12 +638,12 @@ impl Client {
             return RetryPolicy::none();
         }
         let policy = operation.retry.clone().unwrap_or_else(|| RetryPolicy {
-            attempts: shared.max_retries + 1,
+            attempts: shared.max_attempts,
             base_delay: shared.base_delay,
             retry_on: Cow::Borrowed(DEFAULT_RETRY_ON),
         });
         RetryPolicy {
-            attempts: policy.attempts.min(shared.max_retries + 1).max(1),
+            attempts: policy.attempts.min(shared.max_attempts).max(1),
             base_delay: policy.base_delay.min(shared.max_delay),
             retry_on: policy.retry_on,
         }
@@ -1209,7 +1211,7 @@ mod tests {
         Client::builder(Config::default().with_base_url("https://fizzy.test"))
             .token_provider(StaticTokenProvider::new("secret"))
             .http_client(http)
-            .max_retries(0)
+            .max_attempts(1)
             .build()
             .unwrap()
     }

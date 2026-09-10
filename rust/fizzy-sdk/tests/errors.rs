@@ -107,7 +107,7 @@ async fn nothing_answering_is_a_network_error() {
         fizzy_sdk::Config::default().with_base_url("http://127.0.0.1:1"),
     )
     .access_token("t")
-    .max_retries(0)
+    .max_attempts(1)
     .build()
     .unwrap();
 

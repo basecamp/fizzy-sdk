@@ -15,7 +15,7 @@ use wiremock::MockServer;
 fn client(server: &MockServer) -> Client {
     Client::builder(Config::default().with_base_url(server.uri()))
         .access_token("test-token")
-        .max_retries(0)
+        .max_attempts(1)
         .max_jitter(Duration::ZERO)
         .build()
         .unwrap()
