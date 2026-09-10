@@ -8,6 +8,7 @@ keywords = ["fizzy", "37signals", "api", "sdk"]
 categories = ["api-bindings", "web-programming::http-client"]
 include = ["src/**", "examples/**", "README.md"]
 edition.workspace = true
+authors.workspace = true
 license.workspace = true
 repository.workspace = true
 homepage.workspace = true

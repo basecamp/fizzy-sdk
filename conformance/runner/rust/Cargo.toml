@@ -6,6 +6,7 @@ version = "0.0.0"
 description = "Runs the shared conformance fixtures against the Rust Fizzy SDK"
 edition = "2024"
 rust-version = "1.88"
+authors = ["37signals LLC"]
 license = "MIT"
 publish = false
 

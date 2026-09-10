@@ -286,3 +286,7 @@ Before 1.0, a breaking change bumps the minor version and an additive one the pa
 `cargo semver-checks` runs in CI once a published baseline exists. The MSRV is 1.88 and is
 raised only when a dependency or feature needs it, as a minor release with a line in the
 release notes.
+
+## License
+
+MIT. Copyright 37signals LLC.
