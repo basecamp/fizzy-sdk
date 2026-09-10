@@ -31,9 +31,11 @@ impl Hooks for RequestLog {
     }
 
     fn on_retry(&self, info: &RequestInfo, next_attempt: u32, cause: &Error) {
+        // The code, not the message: a transport error's message can quote the URL.
         println!(
-            "resending {} as attempt {next_attempt}: {cause}",
-            info.method
+            "resending {} as attempt {next_attempt} after {}",
+            info.method,
+            cause.code()
         );
     }
 
@@ -46,7 +48,7 @@ impl Hooks for RequestLog {
     ) {
         match outcome {
             Ok(()) => println!("{} ok in {duration:?}", op.operation),
-            Err(error) => println!("{} failed in {duration:?}: {error}", op.operation),
+            Err(error) => println!("{} failed in {duration:?}: {}", op.operation, error.code()),
         }
     }
 }

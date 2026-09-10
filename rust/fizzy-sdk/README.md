@@ -236,8 +236,10 @@ each resend is a debug event on that span with the attempt number. Subscribe wit
 ## Caching
 
 Reads can be cached by `ETag`: a repeat request sends `If-None-Match`, and a 304 answers from
-the cache without a body on the wire. `Config::with_cache_enabled(true)` turns it on with the
-file cache in `FIZZY_CACHE_DIR`; `ClientBuilder::cache` takes any `ResponseCache`, and
+the cache without a body on the wire. `Config::default().with_env().with_cache_enabled(true)`
+turns it on with the file cache in the directory `FIZZY_CACHE_DIR` names — `with_env` is what
+reads the variable; without it the platform default directory is used, or
+`Config::with_cache_dir` sets one. `ClientBuilder::cache` takes any `ResponseCache`, and
 `fizzy_sdk::cache::InMemoryCache` is one.
 
 ## Bring your own HTTP client
