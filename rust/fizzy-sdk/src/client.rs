@@ -777,13 +777,12 @@ impl Client {
                 retry_after,
             })),
             Err(error) => {
-                let mut again = attempt < policy.attempts;
-                let error = unread(operation, status, &parts.headers, error, &mut again);
+                let (error, retryable) = unread(operation, status, &parts.headers, error);
                 hooks.on_request_end(
                     &info,
-                    &RequestResult::failed(Some(status), duration, &error, again, retry_after),
+                    &RequestResult::failed(Some(status), duration, &error, retryable, retry_after),
                 );
-                if again {
+                if retryable && attempt < policy.attempts {
                     self.resend(backoff, &info, operation, &error, None, "body broke off")
                         .await;
                     Ok(None)
@@ -1244,22 +1243,22 @@ fn header_value(value: &str) -> Result<HeaderValue, Error> {
 
 /// Reads a body up to the bound and refuses it on the first byte past. A body exactly at
 /// the bound reads whole; one declared past it never starts.
-/// The error for a body that could not be read, and whether the answer is asked for
-/// again: a success whose body broke off is, while the budget allows; a refusal is not,
-/// and a failure keeps its status over the reason its body was lost.
+/// The error for a body that could not be read, and whether the SDK would ask for the
+/// answer again given an attempt to spare: a success whose body broke off, it would; a
+/// refusal it would not, and that keeps its status over the reason its body was lost.
 fn unread(
     operation: &Operation,
     status: StatusCode,
     headers: &HeaderMap,
     error: Error,
-    again: &mut bool,
-) -> Error {
-    *again = *again && status.is_success() && error.is_retryable();
-    if status.is_success() {
+) -> (Error, bool) {
+    let retryable = status.is_success() && error.is_retryable();
+    let error = if status.is_success() {
         error
     } else {
         Error::from_response(status, &operation.method, headers, &[]).refusing(error)
-    }
+    };
+    (error, retryable)
 }
 
 /// Where the retry loop stands: which attempt is next, and how long the wait before it is.
@@ -1456,6 +1455,37 @@ mod tests {
         assert_eq!(error.code(), ErrorCode::Validation);
         assert_eq!(error.http_status(), Some(422));
         assert_eq!(http.sent().len(), 1);
+    }
+
+    /// Keeps what each request was reported as, resendable or not.
+    #[derive(Default)]
+    struct Retryability(Mutex<Vec<bool>>);
+
+    impl Hooks for Retryability {
+        fn on_request_end(&self, _info: &RequestInfo, result: &RequestResult<'_>) {
+            self.0.lock().unwrap().push(result.retryable);
+        }
+    }
+
+    #[tokio::test]
+    async fn a_body_that_breaks_off_on_the_last_attempt_is_still_reported_resendable() {
+        let http = Canned::new(|_| broken_body(200));
+        let seen = Arc::new(Retryability::default());
+        let client = Client::builder(Config::default().with_base_url("https://fizzy.test"))
+            .token_provider(StaticTokenProvider::new("secret"))
+            .http_client(http.clone())
+            .hooks(seen.clone())
+            .max_attempts(2)
+            .max_jitter(Duration::ZERO)
+            .base_delay(Duration::from_millis(1))
+            .build()
+            .unwrap();
+
+        let error = client.get("/x.json").await.unwrap_err();
+
+        assert_eq!(error.code(), ErrorCode::Network);
+        assert_eq!(http.sent().len(), 2);
+        assert_eq!(*seen.0.lock().unwrap(), [true, true]);
     }
 
     #[tokio::test]
