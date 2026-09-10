@@ -13,8 +13,8 @@ use tokio::net::TcpListener;
 use tokio::task::JoinHandle;
 use url::Url;
 
+use crate::assertions::next_link;
 use crate::fixtures::MockResponse;
-use fizzy_sdk::pagination::next_link;
 
 /// One request the mock server saw.
 #[derive(Debug, Clone)]

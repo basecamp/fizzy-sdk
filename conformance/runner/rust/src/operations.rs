@@ -132,11 +132,17 @@ pub fn construct_client(case: &TestCase) -> Result<Outcome, Error> {
 /// Runs the case against the mock server through the raw verbs, the way the Go,
 /// TypeScript and Ruby runners do: the account-scoped client for a path under an
 /// account, the bare client otherwise.
-pub async fn execute(case: &TestCase, base_url: &str) -> Result<(Outcome, usize), Error> {
-    let (client, foreign) = build_client(case, base_url, Some(base_url))?;
+/// The outcome, and how many requests the transport refused to send off the mock server —
+/// counted whether the operation then succeeded or failed, since a refused request is
+/// usually why it failed.
+pub async fn execute(case: &TestCase, base_url: &str) -> (Result<Outcome, Error>, usize) {
+    let (client, foreign) = match build_client(case, base_url, Some(base_url)) {
+        Ok(built) => built,
+        Err(error) => return (Err(error), 0),
+    };
     let outcome = dispatch(&client, case).await;
     let refused = foreign.lock().map(|count| *count).unwrap_or_default();
-    outcome.map(|outcome| (outcome, refused))
+    (outcome, refused)
 }
 
 async fn dispatch(client: &Client, case: &TestCase) -> Result<Outcome, Error> {

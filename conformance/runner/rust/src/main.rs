@@ -111,17 +111,13 @@ async fn run_case(case: &TestCase) -> Result<(), String> {
             recorded: &[],
             foreign_requests: 0,
             wrong_pages: 0,
-            base_url: case.link_origin(),
         });
     }
     let server = MockServer::start(&case.mock_responses, case.link_origin())
         .await
         .map_err(|error| format!("Failed to start the mock server: {error}"))?;
     let base_url = server.base_url().to_string();
-    let (outcome, foreign_requests) = match operations::execute(case, &base_url).await {
-        Ok((outcome, refused)) => (Ok(outcome), refused),
-        Err(error) => (Err(error), 0),
-    };
+    let (outcome, foreign_requests) = operations::execute(case, &base_url).await;
     let recorded = server.shutdown();
     assertions::check_all(&Run {
         case,
@@ -129,6 +125,5 @@ async fn run_case(case: &TestCase) -> Result<(), String> {
         recorded: &recorded.requests,
         foreign_requests,
         wrong_pages: recorded.wrong_pages,
-        base_url: &base_url,
     })
 }

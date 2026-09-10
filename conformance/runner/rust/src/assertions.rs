@@ -1,7 +1,6 @@
 use std::time::Duration;
 
 use axum::http::HeaderMap;
-use fizzy_sdk::pagination::next_link;
 use serde_json::Value;
 use url::Url;
 
@@ -20,7 +19,6 @@ pub struct Run<'a> {
     /// Follow-on requests for a page other than the one the previous `Link` named. Always
     /// a failure, whatever the SDK made of the answer.
     pub wrong_pages: usize,
-    pub base_url: &'a str,
 }
 
 /// Every assertion in the case, in order; the first failure is the case's failure. An
@@ -377,12 +375,15 @@ fn check_header_injected(run: &Run, assertion: &Assertion) -> Result<(), String>
     }
 }
 
+/// The scheme of the origin the case configured, which is where the request logically
+/// went; the loopback mock only ever speaks plain HTTP, so the server's own scheme would
+/// fail every honest `https` assertion.
 fn check_request_scheme(run: &Run, assertion: &Assertion) -> Result<(), String> {
     let expected = expected_string(assertion)?;
     first_request(run)?;
-    let actual = Url::parse(run.base_url)
+    let actual = Url::parse(run.case.link_origin())
         .map(|url| url.scheme().to_string())
-        .map_err(|error| format!("bad server URL: {error}"))?;
+        .map_err(|error| format!("bad configured origin: {error}"))?;
     if actual == expected {
         Ok(())
     } else {
@@ -463,6 +464,38 @@ fn header<'a>(headers: &'a HeaderMap, name: &str) -> &'a str {
         .unwrap_or_default()
 }
 
+/// The `rel="next"` target of a `Link` header, read by the runner's own parser so the
+/// oracle does not share the SDK's mistakes: a header with several links, or `rel` sets
+/// like `"prev next"`, must yield the next one whatever the SDK picks. Targets are found by
+/// their angle brackets, so a comma inside one does not split it.
+pub fn next_link(header: &str) -> Option<String> {
+    let mut rest = header;
+    while let Some((_, after)) = rest.split_once('<') {
+        let (target, tail) = after.split_once('>')?;
+        let params_end = tail
+            .find(",<")
+            .or_else(|| tail.find(", <"))
+            .unwrap_or(tail.len());
+        let params = &tail[..params_end];
+        let is_next = params.split(';').any(|param| {
+            let param = param.trim();
+            param
+                .strip_prefix("rel=")
+                .map(|value| value.trim_matches(['"', '\'']))
+                .is_some_and(|value| {
+                    value
+                        .split_whitespace()
+                        .any(|rel| rel.eq_ignore_ascii_case("next"))
+                })
+        });
+        if is_next {
+            return Some(target.to_string());
+        }
+        rest = &tail[params_end..];
+    }
+    None
+}
+
 fn same_origin(a: &Url, b: &Url) -> bool {
     a.scheme().eq_ignore_ascii_case(b.scheme())
         && a.host_str()
@@ -541,6 +574,18 @@ fn display(value: &Value) -> String {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn next_link_reads_the_next_relation_only() {
+        let link = "<https://fizzy.do/999/boards.json?page=1>; rel=\"prev\", </999/boards.json?page=2>; rel=\"next\"";
+        assert_eq!(next_link(link).as_deref(), Some("/999/boards.json?page=2"));
+        assert_eq!(next_link("<https://x/y>; rel=\"prev\""), None);
+        assert_eq!(
+            next_link("<https://x/a,b>; rel=\"prev next\"").as_deref(),
+            Some("https://x/a,b")
+        );
+        assert_eq!(next_link(""), None);
+    }
 
     #[test]
     fn lookup_walks_objects_and_arrays() {
