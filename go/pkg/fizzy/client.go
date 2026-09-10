@@ -319,6 +319,7 @@ func (c *Client) GetAllWithLimit(ctx context.Context, path string, limit int) ([
 	if err != nil {
 		return nil, err
 	}
+	ctx = markCallerURL(ctx, path)
 	url := baseURL
 	var page int
 
@@ -362,10 +363,35 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body any) (
 	if err != nil {
 		return nil, err
 	}
-	return c.doRequestURL(ctx, method, url, body)
+	return c.doRequestURL(markCallerURL(ctx, path), method, url, body)
+}
+
+// markCallerURL marks ctx when path is a caller's absolute URL rather than an API
+// path: it can be a signed one, on any origin, and the hooks and the network error
+// see it projected.
+func markCallerURL(ctx context.Context, path string) context.Context {
+	if strings.HasPrefix(path, "https://") {
+		return markProjectedRequest(ctx)
+	}
+	return ctx
+}
+
+// trustedOrigin is the API origin a network error on this request may keep its cause
+// beneath, or none for a request the hooks see projected.
+func (c *Client) trustedOrigin(ctx context.Context) string {
+	if isProjectedRequest(ctx) {
+		return ""
+	}
+	return c.cfg.BaseURL
 }
 
 func (c *Client) doRequestURL(ctx context.Context, method, url string, body any) (*Response, error) {
+	// The retry hook sees the URL as the request hooks do: projected on a request the
+	// transport projects.
+	displayURL := url
+	if isProjectedRequest(ctx) {
+		displayURL = projectURL(url, false)
+	}
 	// POST and operations that opt out via WithNoRetry: single attempt only.
 	// Exception: POST requests marked as idempotent via WithIdempotent get full retry.
 	if (method == "POST" && !isIdempotent(ctx)) || isNoRetry(ctx) {
@@ -376,7 +402,7 @@ func (c *Client) doRequestURL(ctx context.Context, method, url string, body any)
 		// Only retry if this was a 401 that triggered successful token refresh
 		if apiErr, ok := err.(*Error); ok && apiErr.Retryable && apiErr.Code == CodeAuth {
 			c.logger.Debug("token refreshed, retrying mutation", "method", method)
-			info := RequestInfo{Method: method, URL: url, Attempt: 1}
+			info := RequestInfo{Method: method, URL: displayURL, Attempt: 1}
 			c.hooks.OnRetry(ctx, info, 2, err)
 			return c.singleRequest(ctx, method, url, body, 2)
 		}
@@ -413,7 +439,7 @@ func (c *Client) doRequestURL(ctx context.Context, method, url string, body any)
 
 		c.logger.Debug("retrying request", "attempt", attempt, "maxRetries", c.httpOpts.MaxRetries, "delay", delay, "error", lastErr)
 
-		info := RequestInfo{Method: method, URL: url, Attempt: attempt}
+		info := RequestInfo{Method: method, URL: displayURL, Attempt: attempt}
 		c.hooks.OnRetry(ctx, info, attempt+1, lastErr)
 
 		select {
@@ -461,11 +487,15 @@ func (c *Client) singleRequest(ctx context.Context, method, url string, body any
 		}
 	}
 
-	c.logger.Debug("http request", "method", method, "url", url, "attempt", attempt)
+	logURL := url
+	if isProjectedRequest(ctx) {
+		logURL = projectURL(url, false)
+	}
+	c.logger.Debug("http request", "method", method, "url", logURL, "attempt", attempt)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, ErrNetwork(err)
+		return nil, networkError(err, c.trustedOrigin(ctx))
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -590,7 +620,7 @@ func (c *Client) buildURL(path string) (string, error) {
 		return path, nil
 	}
 	if strings.HasPrefix(path, "http://") {
-		return "", fmt.Errorf("URL must use HTTPS, got: %s", path)
+		return "", fmt.Errorf("URL must use HTTPS, got: %s", describeOrigin(path))
 	}
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path

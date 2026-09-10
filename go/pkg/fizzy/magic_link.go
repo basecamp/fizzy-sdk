@@ -56,7 +56,7 @@ func (f *MagicLinkFlow) CreateSession(ctx context.Context, email string) (*Creat
 
 	resp, err := f.httpClient.Do(req)
 	if err != nil {
-		return nil, ErrNetwork(err)
+		return nil, networkError(err, f.baseURL)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -105,7 +105,7 @@ func (f *MagicLinkFlow) RedeemMagicLink(ctx context.Context, token string) (*Red
 
 	resp, err := f.httpClient.Do(req)
 	if err != nil {
-		return nil, ErrNetwork(err)
+		return nil, networkError(err, f.baseURL)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
