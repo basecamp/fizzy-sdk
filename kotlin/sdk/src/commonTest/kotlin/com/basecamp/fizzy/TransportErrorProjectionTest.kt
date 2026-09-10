@@ -87,11 +87,27 @@ class TransportErrorProjectionTest {
             val e = assertFailsWith<FizzyException.Network> {
                 client.httpClient.requestWithRetry(HttpMethod.Get, signed)
             }
-            assertTrue(e.message!!.contains("[url=http://localhost:3000/blob]"), e.message)
+            assertTrue(e.message!!.contains("[url=http://localhost:3000/blob, "), e.message)
             assertNoSecret(e, "thrown error")
             assertNoSecret(spy.errors.single(), "RequestResult.error")
             client.close()
         }
+    }
+
+    @Test
+    fun binaryRequestTimeoutRendersNoSignedQuery() = runTest {
+        val spy = EndSpy()
+        val client = clientThrowing(spy) { request -> HttpRequestTimeoutException(request) }
+
+        val e = assertFailsWith<FizzyException.Network> {
+            client.httpClient.requestBinaryWithRetry(HttpMethod.Put, signed, byteArrayOf(1, 2, 3), "application/octet-stream")
+        }
+
+        assertIs<HttpRequestTimeoutException>(e.cause)
+        assertTrue(e.message!!.startsWith("Network error: Request timeout has expired [url=http://localhost:3000/blob,"), e.message)
+        assertNoSecret(e, "thrown error")
+        assertNoSecret(spy.errors.single(), "RequestResult.error")
+        client.close()
     }
 
     @Test

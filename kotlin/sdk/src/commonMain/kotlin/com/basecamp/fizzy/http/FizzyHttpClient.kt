@@ -23,11 +23,13 @@ internal class FizzyHttpClient(
     private val config: FizzyConfig,
     private val hooks: FizzyHooks,
     internal val json: Json,
+    /**
+     * The per-attempt budget the SDK's own HttpTimeout enforces, rendered
+     * beside a projected timeout; null when the caller supplied the
+     * [HttpClient], whose budget the SDK does not know.
+     */
+    private val requestTimeoutMillis: Long? = null,
 ) {
-    /** The per-attempt budget HttpTimeout enforces, rendered into a projected timeout. */
-    private val requestTimeoutMillis: Long? =
-        config.timeout.takeIf { it.isFinite() }?.inWholeMilliseconds
-
     /**
      * Executes an HTTP request with authentication, returning the raw [HttpResponse].
      *

@@ -57,13 +57,18 @@ class TransportErrorProjectionJvmTest {
                 httpClient = engine
             }
 
-            val e = assertFailsWith<FizzyException.Network> {
-                client.httpClient.requestWithRetry(HttpMethod.Get, "$base/blob?signature=$secret")
+            val e = try {
+                assertFailsWith<FizzyException.Network> {
+                    client.httpClient.requestWithRetry(HttpMethod.Get, "$base/blob?signature=$secret")
+                }
+            } finally {
+                // The injected client is the caller's to close; client.close() leaves it running.
+                engine.close()
             }
-            client.close()
 
             assertIs<HttpRequestTimeoutException>(e.cause)
-            assertEquals("Network error: Request timeout has expired [url=$base/blob, request_timeout=30000 ms]", e.message)
+            // The budget is the injected client's, which the SDK does not know, so none is claimed.
+            assertEquals("Network error: Request timeout has expired [url=$base/blob, request_timeout=unknown ms]", e.message)
             for ((label, text) in renderings(e) + renderings(spy.errors.single(), "RequestResult.error")) {
                 assertFalse(text.contains(secret), "the signed query leaked into $label: $text")
             }

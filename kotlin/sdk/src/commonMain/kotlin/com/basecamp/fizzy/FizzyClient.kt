@@ -157,6 +157,7 @@ class FizzyClient internal constructor(
         config = config,
         hooks = hooks,
         json = json,
+        requestTimeoutMillis = if (externalHttpClient == null) config.timeout.inWholeMilliseconds else null,
     )
 
     private fun HttpClientConfig<*>.configureClient() {
