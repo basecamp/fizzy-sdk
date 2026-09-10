@@ -127,7 +127,9 @@ Responses are `#[non_exhaustive]`: a field Fizzy adds later is not a breaking ch
 
 ### Pages and streams
 
-A list operation answers a `Page<T>`: the decoded body, plus the `Link` header Fizzy sent.
+A paginated list operation — the thirteen the model marks `Link`-paginated, `boards().list()`
+among them — answers a `Page<T>`: the decoded body, plus the `Link` header Fizzy sent. A list
+the API serves whole (`columns().list()`, `webhooks().list()`, …) answers its `Vec` directly.
 Walk pages one at a time, or as a `Stream` of pages or items that reads lazily as it is polled
 (`cargo add futures-util` for the stream adapters).
 
@@ -192,8 +194,9 @@ every page after. `Retry-After` is honored, in seconds or as an HTTP date, up to
 raw call can say so with `RequestOptions::idempotent`, or opt out with
 `RequestOptions::no_retry`. Retries back off exponentially with jitter. On the builder,
 `max_attempts` is a ceiling over every route's budget (3 by default, counting the first
-request), `max_delay` caps every wait, a route's first backoff included (set it below `base_delay` and
-the first wait shrinks to it),
+request), `max_delay` caps every backoff, a route's first one included (set it below `base_delay` and
+the first wait shrinks to it) — a `Retry-After` the server sends is honored as is, up to
+`max_retry_after` —,
 `max_jitter` bounds the randomness, and `base_delay` is the first backoff for raw calls,
 which have no route to read one from.
 
@@ -229,8 +232,9 @@ let client = Client::builder(Config::default())
 # }
 ```
 
-With the `tracing` feature (on by default) every operation runs inside a span named for it,
-carrying the service, the operation, and the HTTP status and request id as they are known;
+With the `tracing` feature (on by default) every operation runs inside a span named
+`fizzy.operation`, whose `operation` field names the call — filter on the field, not the span
+name — alongside the service, and the HTTP status and request id as they are known;
 each resend is a debug event on that span with the attempt number. Subscribe with any
 `tracing` subscriber; the SDK depends on none.
 

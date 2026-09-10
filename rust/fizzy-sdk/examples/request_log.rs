@@ -1,7 +1,8 @@
 //! Customizes the client: hooks that log every operation, attempt and resend, and the
 //! retry and page bounds set by hand rather than left at their defaults. A modelled call keeps its own
 //! retry policy; the builder's knobs cap it — `max_attempts` over the route's budget,
-//! `max_delay` over every wait, the first backoff included — and
+//! `max_delay` over every backoff, the first included (a server's `Retry-After` is honored
+//! up to `max_retry_after` instead) — and
 //! `max_jitter` zero makes the waits exact.
 //!
 //! ```sh
