@@ -23,7 +23,7 @@ Retry behavior varies by SDK and is driven by a per-operation behavior model gen
 - **Go** retries all methods except `POST` by default. Operations with `retry_on: null` in the behavior model can opt out via `WithNoRetry(ctx)`.
 - **Ruby** retries all methods except `POST` by default. Operations with `retry_on: null` can opt out via `retryable: false`.
 - **Kotlin** retries `GET`, `PUT`, `PATCH`, `DELETE`, and `HEAD` by default, and can additionally retry `POST` when the operation's metadata marks it as idempotent.
-- **TypeScript and Swift** use the full per-operation retry config from the behavior model.
+- **TypeScript, Swift and Rust** use the full per-operation retry config from the behavior model. In Rust the policy travels with the operation onto every page of a paginated read, and raw calls opt out with `RequestOptions::no_retry` or in with `RequestOptions::idempotent`.
 
 All retries use exponential backoff with jitter. The `Retry-After` header is respected when present on `429` responses.
 
@@ -36,7 +36,7 @@ When debug logging is enabled, the SDK redacts sensitive headers before output. 
 Incoming webhook payloads can be verified using HMAC-SHA256 signatures. The SDK provides a verification function that:
 
 - Computes HMAC-SHA256 over the raw request body using the shared secret
-- Compares the computed signature against the `X-Fizzy-Signature` header using constant-time comparison
+- Compares the computed signature against the `X-Webhook-Signature` header using constant-time comparison
 - Rejects payloads with missing, malformed, or mismatched signatures
 
 ## Pagination Origin Enforcement
@@ -52,3 +52,4 @@ Each language implementation provides concurrency-safe client instances:
 - **Ruby**: The client is thread-safe. Internal state is protected by a `Mutex` where needed.
 - **Kotlin**: The client uses `ConcurrentHashMap` for JVM service caching via `getOrPut`. HTTP operations are coroutine-safe.
 - **Swift**: The client uses `NSLock` to serialize service cache access and resilience state (circuit breaker, bulkhead, rate limiter, ETag cache). Fields guarded by locks are marked `nonisolated(unsafe)`.
+- **Rust**: `Client` is `Clone + Send + Sync` and shares one connection pool and one set of hooks across clones. Resilience and cache state live behind `Mutex`es; credentials are `SensitiveString`s whose `Debug` output is redacted. `#![forbid(unsafe_code)]` holds for the whole crate.
