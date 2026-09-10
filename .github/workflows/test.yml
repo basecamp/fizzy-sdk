@@ -149,6 +149,7 @@ jobs:
         with:
           distribution: corretto
           java-version: '17'
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
       - name: Build
         run: cd kotlin && ./gradlew :fizzy-sdk:compileKotlinJvm
       - name: Check service drift
@@ -340,6 +341,7 @@ jobs:
         with:
           distribution: corretto
           java-version: '17'
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
       - run: cd kotlin && ./gradlew :conformance:run
 
   conformance-rust:
