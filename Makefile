@@ -325,7 +325,7 @@ conformance-swift:
 		cd conformance/runner/swift && swift run ConformanceRunner ../../tests/; \
 	else echo "SKIP: Swift conformance runner not found"; fi
 
-conformance-rust:
+conformance-rust: conformance-runner-tests-rust
 	@echo "==> Running Rust conformance..."
 	cd conformance/runner/rust && cargo run -q --release --locked
 

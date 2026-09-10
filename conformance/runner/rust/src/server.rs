@@ -157,12 +157,20 @@ fn rewrite_targets(header: &str, from: &Url, to: &Url) -> String {
     out
 }
 
+/// A network-path reference (`//host/path`) names an origin too; it is resolved against
+/// the fixture origin's scheme before being classified, so it is rewritten or refused by
+/// the origin it actually names rather than passed through unread.
 fn rewrite_target(target: &str, from: &Url, to: &Url) -> String {
-    let Ok(mut url) = Url::parse(target) else {
+    let parsed = if target.starts_with("//") {
+        from.join(target)
+    } else {
+        Url::parse(target)
+    };
+    let Ok(mut url) = parsed else {
         return target.to_string();
     };
     if url.origin() != from.origin() {
-        return target.to_string();
+        return url.to_string();
     }
     let _ = url.set_scheme(to.scheme());
     let _ = url.set_host(to.host_str());
@@ -301,6 +309,22 @@ mod tests {
         assert_eq!(
             rewritten.headers["Link"],
             "<http://127.0.0.1:4321/a,b?x=1,2>; rel=\"next\"; title=\"one, two\", <http://127.0.0.1:4321/c>; rel=\"prev\""
+        );
+    }
+
+    #[test]
+    fn resolves_network_path_references_by_their_own_origin() {
+        let same = linked("<//fizzy.do/999/boards.json?page=2>; rel=\"next\"");
+        let rewritten = rewrite_link(&same, "https://fizzy.do", SERVER);
+        assert_eq!(
+            rewritten.headers["Link"],
+            "<http://127.0.0.1:4321/999/boards.json?page=2>; rel=\"next\""
+        );
+        let foreign = linked("<//evil.example/next>; rel=\"next\"");
+        let rewritten = rewrite_link(&foreign, "https://fizzy.do", SERVER);
+        assert_eq!(
+            rewritten.headers["Link"],
+            "<https://evil.example/next>; rel=\"next\""
         );
     }
 

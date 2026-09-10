@@ -269,10 +269,15 @@ fn check_url_origin(run: &Run, assertion: &Assertion) -> Result<(), String> {
         })
         .ok_or_else(|| "no Link header in the mock responses to reject".to_string())?;
     let target = next_link(&link).ok_or_else(|| format!("no next URL in Link header {link:?}"))?;
-    let server = Url::parse(run.base_url).map_err(|error| format!("bad server URL: {error}"))?;
-    if Url::parse(&target).is_ok_and(|next| same_origin(&next, &server)) {
+    let configured = Url::parse(run.case.link_origin())
+        .map_err(|error| format!("bad configured origin: {error}"))?;
+    let next = configured
+        .join(&target)
+        .map_err(|error| format!("Link target {target:?} does not resolve: {error}"))?;
+    if same_origin(&next, &configured) {
         return Err(format!(
-            "fixture Link {target} has the server's origin; nothing to reject"
+            "fixture Link {target} resolves to the configured origin {}; nothing to reject",
+            run.case.link_origin()
         ));
     }
     let pages = run.case.mock_responses.len();
