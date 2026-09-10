@@ -50,6 +50,7 @@ jobs:
           workspaces: |
             rust
             conformance/runner/rust
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Install cargo-deny
         uses: taiki-e/install-action@c3ec0de9ae7f1019cea21aa96aa0a895b9552063 # v2.87.9
