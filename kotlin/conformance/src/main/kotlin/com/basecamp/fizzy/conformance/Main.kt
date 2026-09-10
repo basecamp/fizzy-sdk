@@ -35,6 +35,8 @@ data class ConfigOverrides(
     val baseUrl: String? = null,
     val maxPages: Int? = null,
     val maxItems: Int? = null,
+    /** Overrides the client-wide retry cap as a TOTAL attempt count. */
+    val maxRetries: Int? = null,
 )
 
 @Serializable
@@ -263,6 +265,12 @@ fun executeOperation(tc: TestCase, engine: MockEngine): ExecResult {
         this.baseUrl = baseUrl
         this.engine = engine
         enableRetry = true
+        // The transport floors the cap at one attempt, so a 0 here is "no
+        // retries, exactly one attempt" rather than "no request". enableRetry
+        // stays true: the cap is what the fixture is pinning, and routing 0
+        // through the on/off knob would test a different mechanism than the
+        // one named.
+        tc.configOverrides?.maxRetries?.let { maxRetries = it }
     }
 
     val accountId = tc.pathParams["accountId"]?.let { jsonElementToString(it) } ?: "999"

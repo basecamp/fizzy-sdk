@@ -20,7 +20,12 @@
         "properties": {
           "baseUrl": { "type": "string" },
           "maxPages": { "type": "integer" },
-          "maxItems": { "type": "integer" }
+          "maxItems": { "type": "integer" },
+          "maxRetries": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Override the client-wide retry cap as a TOTAL attempt count. 0 means no retries — exactly one attempt — and is the value this key exists for. Go, Ruby, Kotlin and Rust take it as their numeric cap. TypeScript and Swift expose no numeric cap, only enableRetry, so a cap of 0 OR 1 maps to enableRetry: false and anything above to enableRetry: true; a cap above 1 pins an exact attempt count only in the numeric SDKs. Negative values are rejected here rather than left to the constructors."
+          }
         }
       },
       "mockResponses": {

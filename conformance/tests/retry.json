@@ -96,5 +96,44 @@
       { "type": "errorCode", "expected": "not_found" }
     ],
     "tags": ["retry"]
+  },
+  {
+    "name": "max_retries 0 sends exactly one request on a governed operation",
+    "description": "`maxRetries = 0` is a legal spelling of \"no retries — exactly one attempt\", not a request to send nothing. Go (#180) and Ruby (#181) each had a pre-check loop that broke out before the first send whenever the cap was 0 and raised \"Request failed after 0 retries\" for a request it never made; both now floor the cap at one, and this case is the cross-language pin those two unit tests could not be.\n\n`GetBoard` is governed: it carries a `retry.max` of 3 in behavior-model.json and 503 is in its declared `retry_on` set, so every retrying SDK would otherwise make three attempts here. A single 503 is queued deliberately: every runner answers past the end of the queue with a 500, and 500 is ALSO in the declared set, so an SDK that retried keeps going to its cap and `requestCount: 1` cannot pass vacuously — it fails on the count either way.\n\n**Strength is not uniform across the runners, and this fixture does not pretend otherwise.** Go and Ruby consult the budget BEFORE the first request (pre-check loops), so a zero cap is a real regression guard there. Rust floors the cap in the builder itself (`max_attempts(0)` reads as one) and clamps each route's budget under it. Kotlin and TypeScript consult the budget only after the first response, so a cap of 0 and of 1 are observably identical in those two; in Kotlin the client cap is a ceiling on the per-operation budget, and in TypeScript there is no numeric cap at all — the override maps to `enableRetry: false`, which is its spelling of the same contract. Swift is the same shape as TypeScript (no numeric cap, `enableRetry`, a loop floored at one) but has no conformance runner yet.",
+    "operation": "GetBoard",
+    "method": "GET",
+    "path": "/{accountId}/boards/{boardId}.json",
+    "pathParams": {
+      "accountId": "999",
+      "boardId": 12345
+    },
+    "configOverrides": {
+      "maxRetries": 0
+    },
+    "mockResponses": [
+      {
+        "status": 503,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "error": "Service unavailable"
+        }
+      }
+    ],
+    "assertions": [
+      {
+        "type": "requestCount",
+        "expected": 1
+      },
+      {
+        "type": "statusCode",
+        "expected": 503
+      }
+    ],
+    "tags": [
+      "retry",
+      "max-retries"
+    ]
   }
 ]

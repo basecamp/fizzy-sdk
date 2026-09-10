@@ -41,6 +41,11 @@ type ConfigOverrides struct {
 	BaseURL  string `json:"baseUrl"`
 	MaxPages int    `json:"maxPages"`
 	MaxItems int    `json:"maxItems"`
+	// MaxRetries overrides the client-wide retry cap as a TOTAL attempt count. A
+	// pointer because 0 is the value this override exists for — "no retries,
+	// exactly one attempt" — and an int would make it indistinguishable from
+	// absent, silently restoring the runner default.
+	MaxRetries *int `json:"maxRetries"`
 }
 
 // MockResponse defines a mock HTTP response.
@@ -440,7 +445,11 @@ func executeOperation(tc TestCase, serverURL string) *ExecResult {
 
 	cfg := &fizzy.Config{BaseURL: baseURL}
 
-	var opts []fizzy.ClientOption
+	maxRetries := fizzy.DefaultMaxRetries
+	if tc.ConfigOverrides != nil && tc.ConfigOverrides.MaxRetries != nil {
+		maxRetries = *tc.ConfigOverrides.MaxRetries
+	}
+	opts := []fizzy.ClientOption{fizzy.WithMaxRetries(maxRetries)}
 
 	// Only use fast retry delays if the test doesn't assert on delay timing
 	if !hasDelayAssertions(tc) {

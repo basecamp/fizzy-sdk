@@ -91,10 +91,14 @@ class ConformanceRunner
     base_delay = has_delay_assertion ? 1.0 : 0.001
     max_jitter = has_delay_assertion ? 0.1 : 0.001
 
+    # maxRetries is a TOTAL attempt count; 0 is the value the override exists for
+    # and is truthy here, so only an absent key falls back to the default.
+    max_retries = tc.dig("configOverrides", "maxRetries") || Fizzy::Config::DEFAULT_MAX_RETRIES
+
     begin
       config = Fizzy::Config.new(
         base_url: base_url,
-        max_retries: 3,
+        max_retries: max_retries,
         base_delay: base_delay,
         max_jitter: max_jitter
       )

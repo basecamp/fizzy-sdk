@@ -114,6 +114,9 @@ fn build_client(
     let mut builder = ClientBuilder::new(Config::default().with_base_url(base_url))
         .token_provider(StaticTokenProvider::new(TOKEN))
         .http_client(transport);
+    if let Some(max_retries) = case.config_overrides.max_retries {
+        builder = builder.max_attempts(max_retries);
+    }
     // Fast retries unless the case measures the delay itself.
     if !case.has_assertion("delayBetweenRequests") {
         builder = builder
