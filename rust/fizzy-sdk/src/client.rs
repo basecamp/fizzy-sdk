@@ -932,10 +932,17 @@ impl Client {
                 }
                 Some(next) => {
                     require_secure_endpoint(&next)?;
+                    if !next.username().is_empty() || next.password().is_some() {
+                        return Err(Error::usage(format!(
+                            "{} redirected to a URL carrying credentials",
+                            operation.id
+                        )));
+                    }
                     if !is_same_origin(&next, &self.shared.base_url) {
                         return Err(Error::usage(format!(
-                            "{} redirected off the Fizzy origin to {next}",
-                            operation.id
+                            "{} redirected off the Fizzy origin to {}",
+                            operation.id,
+                            next.origin().ascii_serialization()
                         )));
                     }
                     request = redirected(outgoing, response.status(), &next)?;
@@ -1325,6 +1332,18 @@ mod tests {
         let error = client.get("/blobs/1").await.unwrap_err();
 
         assert_eq!(error.code(), ErrorCode::Usage);
+        assert_eq!(http.sent().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn a_redirect_carrying_credentials_is_refused_without_echoing_them() {
+        let http = Canned::new(|_| redirect("https://user:s3cret@fizzy.test/new.json"));
+        let client = client_over(http.clone());
+
+        let error = client.get("/old.json").await.unwrap_err();
+
+        assert_eq!(error.code(), ErrorCode::Usage);
+        assert!(!error.to_string().contains("s3cret"));
         assert_eq!(http.sent().len(), 1);
     }
 
