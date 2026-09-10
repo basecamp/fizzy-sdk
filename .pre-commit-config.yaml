@@ -15,3 +15,11 @@ repos:
       - id: golangci-lint
         entry: bash -c 'cd go && golangci-lint run'
         pass_filenames: false
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo fmt
+        entry: bash -c 'cd rust && cargo fmt --all -- --check && cargo fmt --all --manifest-path ../conformance/runner/rust/Cargo.toml -- --check'
+        language: system
+        files: \.rs$
+        pass_filenames: false
