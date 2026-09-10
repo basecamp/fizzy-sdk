@@ -26,8 +26,9 @@ func renderings(err error) []string {
 // the error's renderings: net/http's *url.Error carries the whole URL, and ErrNetwork
 // used to copy it into the hint verbatim.
 func TestNetworkErrorRendersNoSignedQuery(t *testing.T) {
+	hooks := &requestRecordingHooks{}
 	client := NewClient(&Config{BaseURL: "http://127.0.0.1:1"}, &StaticTokenProvider{Token: "test"},
-		WithMaxRetries(1), WithBaseDelay(time.Millisecond), WithMaxJitter(time.Millisecond))
+		WithMaxRetries(1), WithBaseDelay(time.Millisecond), WithMaxJitter(time.Millisecond), WithHooks(hooks))
 
 	_, err := client.Get(context.Background(), "/x?sig=SECRETVALUE")
 	if err == nil {
@@ -73,6 +74,33 @@ func TestNetworkErrorRendersNoSignedQuery(t *testing.T) {
 	if want := `Get "https://127.0.0.1:1": transport failure`; sdkErr.Hint != want {
 		t.Errorf("hint = %q, want %q", sdkErr.Hint, want)
 	}
+	if len(hooks.infos) != 2 || len(hooks.results) != 2 {
+		t.Fatalf("expected both requests in the hooks, got %d starts, %d ends", len(hooks.infos), len(hooks.results))
+	}
+	if api := hooks.infos[0]; api.URL != "http://127.0.0.1:1/x?sig=SECRETVALUE" {
+		t.Errorf("an API-origin request reaches the hooks whole, got %q", api.URL)
+	}
+	if caller := hooks.infos[1]; caller.URL != "https://127.0.0.1:1" {
+		t.Errorf("a caller's absolute URL reaches the hooks as its origin, got %q", caller.URL)
+	}
+	if got := hooks.results[1].Error; got == nil || strings.Contains(got.Error(), "SECRETVALUE") || got.Error() != "transport failure" {
+		t.Errorf("a caller's absolute URL's failure reaches the hooks as its classification, got %v", got)
+	}
+}
+
+type requestRecordingHooks struct {
+	NoopHooks
+	infos   []RequestInfo
+	results []RequestResult
+}
+
+func (h *requestRecordingHooks) OnRequestStart(ctx context.Context, info RequestInfo) context.Context {
+	h.infos = append(h.infos, info)
+	return ctx
+}
+
+func (h *requestRecordingHooks) OnRequestEnd(_ context.Context, _ RequestInfo, result RequestResult) {
+	h.results = append(h.results, result)
 }
 
 func TestRedactTransportError(t *testing.T) {
@@ -193,6 +221,23 @@ func TestRedactTransportError(t *testing.T) {
 		}
 	})
 
+	t.Run("keeps a dropped sibling's classification and an exposed transport error", func(t *testing.T) {
+		joined := redactTransportError(errors.Join(timeoutError{}, signed), "")
+		var netErr net.Error
+		if !errors.As(joined, &netErr) || !netErr.Timeout() {
+			t.Errorf("a dropped net.Error sibling should leave its classification, got %v", joined)
+		}
+		for _, text := range renderings(joined) {
+			if strings.Contains(text, "SECRETVALUE") {
+				t.Errorf("the signed query leaked into %q", text)
+			}
+		}
+		exposed := redactTransportError(&asOnlyError{target: signed}, "")
+		if want := `Get "https://storage.example.com": context canceled`; exposed.Error() != want {
+			t.Errorf("got %q, want %q", exposed.Error(), want)
+		}
+	})
+
 	t.Run("keeps the cause beneath a URL on the API origin", func(t *testing.T) {
 		api := &url.Error{Op: "Get", URL: "https://api.example.com/boxes?page=2", Err: errors.New("connection refused")}
 		got := redactTransportError(api, "https://api.example.com")
@@ -276,6 +321,20 @@ func (cancelledTimeoutError) Error() string   { return "cancelled: " + context.C
 func (cancelledTimeoutError) Unwrap() error   { return context.Canceled }
 func (cancelledTimeoutError) Timeout() bool   { return true }
 func (cancelledTimeoutError) Temporary() bool { return false }
+
+// asOnlyError exposes a *url.Error through As alone, with no Unwrap, and renders the
+// signed URL on its own.
+type asOnlyError struct{ target *url.Error }
+
+func (e *asOnlyError) Error() string { return "request " + e.target.URL + " failed" }
+
+func (e *asOnlyError) As(target any) bool {
+	if p, ok := target.(**url.Error); ok {
+		*p = e.target
+		return true
+	}
+	return false
+}
 
 // opaqueWrapperError wraps an error without rendering it.
 type opaqueWrapperError struct{ cause error }
