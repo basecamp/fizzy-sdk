@@ -19,7 +19,11 @@ pub fn require_secure_endpoint(url: &Url) -> Result<(), Error> {
     if url.scheme() == "https" || (url.scheme() == "http" && is_localhost(url)) {
         Ok(())
     } else {
-        Err(Error::usage(format!("{url} must use HTTPS")))
+        // Only the origin is named: a pasted URL may carry credentials or a query.
+        Err(Error::usage(format!(
+            "{} must use HTTPS",
+            url.origin().ascii_serialization()
+        )))
     }
 }
 
@@ -73,6 +77,11 @@ mod tests {
         assert!(require_secure_endpoint(&Url::parse("http://app.localhost").unwrap()).is_ok());
         assert!(require_secure_endpoint(&Url::parse("https://fizzy.do").unwrap()).is_ok());
         assert!(require_secure_endpoint(&Url::parse("http://evil.example.com").unwrap()).is_err());
+        let error = require_secure_endpoint(
+            &Url::parse("http://user:s3cret@evil.example.com/x?t=s3cret").unwrap(),
+        )
+        .unwrap_err();
+        assert!(!error.to_string().contains("s3cret"), "{error}");
     }
 
     #[test]

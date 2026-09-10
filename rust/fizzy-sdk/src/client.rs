@@ -781,7 +781,7 @@ impl Client {
                 let error = unread(operation, status, &parts.headers, error, &mut again);
                 hooks.on_request_end(
                     &info,
-                    &RequestResult::failed(Some(status), duration, &error, again, None),
+                    &RequestResult::failed(Some(status), duration, &error, again, retry_after),
                 );
                 if again {
                     self.resend(backoff, &info, operation, &error, None, "body broke off")
