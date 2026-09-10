@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 
+use percent_encoding::{AsciiSet, CONTROLS, utf8_percent_encode};
 use serde::Deserialize;
 use serde_json::{Map, Value};
 
@@ -89,14 +90,14 @@ impl TestCase {
 
     /// The request path with `{param}` placeholders filled in and the query appended.
     /// Array-valued query params repeat the key, as the API reads them.
-    pub fn request_path(&self) -> String {
-        let mut path = expand_path(&self.path, &self.path_params);
+    pub fn request_path(&self) -> Result<String, String> {
+        let mut path = expand_path(&self.path, &self.path_params)?;
         let query = query_string(&self.query_params);
         if !query.is_empty() {
             path.push('?');
             path.push_str(&query);
         }
-        path
+        Ok(path)
     }
 
     /// Whether the case exercises pagination: several responses with a `Link` header to
@@ -122,12 +123,44 @@ pub fn param_string(value: &Value) -> String {
     }
 }
 
-pub fn expand_path(template: &str, params: &Params) -> String {
-    params
+/// The characters a path segment must escape: everything the URL grammar reserves or
+/// cannot carry raw, so a parameter value travels as one segment whatever it contains.
+const SEGMENT: &AsciiSet = &CONTROLS
+    .add(b' ')
+    .add(b'"')
+    .add(b'#')
+    .add(b'%')
+    .add(b'/')
+    .add(b'<')
+    .add(b'>')
+    .add(b'?')
+    .add(b'[')
+    .add(b']')
+    .add(b'`')
+    .add(b'{')
+    .add(b'|')
+    .add(b'}');
+
+/// Fills every `{param}` in the template from the case's parameters, percent-encoding each
+/// value as one path segment. A placeholder the case does not name is an error: a typo in
+/// `pathParams` must not reach the permissive mock server as a literal.
+pub fn expand_path(template: &str, params: &Params) -> Result<String, String> {
+    let path = params
         .iter()
         .fold(template.to_string(), |path, (key, value)| {
-            path.replace(&format!("{{{key}}}"), &param_string(value))
-        })
+            let encoded = utf8_percent_encode(&param_string(value), SEGMENT).to_string();
+            path.replace(&format!("{{{key}}}"), &encoded)
+        });
+    if let Some(start) = path.find('{') {
+        let end = path[start..]
+            .find('}')
+            .map_or(path.len(), |end| start + end + 1);
+        return Err(format!(
+            "path placeholder {} has no value in pathParams",
+            &path[start..end]
+        ));
+    }
+    Ok(path)
 }
 
 pub fn query_string(params: &Params) -> String {
@@ -162,7 +195,21 @@ mod tests {
             "/{accountId}/cards/{cardNumber}",
             &params(&json!({"accountId": "999", "cardNumber": 9_007_199_254_740_993_i64})),
         );
-        assert_eq!(path, "/999/cards/9007199254740993");
+        assert_eq!(path.as_deref(), Ok("/999/cards/9007199254740993"));
+    }
+
+    #[test]
+    fn encodes_parameter_values_as_one_segment_and_rejects_missing_ones() {
+        let path = expand_path(
+            "/{accountId}/boards/{boardId}",
+            &params(&json!({"accountId": "999", "boardId": "a/b c"})),
+        );
+        assert_eq!(path.as_deref(), Ok("/999/boards/a%2Fb%20c"));
+        let missing = expand_path(
+            "/{accountId}/boards/{boardId}",
+            &params(&json!({"accountID": "999"})),
+        );
+        assert!(missing.unwrap_err().contains("{accountId}"));
     }
 
     #[test]

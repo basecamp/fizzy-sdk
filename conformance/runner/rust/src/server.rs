@@ -186,12 +186,17 @@ fn header<'a>(mock: &'a MockResponse, name: &str) -> Option<&'a str> {
 }
 
 /// The page the previous response's `Link` told the client to ask for next, as a
-/// path-and-query on this server. `None` when the previous response had no next link or
-/// pointed away from this server, which is the client's problem to refuse, not ours.
-fn expected_page(mocks: &Mocks, index: usize) -> Option<String> {
+/// path-and-query on this server, resolved against the URL that response answered — a
+/// relative target like `?page=2` names a page under it. `None` when the previous response
+/// had no next link or pointed away from this server, which is the client's problem to
+/// refuse, not ours.
+fn expected_page(mocks: &Mocks, index: usize, previous_request: &str) -> Option<String> {
     let previous = mocks.responses.get(index.checked_sub(1)?)?;
     let target = next_link(header(previous, "link")?)?;
-    let base = Url::parse(&mocks.base_url).ok()?;
+    let base = Url::parse(&mocks.base_url)
+        .ok()?
+        .join(previous_request)
+        .ok()?;
     let next = base.join(&target).ok()?;
     (next.origin() == base.origin()).then(|| match next.query() {
         Some(query) => format!("{}?{query}", next.path()),
@@ -208,10 +213,20 @@ async fn answer(State(mocks): State<Arc<Mocks>>, request: Request) -> Response<B
         Some(query) => format!("{}?{query}", parts.uri.path()),
         None => parts.uri.path().to_string(),
     };
-    let index = {
+    let (index, previous_request) = {
         let Ok(mut records) = mocks.records.lock() else {
             return (StatusCode::INTERNAL_SERVER_ERROR, "record lock poisoned").into_response();
         };
+        let previous_request = records.last().map(|record| {
+            let query = url::form_urlencoded::Serializer::new(String::new())
+                .extend_pairs(&record.query)
+                .finish();
+            if query.is_empty() {
+                record.path.clone()
+            } else {
+                format!("{}?{query}", record.path)
+            }
+        });
         records.push(RequestRecord {
             time: Instant::now(),
             method: parts.method.to_string(),
@@ -222,10 +237,12 @@ async fn answer(State(mocks): State<Arc<Mocks>>, request: Request) -> Response<B
             body: bytes,
             headers: parts.headers.clone(),
         });
-        records.len() - 1
+        (records.len() - 1, previous_request.unwrap_or_default())
     };
 
-    if let Some(expected) = expected_page(&mocks, index).filter(|expected| *expected != requested) {
+    if let Some(expected) =
+        expected_page(&mocks, index, &previous_request).filter(|expected| *expected != requested)
+    {
         if let Ok(mut count) = mocks.wrong_pages.lock() {
             *count += 1;
         }
@@ -362,12 +379,35 @@ mod tests {
             records: Arc::new(Mutex::new(Vec::new())),
             wrong_pages: Arc::new(Mutex::new(0)),
         };
-        assert_eq!(expected_page(&mocks, 0), None);
+        assert_eq!(expected_page(&mocks, 0, ""), None);
         assert_eq!(
-            expected_page(&mocks, 1).as_deref(),
+            expected_page(&mocks, 1, "/999/boards.json").as_deref(),
             Some("/999/boards.json?page=2")
         );
-        assert_eq!(expected_page(&mocks, 2), None);
-        assert_eq!(expected_page(&mocks, 3), None);
+        assert_eq!(expected_page(&mocks, 2, "/999/boards.json?page=2"), None);
+        assert_eq!(expected_page(&mocks, 3, "/x"), None);
+    }
+
+    #[test]
+    fn resolves_a_relative_next_page_against_the_previous_request() {
+        let mocks = Mocks {
+            base_url: SERVER.into(),
+            responses: vec![
+                linked("<?page=2>; rel=\"next\""),
+                linked("<next?page=3>; rel=\"next\""),
+                MockResponse::default(),
+            ],
+            paginated: true,
+            records: Arc::new(Mutex::new(Vec::new())),
+            wrong_pages: Arc::new(Mutex::new(0)),
+        };
+        assert_eq!(
+            expected_page(&mocks, 1, "/999/boards.json").as_deref(),
+            Some("/999/boards.json?page=2")
+        );
+        assert_eq!(
+            expected_page(&mocks, 2, "/999/boards.json?page=2").as_deref(),
+            Some("/999/next?page=3")
+        );
     }
 }

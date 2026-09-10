@@ -96,9 +96,16 @@ fn case_files(directory: &Path) -> Result<Vec<PathBuf>, io::Error> {
     Ok(files)
 }
 
+/// A fixture file with no cases is a failure, not an empty section: a family's coverage
+/// cannot vanish and leave the gate green.
 fn load_cases(file: &Path) -> Result<Vec<TestCase>, String> {
     let contents = std::fs::read(file).map_err(|error| error.to_string())?;
-    serde_json::from_slice(&contents).map_err(|error| error.to_string())
+    let cases: Vec<TestCase> =
+        serde_json::from_slice(&contents).map_err(|error| error.to_string())?;
+    if cases.is_empty() {
+        return Err("the file contains no cases".to_string());
+    }
+    Ok(cases)
 }
 
 async fn run_case(case: &TestCase) -> Result<(), String> {

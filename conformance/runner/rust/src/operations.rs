@@ -148,7 +148,7 @@ pub async fn execute(case: &TestCase, base_url: &str) -> (Result<Outcome, Error>
 async fn dispatch(client: &Client, case: &TestCase) -> Result<Outcome, Error> {
     let route = route(case).map_err(Error::usage)?;
     let method = method(case).map_err(Error::usage)?;
-    let full_path = case.request_path();
+    let full_path = case.request_path().map_err(Error::usage)?;
 
     // The behavior model's contract exceptions, as the Go runner applies them: a
     // non-POST with no retry policy opts out, an idempotent POST opts in.

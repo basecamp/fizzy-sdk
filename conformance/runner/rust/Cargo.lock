@@ -302,6 +302,7 @@ dependencies = [
  "axum",
  "bytes",
  "fizzy-sdk",
+ "percent-encoding",
  "serde",
  "serde_json",
  "tokio",
