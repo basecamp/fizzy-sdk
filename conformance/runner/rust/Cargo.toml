@@ -1,0 +1,35 @@
+[workspace]
+
+[package]
+name = "fizzy-conformance"
+version = "0.0.0"
+description = "Runs the shared conformance fixtures against the Rust Fizzy SDK"
+edition = "2024"
+rust-version = "1.88"
+license = "MIT"
+publish = false
+
+[[bin]]
+name = "fizzy-conformance"
+path = "src/main.rs"
+
+[dependencies]
+async-trait = "0.1"
+axum = "0.8"
+bytes = "1"
+fizzy-sdk = { path = "../../../rust/fizzy-sdk" }
+percent-encoding = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["arbitrary_precision"] }
+tokio = { version = "1", features = ["macros", "net", "rt-multi-thread", "time"] }
+url = "2"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+must_use_candidate = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
