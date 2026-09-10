@@ -8,6 +8,7 @@
 - Ruby 3.2+
 - Swift 6.0+
 - JDK 17+
+- Rust 1.88+ (the MSRV; `rust/rust-toolchain.toml` pins the dev toolchain, and `cargo deny` is needed for `make rs-check`)
 - Make
 - [mise](https://mise.jdx.dev/) (recommended)
 
