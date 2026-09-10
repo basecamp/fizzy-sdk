@@ -155,6 +155,12 @@ mod tests {
     }
 
     #[test]
+    fn captured_parameters_come_back_decoded() {
+        let matched = router().recognize("/999/cards/a%3Ab").unwrap();
+        assert_eq!(matched.resource_id(), Some("a:b"));
+    }
+
+    #[test]
     fn literal_segments_win_over_parameters_at_the_same_depth() {
         let closed = router()
             .recognize("/999/boards/b1/columns/closed.json")

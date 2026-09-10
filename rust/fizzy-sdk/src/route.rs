@@ -2,7 +2,7 @@
 
 use std::fmt::Display;
 
-use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, utf8_percent_encode};
+use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, percent_decode_str, utf8_percent_encode};
 
 use crate::error::Error;
 use crate::http::Method;
@@ -171,7 +171,7 @@ impl Route {
     }
 
     /// Matches a path against the route's pattern and answers the captured parameters, the
-    /// account included.
+    /// account included, decoded back to what [`Route::fill`] was given.
     pub fn recognize(&self, path: &str) -> Option<Vec<(&'static str, String)>> {
         let pattern_segments: Vec<&str> = self.pattern.split('/').collect();
         let path_segments: Vec<&str> = path.split('/').collect();
@@ -192,7 +192,8 @@ impl Route {
                 } else {
                     self.params.iter().find(|param| param.name == name)?.name
                 };
-                params.push((name, (*actual).to_string()));
+                let value = percent_decode_str(actual).decode_utf8().ok()?;
+                params.push((name, value.into_owned()));
             } else if pattern != actual {
                 return None;
             }

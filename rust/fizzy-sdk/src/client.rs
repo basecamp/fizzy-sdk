@@ -13,7 +13,7 @@ use url::Url;
 use crate::auth::{AuthStrategy, BearerAuth, CookieAuth, StaticTokenProvider, TokenProvider};
 use crate::cache::{CachedResponse, FileCache, ResponseCache, cache_key};
 use crate::config::Config;
-use crate::error::{Error, ErrorCode, retry_after_seconds};
+use crate::error::{Error, ErrorCode, MAX_ERROR_BODY_BYTES, retry_after_seconds};
 use crate::http::header::{
     ACCEPT, AUTHORIZATION, CONTENT_LENGTH, CONTENT_TYPE, COOKIE, IF_NONE_MATCH, USER_AGENT,
 };
@@ -637,13 +637,15 @@ impl Client {
     async fn dispatch(&self, operation: &Operation) -> Result<Response, Error> {
         let url = self.url_for(operation)?;
         let answered = self.attempt(operation, &url).await?;
-        let status = answered.response.status();
+        let status = answered.status;
         let finished = self
             .finish(
                 operation,
                 &url,
                 answered.url,
-                answered.response,
+                status,
+                answered.headers,
+                answered.body,
                 answered.cached,
             )
             .await;
@@ -684,94 +686,146 @@ impl Client {
     /// Sends the operation as many times as its retry budget and Fizzy's answers call for,
     /// and hands back the answer it stopped on with the body still unread.
     async fn attempt(&self, operation: &Operation, url: &Url) -> Result<Answered, Error> {
-        let hooks = &self.shared.hooks;
         let policy = self.policy_for(operation);
-        let mut attempt = 1;
-        let mut delay = policy.base_delay;
+        let mut backoff = Backoff {
+            attempt: 1,
+            delay: policy.base_delay,
+        };
         // Looked up once and carried across the attempts: a resend would find the same
         // entry, and the cache the SDK ships reads it off disk.
         let mut cached = None;
 
         loop {
-            let request = self.prepare(operation, url, &mut cached).await?;
-            let info = RequestInfo {
-                method: operation.method.clone(),
-                url: url.clone(),
-                attempt,
-            };
-            hooks.on_request_start(&info);
-            let started = Instant::now();
-            let sent = self.transmit(operation, url.clone(), request).await;
-            let duration = started.elapsed();
+            let once = self.attempt_once(operation, url, &policy, &mut backoff, &mut cached);
+            if let Some(answered) = once.await? {
+                return Ok(answered);
+            }
+        }
+    }
 
-            match sent {
-                Err(error) => {
-                    hooks.on_request_end(
-                        &info,
-                        &RequestResult {
-                            status: None,
-                            duration,
-                            error: Some(&error),
-                            from_cache: false,
-                            retryable: error.is_retryable(),
-                            retry_after: None,
-                        },
-                    );
-                    if error.is_retryable() && attempt < policy.attempts {
-                        crate::trace::debug(&operation.id, attempt, "request failed, retrying");
-                        hooks.on_retry(&info, attempt + 1, &error);
-                        self.wait(delay).await;
-                        delay = self.next_delay(delay);
-                        attempt += 1;
-                    } else {
-                        return Err(error);
-                    }
-                }
-                Ok((final_url, response)) => {
-                    let status = response.status();
-                    let retryable = policy.retry_on.contains(&status.as_u16());
-                    let retry_after = retry_after_asked(status, response.headers());
-                    let wait = match retry_after {
-                        Some(seconds) if seconds > 0 => Some(Duration::from_secs(seconds)),
-                        _ => None,
-                    };
-                    let too_long = wait.is_some_and(|wait| wait > self.shared.max_retry_after);
-                    if retryable && attempt < policy.attempts && !too_long {
-                        let cause = Error::from_response(
-                            status,
-                            &operation.method,
-                            response.headers(),
-                            &[],
-                        );
-                        hooks.on_request_end(
-                            &info,
-                            &RequestResult {
-                                status: Some(status),
-                                duration,
-                                error: Some(&cause),
-                                from_cache: false,
-                                retryable,
-                                retry_after,
-                            },
-                        );
-                        crate::trace::debug(&operation.id, attempt, "retryable status, retrying");
-                        hooks.on_retry(&info, attempt + 1, &cause);
-                        self.wait(wait.unwrap_or(delay)).await;
-                        delay = self.next_delay(delay);
-                        attempt += 1;
-                    } else {
-                        return Ok(Answered {
-                            url: final_url,
-                            response,
-                            cached: cached.take(),
-                            info,
-                            duration,
-                            retryable,
-                            retry_after,
-                        });
-                    }
+    /// One request, and what came of it: the answer the loop settles on, or `None` once
+    /// the wait before the next attempt is over.
+    async fn attempt_once(
+        &self,
+        operation: &Operation,
+        url: &Url,
+        policy: &RetryPolicy,
+        backoff: &mut Backoff,
+        cached: &mut Option<(String, CachedResponse)>,
+    ) -> Result<Option<Answered>, Error> {
+        let hooks = &self.shared.hooks;
+        let attempt = backoff.attempt;
+        let request = self.prepare(operation, url, cached).await?;
+        let info = RequestInfo {
+            method: operation.method.clone(),
+            url: url.clone(),
+            attempt,
+        };
+        hooks.on_request_start(&info);
+        let started = Instant::now();
+        let sent = self.transmit(operation, url.clone(), request).await;
+        let duration = started.elapsed();
+
+        let (final_url, response) = match sent {
+            Err(error) => {
+                let again = error.is_retryable() && attempt < policy.attempts;
+                hooks.on_request_end(
+                    &info,
+                    &RequestResult::failed(None, duration, &error, error.is_retryable(), None),
+                );
+                return if again {
+                    self.resend(backoff, &info, operation, &error, None, "request failed")
+                        .await;
+                    Ok(None)
+                } else {
+                    Err(error)
+                };
+            }
+            Ok(sent) => sent,
+        };
+
+        let status = response.status();
+        let retryable = policy.retry_on.contains(&status.as_u16());
+        let retry_after = retry_after_asked(status, response.headers());
+        let wait = match retry_after {
+            Some(seconds) if seconds > 0 => Some(Duration::from_secs(seconds)),
+            _ => None,
+        };
+        let too_long = wait.is_some_and(|wait| wait > self.shared.max_retry_after);
+        if retryable && attempt < policy.attempts && !too_long {
+            let cause = Error::from_response(status, &operation.method, response.headers(), &[]);
+            hooks.on_request_end(
+                &info,
+                &RequestResult::failed(Some(status), duration, &cause, retryable, retry_after),
+            );
+            self.resend(backoff, &info, operation, &cause, wait, "retryable status")
+                .await;
+            return Ok(None);
+        }
+
+        let (parts, body) = response.into_parts();
+        match self.read_answer(operation, url, status, body).await {
+            Ok(body) => Ok(Some(Answered {
+                url: final_url,
+                status,
+                headers: parts.headers,
+                body,
+                cached: cached.take(),
+                info,
+                duration,
+                retryable,
+                retry_after,
+            })),
+            Err(error) => {
+                let mut again = attempt < policy.attempts;
+                let error = unread(operation, status, &parts.headers, error, &mut again);
+                hooks.on_request_end(
+                    &info,
+                    &RequestResult::failed(Some(status), duration, &error, again, None),
+                );
+                if again {
+                    self.resend(backoff, &info, operation, &error, None, "body broke off")
+                        .await;
+                    Ok(None)
+                } else {
+                    Err(error)
                 }
             }
+        }
+    }
+
+    /// Tells the hooks a resend is coming, waits it out — `wait` when Fizzy named one,
+    /// the backoff otherwise — and moves the loop on to the next attempt.
+    async fn resend(
+        &self,
+        backoff: &mut Backoff,
+        info: &RequestInfo,
+        operation: &Operation,
+        error: &Error,
+        wait: Option<Duration>,
+        why: &str,
+    ) {
+        crate::trace::debug(&operation.id, backoff.attempt, &format!("{why}, retrying"));
+        self.shared.hooks.on_retry(info, backoff.attempt + 1, error);
+        self.wait(wait.unwrap_or(backoff.delay)).await;
+        backoff.delay = self.next_delay(backoff.delay);
+        backoff.attempt += 1;
+    }
+
+    /// Reads the body of the answer an attempt settled on: whole, up to the cap, for a
+    /// success; no more than the diagnostic prefix a failure keeps, for anything else.
+    async fn read_answer(
+        &self,
+        operation: &Operation,
+        url: &Url,
+        status: StatusCode,
+        body: Body,
+    ) -> Result<Bytes, Error> {
+        if status.is_success() {
+            let bound = self.shared.max_response_body_bytes;
+            read_body(body, bound, &operation.method, url.path()).await
+        } else {
+            body.prefix(MAX_ERROR_BODY_BYTES).await
         }
     }
 
@@ -953,16 +1007,17 @@ impl Client {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     async fn finish(
         &self,
         operation: &Operation,
         url: &Url,
         final_url: Url,
-        response: HttpResponse<Body>,
+        status: StatusCode,
+        headers: HeaderMap,
+        body: Bytes,
         cached: Option<(String, CachedResponse)>,
     ) -> Result<Response, Error> {
-        let status = response.status();
-        let headers = response.headers().clone();
         // An answer that arrived from somewhere other than where the request went is not
         // the document the cache holds under the request's key, and is not stored there.
         let cached = if final_url == *url { cached } else { None };
@@ -982,21 +1037,6 @@ impl Client {
                 )),
             };
         }
-
-        let bound = self.shared.max_response_body_bytes;
-        let body = match read_body(response.into_body(), bound, &operation.method, url.path()).await
-        {
-            Ok(body) => body,
-            Err(refusal) if status.is_success() => return Err(refusal),
-            // The status is what matters about a failure, and a body the client would not
-            // read is no reason to lose it.
-            Err(refusal) => {
-                return Err(
-                    Error::from_response(status, &operation.method, &headers, &[])
-                        .refusing(refusal),
-                );
-            }
-        };
 
         if status.is_success() {
             if let (Some((key, _)), Some(cache)) = (cached, self.cacheable(operation))
@@ -1069,12 +1109,14 @@ impl Drop for Running<'_> {
     }
 }
 
-/// One answer from Fizzy with its body unread: what the retry loop settled on, the URL it
-/// came from once any redirects were followed, and what the hooks still have to be told
-/// about it once the body has been dealt with.
+/// One answer from Fizzy, body read: what the retry loop settled on, the URL it came from
+/// once any redirects were followed, and what the hooks still have to be told about it
+/// once the body has been dealt with.
 struct Answered {
     url: Url,
-    response: HttpResponse<Body>,
+    status: StatusCode,
+    headers: HeaderMap,
+    body: Bytes,
     cached: Option<(String, CachedResponse)>,
     info: RequestInfo,
     duration: Duration,
@@ -1202,6 +1244,30 @@ fn header_value(value: &str) -> Result<HeaderValue, Error> {
 
 /// Reads a body up to the bound and refuses it on the first byte past. A body exactly at
 /// the bound reads whole; one declared past it never starts.
+/// The error for a body that could not be read, and whether the answer is asked for
+/// again: a success whose body broke off is, while the budget allows; a refusal is not,
+/// and a failure keeps its status over the reason its body was lost.
+fn unread(
+    operation: &Operation,
+    status: StatusCode,
+    headers: &HeaderMap,
+    error: Error,
+    again: &mut bool,
+) -> Error {
+    *again = *again && status.is_success() && error.is_retryable();
+    if status.is_success() {
+        error
+    } else {
+        Error::from_response(status, &operation.method, headers, &[]).refusing(error)
+    }
+}
+
+/// Where the retry loop stands: which attempt is next, and how long the wait before it is.
+struct Backoff {
+    attempt: u32,
+    delay: Duration,
+}
+
 pub(crate) async fn read_body(
     body: Body,
     limit: usize,
@@ -1332,6 +1398,63 @@ mod tests {
         let error = client.get("/blobs/1").await.unwrap_err();
 
         assert_eq!(error.code(), ErrorCode::Usage);
+        assert_eq!(http.sent().len(), 1);
+    }
+
+    fn broken_body(status: u16) -> HttpResponse<Body> {
+        let chunks = futures_util::stream::iter([
+            Ok(Bytes::from_static(b"{\"ok\":")),
+            Err(Error::new(ErrorCode::Network, "cut off").retryable()),
+        ]);
+        let mut response = HttpResponse::new(Body::from_stream(chunks, None));
+        *response.status_mut() = StatusCode::from_u16(status).unwrap();
+        response
+    }
+
+    #[tokio::test]
+    async fn a_body_that_breaks_off_is_asked_for_again() {
+        let calls = Arc::new(Mutex::new(0));
+        let seen = calls.clone();
+        let http = Canned::new(move |_| {
+            let mut calls = seen.lock().unwrap();
+            *calls += 1;
+            if *calls == 1 {
+                broken_body(200)
+            } else {
+                answer(200, r#"{"ok":true}"#)
+            }
+        });
+        let client = Client::builder(Config::default().with_base_url("https://fizzy.test"))
+            .token_provider(StaticTokenProvider::new("secret"))
+            .http_client(http.clone())
+            .max_attempts(2)
+            .max_jitter(Duration::ZERO)
+            .base_delay(Duration::from_millis(1))
+            .build()
+            .unwrap();
+
+        let response = client.get("/x.json").await.unwrap();
+
+        assert_eq!(response.body, r#"{"ok":true}"#);
+        assert_eq!(http.sent().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn a_failure_whose_body_breaks_off_keeps_its_status_and_is_not_resent() {
+        let http = Canned::new(|_| broken_body(422));
+        let client = Client::builder(Config::default().with_base_url("https://fizzy.test"))
+            .token_provider(StaticTokenProvider::new("secret"))
+            .http_client(http.clone())
+            .max_attempts(2)
+            .max_jitter(Duration::ZERO)
+            .base_delay(Duration::from_millis(1))
+            .build()
+            .unwrap();
+
+        let error = client.get("/x.json").await.unwrap_err();
+
+        assert_eq!(error.code(), ErrorCode::Validation);
+        assert_eq!(error.http_status(), Some(422));
         assert_eq!(http.sent().len(), 1);
     }
 

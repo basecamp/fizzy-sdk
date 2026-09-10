@@ -138,9 +138,11 @@ impl Operation {
     pub(crate) fn raw(method: Method, path: String) -> Operation {
         let idempotent = method != Method::POST;
         let id = format!("{method} {path}");
+        // Scoped by verb, not path: the breaker and bulkhead keep one entry per operation
+        // for the client's life, and raw paths are as many as the caller's resources.
         let info = OperationInfo {
             service: Cow::Borrowed("Raw"),
-            operation: Cow::Owned(id.clone()),
+            operation: Cow::Owned(method.to_string()),
             resource_type: Cow::Borrowed("raw"),
             is_mutation: method != Method::GET,
             resource_id: None,
@@ -292,5 +294,19 @@ impl Operation {
     pub fn no_cache(&mut self) -> &mut Operation {
         self.no_cache = true;
         self
+    }
+}
+
+#[cfg(test)]
+mod raw_scope {
+    use super::*;
+
+    #[test]
+    fn raw_calls_share_one_scope_per_verb() {
+        let one = Operation::raw(Method::GET, "/999/cards/1".to_string());
+        let two = Operation::raw(Method::GET, "/999/cards/2".to_string());
+        assert_eq!(one.info.operation, two.info.operation);
+        assert_eq!(one.info.operation, "GET");
+        assert_eq!(one.id, "GET /999/cards/1");
     }
 }

@@ -245,15 +245,15 @@ impl Error {
     pub fn response_too_large(limit: usize, method: &Method, path: &str) -> Error {
         Error {
             response_too_large: true,
-            ..Error::api(
-                0,
+            ..Error::new(
+                ErrorCode::ApiError,
                 format!("{method} {path}: response body exceeds {limit} bytes"),
             )
         }
     }
 
-    /// Puts a refusal behind the error a status maps to, so a body too large to read on a
-    /// non-2xx answer still reports the status the answer carried.
+    /// Puts a failure to read the body behind the error a status maps to, so a non-2xx
+    /// answer whose body broke off still reports the status the answer carried.
     pub(crate) fn refusing(mut self, refusal: Error) -> Error {
         self.response_too_large = refusal.response_too_large;
         if self.hint.is_none() {
@@ -462,7 +462,7 @@ impl std::error::Error for Error {
 
 impl From<serde_json::Error> for Error {
     fn from(error: serde_json::Error) -> Error {
-        Error::api(0, "unexpected JSON")
+        Error::new(ErrorCode::ApiError, "unexpected JSON")
             .with_hint(error.to_string())
             .with_source(error)
     }

@@ -62,6 +62,26 @@ pub struct RequestResult<'a> {
     pub retry_after: Option<u64>,
 }
 
+impl<'a> RequestResult<'a> {
+    /// A request that ended in `error`, whether or not it is about to be resent.
+    pub(crate) fn failed(
+        status: Option<StatusCode>,
+        duration: Duration,
+        error: &'a Error,
+        retryable: bool,
+        retry_after: Option<u64>,
+    ) -> RequestResult<'a> {
+        RequestResult {
+            status,
+            duration,
+            error: Some(error),
+            from_cache: false,
+            retryable,
+            retry_after,
+        }
+    }
+}
+
 /// Whatever [`Hooks::on_operation_start`] hands the matching [`Hooks::on_operation_end`].
 pub type OperationState = Option<Box<dyn Any + Send>>;
 

@@ -104,6 +104,18 @@ impl Body {
         }
         Ok(body.freeze())
     }
+
+    /// Reads the first `limit` bytes of the body and stops there, leaving the rest unread.
+    pub async fn prefix(mut self, limit: usize) -> Result<Bytes, Error> {
+        let mut body = BytesMut::new();
+        while body.len() < limit
+            && let Some(chunk) = self.chunk().await?
+        {
+            let room = limit - body.len();
+            body.extend_from_slice(&chunk[..chunk.len().min(room)]);
+        }
+        Ok(body.freeze())
+    }
 }
 
 impl From<Bytes> for Body {
@@ -172,6 +184,17 @@ mod tests {
             body.collect(5, too_large).await.unwrap_err().to_string(),
             "too large"
         );
+    }
+
+    #[tokio::test]
+    async fn a_prefix_stops_at_the_limit_without_reading_further() {
+        let chunks = stream::iter([
+            Ok(Bytes::from_static(b"hel")),
+            Ok(Bytes::from_static(b"lo!")),
+            Err(Error::api(0, "never reached")),
+        ]);
+        let body = Body::from_stream(chunks, None);
+        assert_eq!(body.prefix(5).await.unwrap(), "hello");
     }
 
     #[tokio::test]
