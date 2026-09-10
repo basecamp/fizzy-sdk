@@ -9,7 +9,7 @@ import Crypto
 /// ```swift
 /// let isValid = WebhookVerifier.verify(
 ///     payload: requestBody,
-///     signature: request.headers["X-Fizzy-Signature"]!,
+///     signature: request.headers["X-Webhook-Signature"]!,
 ///     secret: "your-webhook-secret"
 /// )
 /// ```
@@ -18,7 +18,7 @@ public enum WebhookVerifier {
     ///
     /// - Parameters:
     ///   - payload: The raw webhook request body.
-    ///   - signature: The signature from the `X-Fizzy-Signature` header.
+    ///   - signature: The signature from the `X-Webhook-Signature` header.
     ///   - secret: The webhook signing secret.
     /// - Returns: `true` if the signature is valid.
     public static func verify(payload: Data, signature: String, secret: String) -> Bool {
@@ -30,7 +30,7 @@ public enum WebhookVerifier {
     ///
     /// - Parameters:
     ///   - payload: The raw webhook request body as a string.
-    ///   - signature: The signature from the `X-Fizzy-Signature` header.
+    ///   - signature: The signature from the `X-Webhook-Signature` header.
     ///   - secret: The webhook signing secret.
     /// - Returns: `true` if the signature is valid.
     public static func verify(payload: String, signature: String, secret: String) -> Bool {

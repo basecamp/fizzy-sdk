@@ -20,6 +20,7 @@ import {
 import { isLocalhost } from "../src/security.js";
 import { normalizeUrlPath } from "../src/client.js";
 import { verifyWebhookSignature, signWebhookPayload } from "../src/webhooks/verify.js";
+import { WebhookReceiver, WebhookVerificationError } from "../src/webhooks/handler.js";
 
 // =============================================================================
 // FizzyError
@@ -702,6 +703,42 @@ describe("webhook signature", () => {
     const buf = Buffer.from(payload);
     const sig = signWebhookPayload(buf, secret);
     expect(verifyWebhookSignature(buf, sig, secret)).toBe(true);
+  });
+});
+
+describe("WebhookReceiver signature header", () => {
+  const secret = "test-secret-key";
+  const payload = '{"id":1,"kind":"card_created"}';
+
+  it("reads the X-Webhook-Signature header Fizzy sends by default", async () => {
+    const receiver = new WebhookReceiver({ secret });
+    const headers = { "x-webhook-signature": signWebhookPayload(payload, secret) };
+    const event = await receiver.handleRequest(payload, headers);
+    expect(event.kind).toBe("card_created");
+  });
+
+  it("rejects a delivery that carries no signature header", async () => {
+    const receiver = new WebhookReceiver({ secret });
+    await expect(receiver.handleRequest(payload, {})).rejects.toThrow(WebhookVerificationError);
+  });
+
+  it("rejects a delivery signed under a different header name", async () => {
+    const receiver = new WebhookReceiver({ secret });
+    const headers = { "x-fizzy-signature": signWebhookPayload(payload, secret) };
+    await expect(receiver.handleRequest(payload, headers)).rejects.toThrow(WebhookVerificationError);
+  });
+
+  it("honors a configured signatureHeader override", async () => {
+    const receiver = new WebhookReceiver({ secret, signatureHeader: "x-custom-signature" });
+    const headers = { "x-custom-signature": signWebhookPayload(payload, secret) };
+    const event = await receiver.handleRequest(payload, headers);
+    expect(event.id).toBe(1);
+  });
+
+  it("skips verification entirely when no secret is configured", async () => {
+    const receiver = new WebhookReceiver();
+    const event = await receiver.handleRequest(payload, {});
+    expect(event.kind).toBe("card_created");
   });
 });
 

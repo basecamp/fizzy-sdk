@@ -21,7 +21,7 @@ export type HeaderAccessor =
 export interface WebhookReceiverOptions {
   /** HMAC secret for signature verification. If unset, verification is skipped. */
   secret?: string;
-  /** HTTP header containing the signature (default: "x-fizzy-signature"). */
+  /** HTTP header carrying the signature (default: "x-webhook-signature", the header Fizzy sends). */
   signatureHeader?: string;
   /** Number of recent event IDs to track for deduplication (default: 1000, 0 to disable). */
   dedupWindowSize?: number;
@@ -53,7 +53,7 @@ export class WebhookReceiver {
 
   constructor(options?: WebhookReceiverOptions) {
     this.secret = options?.secret;
-    this.signatureHeader = options?.signatureHeader ?? "x-fizzy-signature";
+    this.signatureHeader = options?.signatureHeader ?? "x-webhook-signature";
     this.dedupWindowSize = options?.dedupWindowSize ?? 1000;
   }
 
