@@ -160,12 +160,15 @@ module Fizzy
     end
 
     def request_with_retry(method, url, params: {}, body: nil)
+      # max_retries counts total attempts and is floored at one: whether a
+      # request reaches the wire at all must not depend on the retry budget.
+      max_attempts = [ @config.max_retries, 1 ].max
       attempt = 0
       last_error = nil
 
       loop do
         attempt += 1
-        break if attempt > @config.max_retries
+        break if attempt > max_attempts
 
         begin
           return single_request(method, url, params: params, body: body, attempt: attempt)
@@ -175,7 +178,7 @@ module Fizzy
           last_error = e
 
           # Don't sleep if this was the last attempt
-          break if attempt >= @config.max_retries
+          break if attempt >= max_attempts
 
           delay = calculate_delay(attempt, e.retry_after)
 
@@ -187,7 +190,8 @@ module Fizzy
         end
       end
 
-      raise last_error || Fizzy::APIError.new("Request failed after #{@config.max_retries} retries")
+      noun = max_attempts == 1 ? "attempt" : "attempts"
+      raise last_error || Fizzy::APIError.new("Request failed after #{max_attempts} #{noun}")
     end
 
     def single_request(method, url, params:, body:, attempt:, retry_count: 0)

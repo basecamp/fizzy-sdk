@@ -716,10 +716,13 @@ end
 class FizzyTransportFailureTest < Minitest::Test
   def setup
     @requests_ended = []
+    @retries = []
     requests_ended = @requests_ended
+    retries = @retries
     @hooks = Class.new do
       include Fizzy::Hooks
       define_method(:on_request_end) { |info, result| requests_ended << [ info, result ] }
+      define_method(:on_retry) { |info, next_attempt, error, delay| retries << [ info, next_attempt, error, delay ] }
     end.new
   end
 
@@ -777,6 +780,30 @@ class FizzyTransportFailureTest < Minitest::Test
     assert_equal "Request timed out", error.message
     assert error.retryable?
     assert_equal 1, calls
+  end
+
+  # max_retries counts total attempts, floored at one (the Kotlin and Rust
+  # SDKs' contract). The loop used to break before the first send at 0 and
+  # raise "Request failed after 0 retries" for a request it never made.
+  def test_max_retries_zero_sends_exactly_once
+    calls = 0
+    http = http_with(max_retries: 0) do
+      calls += 1
+      raise Faraday::TimeoutError, "execution expired"
+    end
+
+    error = assert_raises(Fizzy::NetworkError) { http.get("/boards.json") }
+
+    assert_equal "Request timed out", error.message
+    assert_equal 1, calls
+    assert_empty @retries
+  end
+
+  def test_max_retries_zero_returns_the_single_attempt
+    http = http_with(max_retries: 0) { [ 200, { "Content-Type" => "application/json" }, "[]" ] }
+
+    assert_equal 200, http.get("/boards.json").status
+    assert_empty @retries
   end
 
   # A 408 is a response, not a transport failure: Faraday raises it as a

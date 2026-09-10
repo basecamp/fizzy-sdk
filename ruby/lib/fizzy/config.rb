@@ -48,7 +48,7 @@ module Fizzy
     #
     # @param base_url [String] API base URL
     # @param timeout [Integer] request timeout in seconds
-    # @param max_retries [Integer] maximum retry attempts
+    # @param max_retries [Integer] total attempts per retryable request, floored at one
     # @param base_delay [Float] initial backoff delay
     # @param max_jitter [Float] maximum jitter
     # @param max_pages [Integer] maximum pages to fetch
