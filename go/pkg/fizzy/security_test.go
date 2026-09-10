@@ -111,11 +111,15 @@ func TestRedactTransportError(t *testing.T) {
 		}
 	})
 
-	t.Run("keeps only the first transport error of a joined pair", func(t *testing.T) {
+	t.Run("projects every member of a joined error and keeps the rest", func(t *testing.T) {
 		other := &url.Error{Op: "Get", URL: "https://other.example.com/x?token=SECRETVALUE", Err: errors.New("reset")}
-		got := redactTransportError(errors.Join(signed, other))
-		if got.Error() != `Get "https://storage.example.com/blob/1": context canceled` {
-			t.Errorf("got %q", got.Error())
+		got := redactTransportError(errors.Join(signed, context.DeadlineExceeded, other))
+		want := "Get \"https://storage.example.com/blob/1\": context canceled\ncontext deadline exceeded\nGet \"https://other.example.com/x\": reset"
+		if got.Error() != want {
+			t.Errorf("got %q, want %q", got.Error(), want)
+		}
+		if !errors.Is(got, context.Canceled) || !errors.Is(got, context.DeadlineExceeded) {
+			t.Error("every member should still be reachable through the chain")
 		}
 		for _, text := range renderings(got) {
 			if strings.Contains(text, "SECRETVALUE") {
