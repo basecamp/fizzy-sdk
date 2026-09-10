@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   smithy:
-    uses: ./.github/workflows/smithy-verify.yml
+    uses: $/.github/workflows/smithy-verify.yml
 
   test:
     name: Test before release
