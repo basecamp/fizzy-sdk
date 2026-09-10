@@ -1,0 +1,227 @@
+name: "CodeQL Advanced"
+
+# Advanced setup in place of GitHub's default setup. Default setup gave
+# java-kotlin `build-mode: none`, and the buildless Java extractor only reads
+# .java sources — the Kotlin module compiled nothing, so `codeql database
+# finalize` failed with "could not process any code written in Java/Kotlin"
+# on every push and pull request. Default setup's build mode is not
+# configurable, so the compiled languages are built here explicitly, with the
+# same toolchains test.yml uses. Default setup must be switched off for these
+# uploads to be accepted:
+#   gh api -X PATCH repos/basecamp/fizzy-sdk/code-scanning/default-setup -f state=not-configured
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 7 * * 1'     # Monday 7am UTC (security.yml at 6am)
+  workflow_dispatch:
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions: {}
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: actions
+            build-mode: none
+          - language: go
+            build-mode: manual
+          - language: javascript-typescript
+            build-mode: none
+          - language: ruby
+            build-mode: none
+          - language: java-kotlin
+            build-mode: manual
+          - language: rust
+            build-mode: none
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # --- Language setup (conditional) ---
+
+      - name: Set up Go
+        if: matrix.language == 'go'
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: 'go/go.mod'
+          cache-dependency-path: 'go/go.sum'
+
+      - name: Set up Java
+        if: matrix.language == 'java-kotlin'
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: corretto
+          java-version: '17'
+
+      - name: Set up Gradle
+        if: matrix.language == 'java-kotlin'
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+
+      # CodeQL's Rust extractor is build-less (`build-mode: none`) but resolves
+      # the workspace through cargo metadata, so it needs a toolchain on PATH.
+      # rust/rust-toolchain.toml pins the dev toolchain, and the extractor runs
+      # cargo from the repository root where rustup does not look for it, so the
+      # channel is read out explicitly — as test.yml's stable leg does.
+      - name: Resolve Rust toolchain
+        if: matrix.language == 'rust'
+        id: rust-toolchain
+        run: |
+          channel=$(sed -n 's/^channel = "\(.*\)"$/\1/p' rust/rust-toolchain.toml)
+          if [ -z "$channel" ]; then
+            echo "::error::Could not read the channel from rust/rust-toolchain.toml"
+            exit 1
+          fi
+          echo "channel=$channel" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Rust
+        if: matrix.language == 'rust'
+        uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
+        with:
+          toolchain: ${{ steps.rust-toolchain.outputs.channel }}
+
+      # --- CodeQL init ---
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          config-file: ./.github/codeql/codeql-config.yml
+
+      # --- Build steps (manual mode only) ---
+
+      - name: Build (Go)
+        if: matrix.language == 'go'
+        working-directory: go
+        run: go build ./...
+
+      # CodeQL extracts Kotlin by tracing the compiler, so the compile task must
+      # actually run: setup-gradle restores caches, and a compile that is
+      # UP-TO-DATE or FROM-CACHE emits nothing — an empty database, which is the
+      # failure this workflow replaces. Scoped to :fizzy-sdk — :generator and
+      # :conformance are dev-time tooling, and :generator is in neither
+      # codeql-config.yml's paths-ignore nor the SARIF filter.
+      - name: Build (Kotlin)
+        if: matrix.language == 'java-kotlin'
+        working-directory: kotlin
+        run: ./gradlew --no-build-cache clean :fizzy-sdk:compileKotlinJvm
+
+      # --- Analysis (fails build on real errors) ---
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          category: "/language:${{ matrix.language }}"
+          upload: never
+          output: sarif-results
+
+      # --- Filter generated-code alerts ---
+      # paths-ignore in codeql-config.yml only governs source extraction
+      # (effective for JS/Ruby). For compiled languages the extractor traces
+      # the build, so generated code enters the database. Strip those results
+      # from SARIF before upload. The filter lives in
+      # .github/codeql/sarif-filter.jq; test-sarif-filter.sh exercises the
+      # exact program this workflow runs, and runs first so a broken filter
+      # fails here rather than quietly dropping or keeping the wrong alerts.
+
+      - name: Test SARIF filter
+        if: always() && matrix.language != 'actions'
+        run: ./.github/codeql/test-sarif-filter.sh
+
+      - name: Filter generated-code alerts from SARIF
+        if: always() && matrix.language != 'actions'
+        run: |
+          for sarif in sarif-results/*.sarif; do
+            [ -f "$sarif" ] || continue
+            before=$(jq '[.runs[].results // [] | length] | add // 0' "$sarif")
+            jq -f .github/codeql/sarif-filter.jq "$sarif" > "${sarif}.tmp" && mv "${sarif}.tmp" "$sarif"
+            after=$(jq '[.runs[].results | length] | add // 0' "$sarif")
+            filtered=$((before - after))
+            echo "$(basename "$sarif"): $before findings, filtered $filtered generated-code alerts, $after remaining"
+          done
+
+      # --- Upload ---
+      # Blocking, like security.yml's SARIF uploads: a rejected upload is the
+      # signal that credentials, permissions or default setup are wrong, and a
+      # green job with nothing published is the failure this workflow replaces.
+
+      - name: Upload SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        if: always()
+        with:
+          sarif_file: sarif-results
+          category: "/language:${{ matrix.language }}"
+
+  analyze-swift:
+    name: Analyze (swift)
+    runs-on: macos-15
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          languages: swift
+          build-mode: manual
+          config-file: ./.github/codeql/codeql-config.yml
+
+      - name: Build (Swift)
+        working-directory: swift
+        run: swift build
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          category: "/language:swift"
+          upload: never
+          output: sarif-results
+
+      - name: Test SARIF filter
+        if: always()
+        run: ./.github/codeql/test-sarif-filter.sh
+
+      - name: Filter generated-code alerts from SARIF
+        if: always()
+        run: |
+          for sarif in sarif-results/*.sarif; do
+            [ -f "$sarif" ] || continue
+            before=$(jq '[.runs[].results // [] | length] | add // 0' "$sarif")
+            jq -f .github/codeql/sarif-filter.jq "$sarif" > "${sarif}.tmp" && mv "${sarif}.tmp" "$sarif"
+            after=$(jq '[.runs[].results | length] | add // 0' "$sarif")
+            filtered=$((before - after))
+            echo "$(basename "$sarif"): $before findings, filtered $filtered generated-code alerts, $after remaining"
+          done
+
+      - name: Upload SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        if: always()
+        with:
+          sarif_file: sarif-results
+          category: "/language:swift"
