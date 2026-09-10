@@ -457,4 +457,43 @@ class FizzyTest {
         assertEquals(2, requests.size)
         client.close()
     }
+
+    @Test
+    fun testFollowUpPagesKeepTheOperationBudgetUnderARaisedCap() = runTest {
+        // ListBoards has a modelled budget of 3. The first page carries the
+        // operation name; the pages a Link header leads to must carry it too,
+        // or a cap raised above the model would apply in full to page two.
+        val requests = mutableListOf<String>()
+        val mockEngine = MockEngine { request ->
+            requests += request.url.toString()
+            if (requests.size == 1) {
+                respond(
+                    content = """[{"id":1,"name":"Board","all_access":true,"created_at":"2026-01-01T00:00:00Z","url":"https://fizzy.do/999/boards/1"}]""",
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(
+                        HttpHeaders.ContentType to listOf("application/json"),
+                        HttpHeaders.Link to listOf("""<https://fizzy.do/999/boards.json?page=2>; rel="next""""),
+                    ),
+                )
+            } else {
+                respond(
+                    content = """{"error":"Service unavailable"}""",
+                    status = HttpStatusCode.ServiceUnavailable,
+                    headers = headersOf(HttpHeaders.ContentType to listOf("application/json")),
+                )
+            }
+        }
+        val client = FizzyClient {
+            accessToken("test-token")
+            baseUrl = "https://fizzy.do"
+            engine = mockEngine
+            maxRetries = 5
+        }
+
+        assertFailsWith<FizzyException.Api> {
+            client.forAccount("999").boards.list()
+        }
+        assertEquals(1 + 3, requests.size)
+        client.close()
+    }
 }
