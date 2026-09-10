@@ -37,3 +37,7 @@ indent_size = 2
 [openapi.json]
 indent_style = space
 indent_size = 2
+
+[*.rs]
+indent_style = space
+indent_size = 4
