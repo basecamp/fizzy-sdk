@@ -709,3 +709,99 @@ class FizzyColumnColorTypeTest < Minitest::Test
     assert_equal "var(--color-card-1)", column.color.value
   end
 end
+
+# Transport failures: no HTTP response, so no status to map. Faraday::TimeoutError
+# < Faraday::ServerError, so a rescue that names the status classes first turns a
+# stalled read into a status-less, non-retryable api_error ("Request failed (HTTP )").
+class FizzyTransportFailureTest < Minitest::Test
+  def setup
+    @requests_ended = []
+    requests_ended = @requests_ended
+    @hooks = Class.new do
+      include Fizzy::Hooks
+      define_method(:on_request_end) { |info, result| requests_ended << [ info, result ] }
+    end.new
+  end
+
+  def test_read_timeout_is_a_retryable_network_error
+    http = http_with(max_retries: 1) { raise Faraday::TimeoutError, "execution expired" }
+
+    error = assert_raises(Fizzy::NetworkError) { http.get("/boards.json") }
+
+    assert_equal "network", error.code
+    assert_equal "Request timed out", error.message
+    assert_nil error.http_status
+    assert error.retryable?
+    assert_kind_of Faraday::TimeoutError, error.cause
+
+    assert_equal 1, @requests_ended.length
+    assert_nil @requests_ended[0][1].status_code
+    assert_same error, @requests_ended[0][1].error
+  end
+
+  def test_read_timeout_is_retried_on_get
+    calls = 0
+    http = http_with(max_retries: 3) do
+      calls += 1
+      calls == 1 ? raise(Faraday::TimeoutError, "execution expired") : [ 200, { "Content-Type" => "application/json" }, "[]" ]
+    end
+
+    response = http.get("/boards.json")
+
+    assert_equal 200, response.status
+    assert_equal 2, calls
+  end
+
+  def test_connection_failure_is_a_retryable_network_error
+    http = http_with(max_retries: 1) { raise Faraday::ConnectionFailed, "refused" }
+
+    error = assert_raises(Fizzy::NetworkError) { http.get("/boards.json") }
+
+    assert_equal "network", error.code
+    assert_equal "Connection failed", error.message
+    assert error.retryable?
+    assert_kind_of Faraday::ConnectionFailed, error.cause
+  end
+
+  def test_raw_post_read_timeout_is_a_network_error
+    calls = 0
+    http = http_with(max_retries: 3, method: :post, path: "/upload.json") do
+      calls += 1
+      raise Faraday::TimeoutError, "execution expired"
+    end
+
+    error = assert_raises(Fizzy::NetworkError) do
+      http.post_raw("/upload.json", body: "bytes", content_type: "application/octet-stream")
+    end
+
+    assert_equal "Request timed out", error.message
+    assert error.retryable?
+    assert_equal 1, calls
+  end
+
+  # A 408 is a response, not a transport failure: Faraday raises it as a
+  # ClientError, and it keeps the status mapping's verdict.
+  def test_408_response_stays_a_status_error
+    http = http_with(max_retries: 1) { [ 408, {}, "" ] }
+
+    error = assert_raises(Fizzy::APIError) { http.get("/boards.json") }
+
+    assert_equal 408, error.http_status
+    refute error.retryable?
+  end
+
+  private
+
+  def http_with(max_retries:, method: :get, path: "/boards.json", &stub)
+    stubs = Faraday::Adapter::Test::Stubs.new
+    stubs.public_send(method, path, &stub)
+    config = Fizzy::Config.new(base_url: "https://fizzy.do", max_retries: max_retries, base_delay: 0.0, max_jitter: 0.0)
+    http = Fizzy::Http.new(config: config, token_provider: Fizzy::StaticTokenProvider.new("token"), hooks: @hooks)
+    http.instance_variable_set(:@faraday, Faraday.new(url: "https://fizzy.do") { |f|
+      f.request :json
+      f.response :raise_error
+      f.adapter :test, stubs
+    })
+    http
+  end
+end
