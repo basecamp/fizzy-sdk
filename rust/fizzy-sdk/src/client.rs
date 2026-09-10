@@ -13,10 +13,9 @@ use url::Url;
 use crate::auth::{AuthStrategy, BearerAuth, CookieAuth, StaticTokenProvider, TokenProvider};
 use crate::cache::{CachedResponse, FileCache, ResponseCache, cache_key};
 use crate::config::Config;
-use crate::error::{Error, ErrorCode, retry_after_seconds};
+use crate::error::{Error, ErrorCode, MAX_ERROR_BODY_BYTES, retry_after_seconds};
 use crate::http::header::{
-    ACCEPT, AUTHORIZATION, CONTENT_LENGTH, CONTENT_TYPE, COOKIE, IF_NONE_MATCH,
-    PROXY_AUTHORIZATION, USER_AGENT,
+    ACCEPT, AUTHORIZATION, CONTENT_LENGTH, CONTENT_TYPE, COOKIE, IF_NONE_MATCH, USER_AGENT,
 };
 use crate::http::{
     Body, HeaderMap, HeaderValue, HttpClient, Method, Request, Response as HttpResponse, StatusCode,
@@ -32,9 +31,10 @@ use crate::version::default_user_agent;
 
 /// How long the shipped HTTP client gives an answer to arrive.
 pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(30);
-/// How many resends a raw call gets after its first attempt, and the ceiling on what a
-/// modelled route may ask for.
-pub const DEFAULT_MAX_RETRIES: u32 = 3;
+/// How many times a raw call is sent, the first attempt included, and the ceiling on what a
+/// modelled route may ask for. Three, as the behavior model gives every retried operation
+/// and as the Go client counts its `MaxRetries`.
+pub const DEFAULT_MAX_ATTEMPTS: u32 = 3;
 /// The first backoff for a raw call.
 pub const DEFAULT_BASE_DELAY: Duration = Duration::from_secs(1);
 /// The longest the client waits between attempts, however many it has made. The backoff's
@@ -72,7 +72,7 @@ pub(crate) struct Shared {
     pub(crate) http: Arc<dyn HttpClient>,
     pub(crate) auth: Arc<dyn AuthStrategy>,
     pub(crate) user_agent: String,
-    pub(crate) max_retries: u32,
+    pub(crate) max_attempts: u32,
     pub(crate) base_delay: Duration,
     pub(crate) max_delay: Duration,
     pub(crate) max_retry_after: Duration,
@@ -89,6 +89,24 @@ pub(crate) struct Shared {
 pub struct AccountClient {
     client: Client,
     account_id: String,
+}
+
+impl std::fmt::Debug for Client {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Client")
+            .field("base_url", &self.shared.base_url.as_str())
+            .field("user_agent", &self.shared.user_agent)
+            .finish_non_exhaustive()
+    }
+}
+
+impl std::fmt::Debug for AccountClient {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AccountClient")
+            .field("account_id", &self.account_id)
+            .field("client", &self.client)
+            .finish()
+    }
 }
 
 impl AccountClient {
@@ -147,12 +165,12 @@ impl<'a> Scope<'a> {
         } else {
             None
         };
-        Ok(Operation::for_route(route, account_id, params))
+        Operation::for_route(route, account_id, params)
     }
 }
 
 /// What came back from Fizzy, before it is decoded.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 #[non_exhaustive]
 pub struct Response {
     /// The status.
@@ -168,14 +186,40 @@ pub struct Response {
     pub from_cache: bool,
 }
 
+/// The body never prints, and the headers print redacted: an answer may carry a session
+/// cookie or a person's details, and `{:?}` of a response is the kind of thing that ends
+/// up in a log.
+impl std::fmt::Debug for Response {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Response")
+            .field("status", &self.status)
+            .field("headers", &crate::security::redact_headers(&self.headers))
+            .field("body_len", &self.body.len())
+            .field("url", &self.url.as_str())
+            .field("from_cache", &self.from_cache)
+            .finish()
+    }
+}
+
 impl Response {
-    /// Decodes the body as JSON.
+    /// Decodes the body as JSON. A body that does not read as `T` is an API error carrying
+    /// the answer's status and request id, so the failure can still be traced.
     pub fn json<T: DeserializeOwned>(&self) -> Result<T, Error> {
-        if self.body.is_empty() {
-            Err(Error::api(self.status.as_u16(), "empty response body"))
+        let status = self.status.as_u16();
+        let error = if self.body.is_empty() {
+            Error::api(status, "empty response body")
         } else {
-            Ok(serde_json::from_slice(&self.body)?)
-        }
+            match serde_json::from_slice(&self.body) {
+                Ok(value) => return Ok(value),
+                Err(error) => Error::api(status, "unexpected JSON")
+                    .with_hint(error.to_string())
+                    .with_source(error),
+            }
+        };
+        Err(match self.header("x-request-id") {
+            Some(request_id) => error.with_request_id(request_id),
+            None => error,
+        })
     }
 
     /// A header, when it is there and reads as text.
@@ -229,7 +273,7 @@ pub struct ClientBuilder {
     http: Option<Arc<dyn HttpClient>>,
     user_agent: String,
     timeout: Duration,
-    max_retries: u32,
+    max_attempts: u32,
     base_delay: Duration,
     max_delay: Duration,
     max_retry_after: Duration,
@@ -249,7 +293,7 @@ impl ClientBuilder {
             http: None,
             user_agent: default_user_agent(),
             timeout: DEFAULT_TIMEOUT,
-            max_retries: DEFAULT_MAX_RETRIES,
+            max_attempts: DEFAULT_MAX_ATTEMPTS,
             base_delay: DEFAULT_BASE_DELAY,
             max_delay: DEFAULT_MAX_DELAY,
             max_retry_after: DEFAULT_MAX_RETRY_AFTER,
@@ -304,10 +348,11 @@ impl ClientBuilder {
         self
     }
 
-    /// How many times a raw call is resent after a transient failure, and the most a
-    /// modelled route may be resent whatever the behavior model says.
-    pub fn max_retries(mut self, max_retries: u32) -> ClientBuilder {
-        self.max_retries = max_retries;
+    /// How many times a raw call is sent, the first attempt included, and the most a
+    /// modelled route may be sent whatever the behavior model says. One sends everything
+    /// once; zero reads as one.
+    pub fn max_attempts(mut self, max_attempts: u32) -> ClientBuilder {
+        self.max_attempts = max_attempts.max(1);
         self
     }
 
@@ -349,7 +394,7 @@ impl ClientBuilder {
         self
     }
 
-    /// Caches JSON reads by ETag. Without this, `config.cache_enabled` decides whether a
+    /// Caches JSON reads by `ETag`. Without this, `config.cache_enabled` decides whether a
     /// [`FileCache`] in `config.cache_dir` is used.
     pub fn cache(mut self, cache: impl ResponseCache + 'static) -> ClientBuilder {
         self.cache = Some(Arc::new(cache));
@@ -397,9 +442,9 @@ impl ClientBuilder {
             http,
             auth,
             user_agent: self.user_agent,
-            max_retries: self.max_retries,
-            base_delay: self.base_delay,
-            max_delay: self.max_delay.max(self.base_delay),
+            max_attempts: self.max_attempts,
+            base_delay: self.base_delay.min(self.max_delay),
+            max_delay: self.max_delay,
             max_retry_after: self.max_retry_after,
             max_jitter: self.max_jitter,
             max_pages: self.max_pages,
@@ -444,10 +489,17 @@ impl Client {
     }
 
     /// A client scoped to one account. The id is checked for shape here — it goes into
-    /// every path — and against Fizzy on the first call.
+    /// every path as one segment — and against Fizzy on the first call.
     pub fn for_account(&self, account_id: impl Into<String>) -> Result<AccountClient, Error> {
         let account_id = account_id.into();
-        if account_id.is_empty() || account_id.contains('/') {
+        if account_id.is_empty()
+            || account_id == "."
+            || account_id == ".."
+            || account_id.contains(['/', '?', '#', '%'])
+            || account_id
+                .chars()
+                .any(|c| c.is_whitespace() || c.is_control())
+        {
             return Err(Error::usage(format!("invalid account id {account_id:?}")));
         }
         Ok(AccountClient {
@@ -585,13 +637,15 @@ impl Client {
     async fn dispatch(&self, operation: &Operation) -> Result<Response, Error> {
         let url = self.url_for(operation)?;
         let answered = self.attempt(operation, &url).await?;
-        let status = answered.response.status();
+        let status = answered.status;
         let finished = self
             .finish(
                 operation,
                 &url,
                 answered.url,
-                answered.response,
+                status,
+                answered.headers,
+                answered.body,
                 answered.cached,
             )
             .await;
@@ -618,12 +672,12 @@ impl Client {
             return RetryPolicy::none();
         }
         let policy = operation.retry.clone().unwrap_or_else(|| RetryPolicy {
-            attempts: shared.max_retries + 1,
+            attempts: shared.max_attempts,
             base_delay: shared.base_delay,
             retry_on: Cow::Borrowed(DEFAULT_RETRY_ON),
         });
         RetryPolicy {
-            attempts: policy.attempts.min(shared.max_retries + 1).max(1),
+            attempts: policy.attempts.min(shared.max_attempts).max(1),
             base_delay: policy.base_delay.min(shared.max_delay),
             retry_on: policy.retry_on,
         }
@@ -632,97 +686,151 @@ impl Client {
     /// Sends the operation as many times as its retry budget and Fizzy's answers call for,
     /// and hands back the answer it stopped on with the body still unread.
     async fn attempt(&self, operation: &Operation, url: &Url) -> Result<Answered, Error> {
-        let hooks = &self.shared.hooks;
         let policy = self.policy_for(operation);
-        let mut attempt = 1;
-        let mut delay = policy.base_delay;
+        let mut backoff = Backoff {
+            attempt: 1,
+            delay: policy.base_delay,
+        };
         // Looked up once and carried across the attempts: a resend would find the same
         // entry, and the cache the SDK ships reads it off disk.
         let mut cached = None;
 
         loop {
-            let request = self.prepare(operation, url, &mut cached).await?;
-            let info = RequestInfo {
-                method: operation.method.clone(),
-                url: url.clone(),
-                attempt,
-            };
-            hooks.on_request_start(&info);
-            let started = Instant::now();
-            let sent = self.transmit(operation, url.clone(), request).await;
-            let duration = started.elapsed();
+            let once = self.attempt_once(operation, url, &policy, &mut backoff, &mut cached);
+            if let Some(answered) = once.await? {
+                return Ok(answered);
+            }
+        }
+    }
 
-            match sent {
-                Err(error) => {
-                    hooks.on_request_end(
-                        &info,
-                        &RequestResult {
-                            status: None,
-                            duration,
-                            error: Some(&error),
-                            from_cache: false,
-                            retryable: true,
-                            retry_after: None,
-                        },
-                    );
-                    if attempt < policy.attempts {
-                        crate::trace::debug(&operation.id, attempt, "request failed, retrying");
-                        hooks.on_retry(&info, attempt + 1, &error);
-                        self.wait(delay).await;
-                        delay = self.next_delay(delay);
-                        attempt += 1;
-                    } else {
-                        return Err(error);
-                    }
-                }
-                Ok((final_url, response)) => {
-                    let status = response.status();
-                    let retryable = policy.retry_on.contains(&status.as_u16());
-                    let retry_after = retry_after_asked(status, response.headers());
-                    let wait = match retry_after {
-                        Some(seconds) if seconds > 0 => Some(Duration::from_secs(seconds)),
-                        _ => None,
-                    };
-                    let too_long = wait.is_some_and(|wait| wait > self.shared.max_retry_after);
-                    if retryable && attempt < policy.attempts && !too_long {
-                        let cause = Error::from_response(
-                            status,
-                            &operation.method,
-                            response.headers(),
-                            &[],
-                        );
-                        hooks.on_request_end(
-                            &info,
-                            &RequestResult {
-                                status: Some(status),
-                                duration,
-                                error: Some(&cause),
-                                from_cache: false,
-                                retryable,
-                                retry_after,
-                            },
-                        );
-                        crate::trace::debug(&operation.id, attempt, "retryable status, retrying");
-                        hooks.on_retry(&info, attempt + 1, &cause);
-                        self.wait(wait.unwrap_or(delay)).await;
-                        delay = self.next_delay(delay);
-                        attempt += 1;
-                    } else {
-                        return Ok(Answered {
-                            url: final_url,
-                            response,
-                            cached: cached.take(),
-                            info,
-                            duration,
-                            retryable,
-                            retry_after,
-                        });
-                    }
+    /// One request, and what came of it: the answer the loop settles on, or `None` once
+    /// the wait before the next attempt is over.
+    async fn attempt_once(
+        &self,
+        operation: &Operation,
+        url: &Url,
+        policy: &RetryPolicy,
+        backoff: &mut Backoff,
+        cached: &mut Option<(String, CachedResponse)>,
+    ) -> Result<Option<Answered>, Error> {
+        let hooks = &self.shared.hooks;
+        let attempt = backoff.attempt;
+        let request = self.prepare(operation, url, cached).await?;
+        let info = RequestInfo {
+            method: operation.method.clone(),
+            url: url.clone(),
+            attempt,
+        };
+        hooks.on_request_start(&info);
+        let started = Instant::now();
+        let sent = self.transmit(operation, url.clone(), request).await;
+        let duration = started.elapsed();
+
+        let (final_url, response) = match sent {
+            Err(error) => {
+                let again = error.is_retryable() && attempt < policy.attempts;
+                hooks.on_request_end(
+                    &info,
+                    &RequestResult::failed(None, duration, &error, error.is_retryable(), None),
+                );
+                return if again {
+                    self.resend(backoff, &info, operation, &error, None, "request failed")
+                        .await;
+                    Ok(None)
+                } else {
+                    Err(error)
+                };
+            }
+            Ok(sent) => sent,
+        };
+
+        let status = response.status();
+        let retryable = policy.retry_on.contains(&status.as_u16());
+        let retry_after = retry_after_asked(status, response.headers());
+        let wait = match retry_after {
+            Some(seconds) if seconds > 0 => Some(Duration::from_secs(seconds)),
+            _ => None,
+        };
+        let too_long = wait.is_some_and(|wait| wait > self.shared.max_retry_after);
+        if retryable && attempt < policy.attempts && !too_long {
+            let cause = Error::from_response(status, &operation.method, response.headers(), &[]);
+            hooks.on_request_end(
+                &info,
+                &RequestResult::failed(Some(status), duration, &cause, retryable, retry_after),
+            );
+            self.resend(backoff, &info, operation, &cause, wait, "retryable status")
+                .await;
+            return Ok(None);
+        }
+
+        let (parts, body) = response.into_parts();
+        match self.read_answer(operation, url, status, body).await {
+            Ok(body) => Ok(Some(Answered {
+                url: final_url,
+                status,
+                headers: parts.headers,
+                body,
+                cached: cached.take(),
+                info,
+                duration,
+                retryable,
+                retry_after,
+            })),
+            Err(error) => {
+                let (error, retryable) = unread(operation, status, &parts.headers, error);
+                hooks.on_request_end(
+                    &info,
+                    &RequestResult::failed(Some(status), duration, &error, retryable, retry_after),
+                );
+                if retryable && attempt < policy.attempts {
+                    self.resend(backoff, &info, operation, &error, None, "body broke off")
+                        .await;
+                    Ok(None)
+                } else {
+                    Err(error)
                 }
             }
         }
     }
 
+    /// Tells the hooks a resend is coming, waits it out — `wait` when Fizzy named one,
+    /// the backoff otherwise — and moves the loop on to the next attempt.
+    async fn resend(
+        &self,
+        backoff: &mut Backoff,
+        info: &RequestInfo,
+        operation: &Operation,
+        error: &Error,
+        wait: Option<Duration>,
+        why: &str,
+    ) {
+        crate::trace::debug(&operation.id, backoff.attempt, &format!("{why}, retrying"));
+        self.shared.hooks.on_retry(info, backoff.attempt + 1, error);
+        self.wait(wait.unwrap_or(backoff.delay)).await;
+        backoff.delay = self.next_delay(backoff.delay);
+        backoff.attempt += 1;
+    }
+
+    /// Reads the body of the answer an attempt settled on: whole, up to the cap, for a
+    /// success; no more than the diagnostic prefix a failure keeps, for anything else.
+    async fn read_answer(
+        &self,
+        operation: &Operation,
+        url: &Url,
+        status: StatusCode,
+        body: Body,
+    ) -> Result<Bytes, Error> {
+        if status.is_success() {
+            let bound = self.shared.max_response_body_bytes;
+            read_body(body, bound, &operation.method, url.path()).await
+        } else {
+            body.prefix(MAX_ERROR_BODY_BYTES).await
+        }
+    }
+
+    /// Where an operation goes. Whatever the path was — relative, absolute, pasted — the
+    /// resolved URL has to sit on the Fizzy origin the client was built for: every request
+    /// carries the credentials, and this is the one place all of them pass through.
     pub(crate) fn url_for(&self, operation: &Operation) -> Result<Url, Error> {
         let mut url = match &operation.url {
             Some(url) => url.clone(),
@@ -733,6 +841,21 @@ impl Client {
         };
         if !operation.query.is_empty() {
             url.query_pairs_mut().extend_pairs(&operation.query);
+        }
+        require_secure_endpoint(&url)?;
+        if !url.username().is_empty() || url.password().is_some() {
+            return Err(Error::usage(format!(
+                "{} names a URL carrying credentials; use an access token or a session token",
+                operation.id
+            )));
+        }
+        if !is_same_origin(&url, &self.shared.base_url) {
+            return Err(Error::usage(format!(
+                "{} resolves off the Fizzy origin {}, onto {}",
+                operation.id,
+                self.shared.base_url.origin().ascii_serialization(),
+                url.origin().ascii_serialization()
+            )));
         }
         Ok(url)
     }
@@ -769,7 +892,7 @@ impl Client {
                 None => None,
                 Some(credential) => {
                     let key = cache_key(url.as_str(), &credential);
-                    if !cached.as_ref().is_some_and(|(held, _)| *held == key) {
+                    if cached.as_ref().is_none_or(|(held, _)| *held != key) {
                         *cached = self.look_up(cache, &key).await;
                     }
                     Some(key)
@@ -818,19 +941,20 @@ impl Client {
     /// are held per identity, so a request that goes out without credentials is not
     /// cached: there would be nothing to tell one caller's copy from another's.
     fn cacheable(&self, operation: &Operation) -> Option<&Arc<dyn ResponseCache>> {
-        if !operation.no_cache && operation.method == Method::GET {
-            self.shared.cache.as_ref()
-        } else {
+        if operation.no_cache || operation.method != Method::GET {
             None
+        } else {
+            self.shared.cache.as_ref()
         }
     }
 
     /// Sends one request and follows the redirects it is answered with, up to
-    /// [`MAX_REDIRECTS`] hops. Hands back the URL the answer came from along with the
-    /// answer.
+    /// [`MAX_REDIRECTS`] hops, as long as they stay on the Fizzy origin. Hands back the
+    /// URL the answer came from along with the answer.
     ///
-    /// Credentials stay on the origin they were meant for: a hop to another origin goes out
-    /// without the `Authorization` or `Cookie`, the way a browser would send it. A 301, 302
+    /// A hop off the origin is refused rather than followed: Fizzy's API never sends one,
+    /// and following it would carry the credentials — the ones the client puts on, and any
+    /// the transport adds of its own — somewhere they were never meant to go. A 301, 302
     /// or 303 turns anything but a GET or HEAD into a GET without its body; a 307 or 308
     /// keeps both.
     async fn transmit(
@@ -861,7 +985,20 @@ impl Client {
                 }
                 Some(next) => {
                     require_secure_endpoint(&next)?;
-                    request = redirected(outgoing, response.status(), &url, &next)?;
+                    if !next.username().is_empty() || next.password().is_some() {
+                        return Err(Error::usage(format!(
+                            "{} redirected to a URL carrying credentials",
+                            operation.id
+                        )));
+                    }
+                    if !is_same_origin(&next, &self.shared.base_url) {
+                        return Err(Error::usage(format!(
+                            "{} redirected off the Fizzy origin to {}",
+                            operation.id,
+                            next.origin().ascii_serialization()
+                        )));
+                    }
+                    request = redirected(outgoing, response.status(), &next)?;
                     url = next;
                     hops += 1;
                 }
@@ -869,16 +1006,20 @@ impl Client {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     async fn finish(
         &self,
         operation: &Operation,
         url: &Url,
         final_url: Url,
-        response: HttpResponse<Body>,
+        status: StatusCode,
+        headers: HeaderMap,
+        body: Bytes,
         cached: Option<(String, CachedResponse)>,
     ) -> Result<Response, Error> {
-        let status = response.status();
-        let headers = response.headers().clone();
+        // An answer that arrived from somewhere other than where the request went is not
+        // the document the cache holds under the request's key, and is not stored there.
+        let cached = if final_url == *url { cached } else { None };
 
         if status == StatusCode::NOT_MODIFIED {
             return match cached {
@@ -895,21 +1036,6 @@ impl Client {
                 )),
             };
         }
-
-        let bound = self.shared.max_response_body_bytes;
-        let body = match read_body(response.into_body(), bound, &operation.method, url.path()).await
-        {
-            Ok(body) => body,
-            Err(refusal) if status.is_success() => return Err(refusal),
-            // The status is what matters about a failure, and a body the client would not
-            // read is no reason to lose it.
-            Err(refusal) => {
-                return Err(
-                    Error::from_response(status, &operation.method, &headers, &[])
-                        .refusing(refusal),
-                );
-            }
-        };
 
         if status.is_success() {
             if let (Some((key, _)), Some(cache)) = (cached, self.cacheable(operation))
@@ -982,12 +1108,14 @@ impl Drop for Running<'_> {
     }
 }
 
-/// One answer from Fizzy with its body unread: what the retry loop settled on, the URL it
-/// came from once any redirects were followed, and what the hooks still have to be told
-/// about it once the body has been dealt with.
+/// One answer from Fizzy, body read: what the retry loop settled on, the URL it came from
+/// once any redirects were followed, and what the hooks still have to be told about it
+/// once the body has been dealt with.
 struct Answered {
     url: Url,
-    response: HttpResponse<Body>,
+    status: StatusCode,
+    headers: HeaderMap,
+    body: Bytes,
     cached: Option<(String, CachedResponse)>,
     info: RequestInfo,
     duration: Duration,
@@ -1056,14 +1184,14 @@ fn redirect_target(url: &Url, response: &HttpResponse<Body>) -> Option<Url> {
     }
 }
 
-/// The request to send to `next` on the way there from `from`: the same one, less the
-/// credentials when the origin changes, and reduced to a GET when the status asks for it.
+/// The request to send to `next`: the same one, reduced to a GET when the status asks for
+/// it, and without the cache validator, which belonged to the URL the request left.
 fn redirected(
     (method, mut headers, body): (Method, HeaderMap, Bytes),
     status: StatusCode,
-    from: &Url,
     next: &Url,
 ) -> Result<Request<Bytes>, Error> {
+    headers.remove(IF_NONE_MATCH);
     let keeps_method = method == Method::GET
         || method == Method::HEAD
         || status == StatusCode::TEMPORARY_REDIRECT
@@ -1075,11 +1203,6 @@ fn redirected(
         headers.remove(CONTENT_LENGTH);
         (Method::GET, Bytes::new())
     };
-    if !is_same_origin(next, from) {
-        headers.remove(AUTHORIZATION);
-        headers.remove(COOKIE);
-        headers.remove(PROXY_AUTHORIZATION);
-    }
     let mut request = Request::builder()
         .method(method)
         .uri(next.as_str())
@@ -1093,6 +1216,11 @@ fn parse_base_url(base_url: &str) -> Result<Url, Error> {
     let mut url = Url::parse(base_url)
         .map_err(|error| Error::usage(format!("base URL {base_url}: {error}")))?;
     require_secure_endpoint(&url)?;
+    if !url.username().is_empty() || url.password().is_some() {
+        return Err(Error::usage(
+            "base URL must not carry credentials; use an access token or a session token",
+        ));
+    }
     if !url.path().ends_with('/') {
         url.set_path(&format!("{}/", url.path()));
     }
@@ -1115,6 +1243,30 @@ fn header_value(value: &str) -> Result<HeaderValue, Error> {
 
 /// Reads a body up to the bound and refuses it on the first byte past. A body exactly at
 /// the bound reads whole; one declared past it never starts.
+/// The error for a body that could not be read, and whether the SDK would ask for the
+/// answer again given an attempt to spare: a success whose body broke off, it would; a
+/// refusal it would not, and that keeps its status over the reason its body was lost.
+fn unread(
+    operation: &Operation,
+    status: StatusCode,
+    headers: &HeaderMap,
+    error: Error,
+) -> (Error, bool) {
+    let retryable = status.is_success() && error.is_retryable();
+    let error = if status.is_success() {
+        error
+    } else {
+        Error::from_response(status, &operation.method, headers, &[]).refusing(error)
+    };
+    (error, retryable)
+}
+
+/// Where the retry loop stands: which attempt is next, and how long the wait before it is.
+struct Backoff {
+    attempt: u32,
+    delay: Duration,
+}
+
 pub(crate) async fn read_body(
     body: Body,
     limit: usize,
@@ -1191,7 +1343,7 @@ mod tests {
         Client::builder(Config::default().with_base_url("https://fizzy.test"))
             .token_provider(StaticTokenProvider::new("secret"))
             .http_client(http)
-            .max_retries(0)
+            .max_attempts(1)
             .build()
             .unwrap()
     }
@@ -1238,23 +1390,195 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn a_redirect_off_the_origin_is_followed_without_credentials() {
-        let http = Canned::new(|request| {
-            if request.uri().host() == Some("fizzy.test") {
-                redirect("https://storage.test/blobs/1")
-            } else {
-                answer(200, "the bytes")
-            }
-        });
+    async fn a_redirect_off_the_origin_is_refused_with_nothing_sent_there() {
+        let http = Canned::new(|_| redirect("https://storage.test/blobs/1"));
         let client = client_over(http.clone());
 
-        let response = client.get("/blobs/1").await.unwrap();
+        let error = client.get("/blobs/1").await.unwrap_err();
 
-        assert_eq!(response.body, "the bytes");
-        let sent = http.sent();
-        assert_eq!(sent.len(), 2);
-        assert_eq!(sent[1].1, "https://storage.test/blobs/1");
-        assert!(sent[1].2.get(AUTHORIZATION).is_none());
+        assert_eq!(error.code(), ErrorCode::Usage);
+        assert_eq!(http.sent().len(), 1);
+    }
+
+    fn broken_body(status: u16) -> HttpResponse<Body> {
+        let chunks = futures_util::stream::iter([
+            Ok(Bytes::from_static(b"{\"ok\":")),
+            Err(Error::new(ErrorCode::Network, "cut off").retryable()),
+        ]);
+        let mut response = HttpResponse::new(Body::from_stream(chunks, None));
+        *response.status_mut() = StatusCode::from_u16(status).unwrap();
+        response
+    }
+
+    #[tokio::test]
+    async fn a_body_that_breaks_off_is_asked_for_again() {
+        let calls = Arc::new(Mutex::new(0));
+        let seen = calls.clone();
+        let http = Canned::new(move |_| {
+            let mut calls = seen.lock().unwrap();
+            *calls += 1;
+            if *calls == 1 {
+                broken_body(200)
+            } else {
+                answer(200, r#"{"ok":true}"#)
+            }
+        });
+        let client = Client::builder(Config::default().with_base_url("https://fizzy.test"))
+            .token_provider(StaticTokenProvider::new("secret"))
+            .http_client(http.clone())
+            .max_attempts(2)
+            .max_jitter(Duration::ZERO)
+            .base_delay(Duration::from_millis(1))
+            .build()
+            .unwrap();
+
+        let response = client.get("/x.json").await.unwrap();
+
+        assert_eq!(response.body, r#"{"ok":true}"#);
+        assert_eq!(http.sent().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn a_failure_whose_body_breaks_off_keeps_its_status_and_is_not_resent() {
+        let http = Canned::new(|_| broken_body(422));
+        let client = Client::builder(Config::default().with_base_url("https://fizzy.test"))
+            .token_provider(StaticTokenProvider::new("secret"))
+            .http_client(http.clone())
+            .max_attempts(2)
+            .max_jitter(Duration::ZERO)
+            .base_delay(Duration::from_millis(1))
+            .build()
+            .unwrap();
+
+        let error = client.get("/x.json").await.unwrap_err();
+
+        assert_eq!(error.code(), ErrorCode::Validation);
+        assert_eq!(error.http_status(), Some(422));
+        assert_eq!(http.sent().len(), 1);
+    }
+
+    /// Keeps what each request was reported as, resendable or not.
+    #[derive(Default)]
+    struct Retryability(Mutex<Vec<bool>>);
+
+    impl Hooks for Retryability {
+        fn on_request_end(&self, _info: &RequestInfo, result: &RequestResult<'_>) {
+            self.0.lock().unwrap().push(result.retryable);
+        }
+    }
+
+    #[tokio::test]
+    async fn a_body_that_breaks_off_on_the_last_attempt_is_still_reported_resendable() {
+        let http = Canned::new(|_| broken_body(200));
+        let seen = Arc::new(Retryability::default());
+        let client = Client::builder(Config::default().with_base_url("https://fizzy.test"))
+            .token_provider(StaticTokenProvider::new("secret"))
+            .http_client(http.clone())
+            .hooks(seen.clone())
+            .max_attempts(2)
+            .max_jitter(Duration::ZERO)
+            .base_delay(Duration::from_millis(1))
+            .build()
+            .unwrap();
+
+        let error = client.get("/x.json").await.unwrap_err();
+
+        assert_eq!(error.code(), ErrorCode::Network);
+        assert_eq!(http.sent().len(), 2);
+        assert_eq!(*seen.0.lock().unwrap(), [true, true]);
+    }
+
+    #[tokio::test]
+    async fn a_redirect_carrying_credentials_is_refused_without_echoing_them() {
+        let http = Canned::new(|_| redirect("https://user:s3cret@fizzy.test/new.json"));
+        let client = client_over(http.clone());
+
+        let error = client.get("/old.json").await.unwrap_err();
+
+        assert_eq!(error.code(), ErrorCode::Usage);
+        assert!(!error.to_string().contains("s3cret"));
+        assert_eq!(http.sent().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn a_path_that_resolves_off_the_origin_is_refused_before_anything_is_sent() {
+        let http = Canned::new(|_| answer(200, "{}"));
+        let client = client_over(http.clone());
+
+        for path in [
+            "http://evil.test/x",
+            "HTTP://evil.test/x",
+            "https://evil.test/x",
+        ] {
+            let error = client.get(path).await.unwrap_err();
+            assert_eq!(error.code(), ErrorCode::Usage, "{path}");
+            let error = client
+                .execute(client.request(Method::GET, path))
+                .await
+                .unwrap_err();
+            assert_eq!(error.code(), ErrorCode::Usage, "{path}");
+        }
+        assert!(http.sent().is_empty());
+    }
+
+    #[tokio::test]
+    async fn a_url_carrying_userinfo_is_refused_without_echoing_it() {
+        let http = Canned::new(|_| answer(200, "{}"));
+        let client = client_over(http.clone());
+
+        let error = client
+            .get("https://user:s3cret@fizzy.test/x")
+            .await
+            .unwrap_err();
+
+        assert_eq!(error.code(), ErrorCode::Usage);
+        assert!(!error.to_string().contains("s3cret"));
+        assert!(http.sent().is_empty());
+    }
+
+    #[tokio::test]
+    async fn a_refused_redirect_is_not_retried() {
+        let http = Canned::new(|_| redirect("http://evil.test/"));
+        let client = Client::builder(Config::default().with_base_url("https://fizzy.test"))
+            .token_provider(StaticTokenProvider::new("secret"))
+            .http_client(http.clone())
+            .max_jitter(Duration::ZERO)
+            .base_delay(Duration::from_millis(1))
+            .build()
+            .unwrap();
+
+        let error = client.get("/anything").await.unwrap_err();
+
+        assert_eq!(error.code(), ErrorCode::Usage);
+        assert_eq!(http.sent().len(), 1);
+    }
+
+    #[test]
+    fn a_response_and_an_operation_print_without_their_secrets() {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            "set-cookie",
+            HeaderValue::from_static("session_token=s3cret; HttpOnly"),
+        );
+        let response = Response {
+            status: StatusCode::OK,
+            headers,
+            body: Bytes::from_static(br#"{"email_address":"jane@example.com"}"#),
+            url: Url::parse("https://fizzy.test/x").unwrap(),
+            from_cache: false,
+        };
+        let printed = format!("{response:?}");
+        assert!(!printed.contains("s3cret"));
+        assert!(!printed.contains("jane@example.com"));
+        assert!(printed.contains("[REDACTED]"));
+
+        let mut operation = Operation::raw(Method::POST, "/session.json".into());
+        operation
+            .json(&serde_json::json!({"email_address": "jane@example.com"}))
+            .unwrap();
+        let printed = format!("{operation:?}");
+        assert!(!printed.contains("jane@example.com"));
+        assert!(printed.contains("len"));
     }
 
     #[tokio::test]
@@ -1285,6 +1609,12 @@ mod tests {
         assert!(parse_base_url("http://127.0.0.1:3000").is_ok());
         assert_eq!(
             parse_base_url("http://evil.example.com")
+                .unwrap_err()
+                .code(),
+            ErrorCode::Usage
+        );
+        assert_eq!(
+            parse_base_url("https://user:secret@fizzy.do")
                 .unwrap_err()
                 .code(),
             ErrorCode::Usage

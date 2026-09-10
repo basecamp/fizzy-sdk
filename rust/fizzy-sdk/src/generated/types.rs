@@ -32,7 +32,7 @@ pub struct AccessToken {
     pub created_at: DateTime,
     /// `token`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub token: Option<String>,
+    pub token: Option<SensitiveString>,
 }
 
 /// `Account`, as Fizzy sends it. Read-only, so a field added later is not a breaking change.
@@ -1358,7 +1358,7 @@ pub struct PendingAuthentication {
         default,
         deserialize_with = "crate::types::null_as_default::deserialize"
     )]
-    pub pending_authentication_token: String,
+    pub pending_authentication_token: SensitiveString,
 }
 
 /// `RateLimitErrorResponseContent`, as Fizzy sends it. Read-only, so a field added later is not a breaking change.
@@ -1408,7 +1408,7 @@ pub struct RedeemMagicLinkRequestContent {
         default,
         deserialize_with = "crate::types::null_as_default::deserialize"
     )]
-    pub token: String,
+    pub token: SensitiveString,
 }
 
 /// `RedeemMagicLinkResponseContent`, as the model names it.
@@ -1475,7 +1475,7 @@ pub struct SessionAuthorization {
         default,
         deserialize_with = "crate::types::null_as_default::deserialize"
     )]
-    pub session_token: String,
+    pub session_token: SensitiveString,
     /// `requires_signup_completion`.
     #[serde(
         default,
@@ -1858,7 +1858,7 @@ pub struct Webhook {
         default,
         deserialize_with = "crate::types::null_as_default::deserialize"
     )]
-    pub signing_secret: String,
+    pub signing_secret: SensitiveString,
     /// `active`.
     #[serde(
         default,

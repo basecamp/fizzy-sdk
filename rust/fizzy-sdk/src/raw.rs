@@ -98,19 +98,24 @@ impl Client {
         })
     }
 
-    /// The URL a path names when it already is one. HTTPS goes anywhere on the Fizzy
-    /// origin; plain HTTP only back to the base URL's own host, which is how a Fizzy
-    /// running on this machine is reached, and nowhere else — the credentials would go
-    /// with it.
+    /// The URL a path names when it already is one. Only the Fizzy origin itself is
+    /// accepted — a `Link` header's absolute URL, say — since every request carries the
+    /// credentials, and they go nowhere else.
     fn absolute(&self, path: &str) -> Result<Option<Url>, Error> {
         if path.starts_with("https://") || path.starts_with("http://") {
             let url = Url::parse(path)?;
-            if is_same_origin(&url, self.base_url()) {
-                Ok(Some(url))
-            } else if url.scheme() == "https" {
+            if !url.username().is_empty() || url.password().is_some() {
+                Err(Error::usage(
+                    "URL must not carry credentials; use an access token or a session token",
+                ))
+            } else if is_same_origin(&url, self.base_url()) {
                 Ok(Some(url))
             } else {
-                Err(Error::usage(format!("URL must use HTTPS, got: {path}")))
+                Err(Error::usage(format!(
+                    "URL must be on the Fizzy origin {}, got one on {}",
+                    self.base_url().origin().ascii_serialization(),
+                    url.origin().ascii_serialization()
+                )))
             }
         } else {
             Ok(None)
@@ -229,7 +234,11 @@ impl AccountClient {
         if path.starts_with("https://") || path.starts_with("http://") {
             path.to_string()
         } else {
-            format!("/{}/{}", self.account_id(), path.trim_start_matches('/'))
+            format!(
+                "/{}/{}",
+                crate::route::encode(self.account_id()),
+                path.trim_start_matches('/')
+            )
         }
     }
 }

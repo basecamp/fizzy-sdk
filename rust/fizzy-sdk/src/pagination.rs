@@ -23,12 +23,22 @@ use crate::security::is_same_origin;
 pub struct Page<T> {
     value: T,
     next_url: Option<Url>,
-    next_page: Option<String>,
+    next_cursor: Option<String>,
     total_count: Option<u64>,
     /// What the read that produced this page announced itself as, so the reads that walk
     /// on from it can say the same.
     info: OperationInfo,
     /// The retry policy the first page was read under, so every page after it is too.
+    retry: Option<RetryPolicy>,
+}
+
+/// What it takes to read the page after one already handed out: where it is, what the
+/// read announces itself as, and the policy it goes under. Taken off a page so the page
+/// itself can be yielded before the next is fetched.
+#[derive(Debug, Clone)]
+struct Cursor {
+    next_url: Option<Url>,
+    info: OperationInfo,
     retry: Option<RetryPolicy>,
 }
 
@@ -45,7 +55,7 @@ impl<T> Page<T> {
             .and_then(|value| value.to_str().ok())
             .and_then(next_link)
             .and_then(|target| response.url.join(&target).ok());
-        let next_page = next_url.as_ref().and_then(|url| {
+        let next_cursor = next_url.as_ref().and_then(|url| {
             url.query_pairs()
                 .find(|(name, _)| name == "page")
                 .map(|(_, value)| value.into_owned())
@@ -58,19 +68,19 @@ impl<T> Page<T> {
         Page {
             value,
             next_url,
-            next_page,
+            next_cursor,
             total_count,
             info,
             retry,
         }
     }
 
-    pub(crate) fn info(&self) -> &OperationInfo {
-        &self.info
-    }
-
-    pub(crate) fn retry(&self) -> Option<&RetryPolicy> {
-        self.retry.as_ref()
+    fn cursor(&self) -> Cursor {
+        Cursor {
+            next_url: self.next_url.clone(),
+            info: self.info.clone(),
+            retry: self.retry.clone(),
+        }
     }
 
     /// The page's contents, owned.
@@ -85,7 +95,7 @@ impl<T> Page<T> {
 
     /// The opaque cursor for the page after this one, to pass as `page` on the same read.
     pub fn next_page(&self) -> Option<&str> {
-        self.next_page.as_deref()
+        self.next_cursor.as_deref()
     }
 
     /// The URL of the page after this one, as Fizzy's `Link` header named it.
@@ -108,7 +118,7 @@ impl<T> Page<T> {
         Page {
             value: f(self.value),
             next_url: self.next_url,
-            next_page: self.next_page,
+            next_cursor: self.next_cursor,
             total_count: self.total_count,
             info: self.info,
             retry: self.retry,
@@ -133,15 +143,22 @@ impl Client {
         &self,
         page: &Page<T>,
     ) -> Result<Option<Page<T>>, Error> {
-        match page.next_url() {
+        self.page_after(&page.cursor()).await
+    }
+
+    async fn page_after<T: DeserializeOwned>(
+        &self,
+        cursor: &Cursor,
+    ) -> Result<Option<Page<T>>, Error> {
+        match &cursor.next_url {
             None => Ok(None),
             Some(next) if !is_same_origin(next, self.base_url()) => Err(Error::usage(format!(
                 "pagination Link header points to a different origin: {next}"
             ))),
             Some(next) => {
                 let mut operation = Operation::at(Method::GET, next.clone());
-                operation.info(page.info().clone());
-                if let Some(retry) = page.retry() {
+                operation.info(cursor.info.clone());
+                if let Some(retry) = &cursor.retry {
                     operation.retry(retry.clone());
                 }
                 self.send_page(operation).await.map(Some)
@@ -169,26 +186,31 @@ impl Client {
     }
 
     /// The first page and every one after it, read lazily as the stream is polled, up to
-    /// the client's page limit. A page that fails to read ends the stream with its error.
+    /// the client's page limit. A page in hand is yielded before the next is fetched, so a
+    /// consumer that stops early never pays for a page it did not read, and a page that
+    /// fails to read ends the stream with its error after the ones before it.
     pub fn pages<'a, T: DeserializeOwned + 'a>(
         &'a self,
         first: Page<T>,
     ) -> impl Stream<Item = Result<Page<T>, Error>> + 'a {
         let max_pages = self.max_pages();
-        stream::try_unfold((Some(first), 0usize), move |(pending, read)| async move {
-            match pending {
-                None => Ok(None),
-                Some(page) => {
-                    let read = read + 1;
-                    let following = if read < max_pages {
-                        self.next_page(&page).await?
-                    } else {
-                        None
-                    };
-                    Ok(Some((page, (following, read))))
-                }
-            }
-        })
+        stream::try_unfold(
+            (Some(first), None::<Cursor>, 0usize),
+            move |(pending, cursor, read)| async move {
+                let page = match (pending, cursor) {
+                    (Some(page), _) => page,
+                    (None, Some(cursor)) if read < max_pages => {
+                        match self.page_after(&cursor).await? {
+                            Some(page) => page,
+                            None => return Ok(None),
+                        }
+                    }
+                    (None, _) => return Ok(None),
+                };
+                let cursor = page.cursor();
+                Ok(Some((page, (None, Some(cursor), read + 1))))
+            },
+        )
     }
 
     /// Every item on every page, read lazily as the stream is polled.
@@ -236,7 +258,7 @@ impl Client {
                 collected.truncate(limit);
                 break;
             }
-            match self.next_page_url(&response, &started_at)? {
+            match Client::next_page_url(&response, &started_at)? {
                 Some(next) if pages < self.max_pages() => {
                     operation = Operation::at(Method::GET, next);
                     if let Some(retry) = &retry {
@@ -257,7 +279,7 @@ impl Client {
     /// it came in. A target off the origin the walk started on is refused rather than
     /// followed: the header is the server's to write, and following it would carry the
     /// credentials somewhere they were never meant to go.
-    fn next_page_url(&self, response: &Response, started_at: &Url) -> Result<Option<Url>, Error> {
+    fn next_page_url(response: &Response, started_at: &Url) -> Result<Option<Url>, Error> {
         match response.header("link").and_then(next_link) {
             None => Ok(None),
             Some(target) => {
@@ -285,7 +307,10 @@ pub fn next_link(header: &str) -> Option<String> {
         let target = &after_start[..end];
         let rest = &after_start[end + 1..];
         let params_end = rest.find('<').unwrap_or(rest.len());
-        if link_is_next(&rest[..params_end]) {
+        // The link-values are comma-separated, so the parameters of this one end at the
+        // comma before the next `<`, however the header is spaced.
+        let params = rest[..params_end].trim().trim_end_matches(',');
+        if link_is_next(params) {
             return Some(target.to_string());
         }
         remaining = &rest[params_end..];
@@ -316,6 +341,19 @@ mod tests {
             next_link(header).as_deref(),
             Some("https://fizzy.do/999/boards.json?page=3")
         );
+    }
+
+    #[test]
+    fn finds_the_next_link_whichever_order_the_relations_come_in() {
+        assert_eq!(
+            next_link(r#"</p2>; rel="next", </p9>; rel="last""#).as_deref(),
+            Some("/p2")
+        );
+        assert_eq!(
+            next_link(r#"</p9>; rel="last",</p2>; rel="next""#).as_deref(),
+            Some("/p2")
+        );
+        assert_eq!(next_link(r#"</p9>; rel="last", </p1>; rel="first""#), None);
     }
 
     #[test]

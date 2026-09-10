@@ -49,7 +49,7 @@ impl RetryPolicy {
 
 /// A request the client has not sent yet. Generated service methods build one from a
 /// [`Route`]; [`crate::Client::request`] builds one for anything the model does not cover.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Operation {
     pub(crate) id: Cow<'static, str>,
     pub(crate) info: OperationInfo,
@@ -66,10 +66,35 @@ pub struct Operation {
     pub(crate) no_cache: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub(crate) struct Body {
     pub(crate) content_type: String,
     pub(crate) bytes: Bytes,
+}
+
+/// The body never prints: a request body may carry an email address or a token, and
+/// `{:?}` of an operation is the kind of thing that ends up in a log.
+impl std::fmt::Debug for Body {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Body")
+            .field("content_type", &self.content_type)
+            .field("len", &self.bytes.len())
+            .finish()
+    }
+}
+
+impl std::fmt::Debug for Operation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Operation")
+            .field("id", &self.id)
+            .field("method", &self.method)
+            .field("path", &self.path)
+            .field("query", &self.query)
+            .field("body", &self.body)
+            .field("idempotent", &self.idempotent)
+            .field("retry", &self.retry)
+            .finish_non_exhaustive()
+    }
 }
 
 impl Operation {
@@ -77,7 +102,8 @@ impl Operation {
         route: &'static Route,
         account_id: Option<&str>,
         params: &[&dyn Display],
-    ) -> Operation {
+    ) -> Result<Operation, Error> {
+        let path = route.try_fill(account_id, params)?;
         let retry = route
             .retry
             .map_or_else(RetryPolicy::none, |retry| RetryPolicy {
@@ -85,7 +111,7 @@ impl Operation {
                 base_delay: Duration::from_millis(retry.base_delay_ms),
                 retry_on: Cow::Borrowed(retry.retry_on),
             });
-        Operation {
+        Ok(Operation {
             id: Cow::Borrowed(route.id),
             info: OperationInfo {
                 service: Cow::Borrowed(route.service),
@@ -95,7 +121,7 @@ impl Operation {
                 resource_id: None,
             },
             method: route.method.clone(),
-            path: route.fill(account_id, params),
+            path,
             url: None,
             query: Vec::new(),
             headers: Vec::new(),
@@ -103,7 +129,7 @@ impl Operation {
             idempotent: route.idempotent,
             retry: Some(retry),
             no_cache: false,
-        }
+        })
     }
 
     /// A call for a path the model does not cover. Everything but a POST is taken as safe
@@ -112,9 +138,11 @@ impl Operation {
     pub(crate) fn raw(method: Method, path: String) -> Operation {
         let idempotent = method != Method::POST;
         let id = format!("{method} {path}");
+        // Scoped by verb, not path: the breaker and bulkhead keep one entry per operation
+        // for the client's life, and raw paths are as many as the caller's resources.
         let info = OperationInfo {
             service: Cow::Borrowed("Raw"),
-            operation: Cow::Owned(id.clone()),
+            operation: Cow::Owned(method.to_string()),
             resource_type: Cow::Borrowed("raw"),
             is_mutation: method != Method::GET,
             resource_id: None,
@@ -266,5 +294,19 @@ impl Operation {
     pub fn no_cache(&mut self) -> &mut Operation {
         self.no_cache = true;
         self
+    }
+}
+
+#[cfg(test)]
+mod raw_scope {
+    use super::*;
+
+    #[test]
+    fn raw_calls_share_one_scope_per_verb() {
+        let one = Operation::raw(Method::GET, "/999/cards/1".to_string());
+        let two = Operation::raw(Method::GET, "/999/cards/2".to_string());
+        assert_eq!(one.info.operation, two.info.operation);
+        assert_eq!(one.info.operation, "GET");
+        assert_eq!(one.id, "GET /999/cards/1");
     }
 }

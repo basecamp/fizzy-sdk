@@ -123,6 +123,7 @@ pub struct Error {
     retryable: bool,
     request_id: Option<String>,
     refusal: Option<Refusal>,
+    cancelled: bool,
     source: Option<Box<dyn std::error::Error + Send + Sync>>,
     response_too_large: bool,
     /// What Fizzy answered the failure with, kept whole so a caller can read the server's
@@ -143,6 +144,7 @@ impl Error {
             retryable: false,
             request_id: None,
             refusal: None,
+            cancelled: false,
             source: None,
             response_too_large: false,
             body: None,
@@ -215,9 +217,13 @@ impl Error {
     /// layer keeps per operation is closed out rather than left open.
     ///
     /// It is a [`ErrorCode::Network`] because that is what a call that never got an answer
-    /// is. It is not retryable: there is nobody left to answer.
+    /// is. It is not retryable: there is nobody left to answer. It does not count against
+    /// the circuit breaker — a deadline the caller chose says nothing about Fizzy.
     pub fn cancelled() -> Error {
-        Error::new(ErrorCode::Network, "operation cancelled")
+        Error {
+            cancelled: true,
+            ..Error::new(ErrorCode::Network, "operation cancelled")
+        }
     }
 
     /// No answer came back.
@@ -239,15 +245,15 @@ impl Error {
     pub fn response_too_large(limit: usize, method: &Method, path: &str) -> Error {
         Error {
             response_too_large: true,
-            ..Error::api(
-                0,
+            ..Error::new(
+                ErrorCode::ApiError,
                 format!("{method} {path}: response body exceeds {limit} bytes"),
             )
         }
     }
 
-    /// Puts a refusal behind the error a status maps to, so a body too large to read on a
-    /// non-2xx answer still reports the status the answer carried.
+    /// Puts a failure to read the body behind the error a status maps to, so a non-2xx
+    /// answer whose body broke off still reports the status the answer carried.
     pub(crate) fn refusing(mut self, refusal: Error) -> Error {
         self.response_too_large = refusal.response_too_large;
         if self.hint.is_none() {
@@ -304,7 +310,10 @@ impl Error {
             code => {
                 let error = Error::api(code, format!("API error: {status}"));
                 if status.is_server_error() {
-                    error.retryable()
+                    match retry_after_seconds(headers) {
+                        Some(seconds) => error.with_hint(retry_hint(Some(seconds))).retryable(),
+                        None => error.retryable(),
+                    }
                 } else {
                     error
                 }
@@ -408,6 +417,11 @@ impl Error {
         self.refusal
     }
 
+    /// The caller gave up on the call before it finished. See [`Error::cancelled`].
+    pub fn is_cancelled(&self) -> bool {
+        self.cancelled
+    }
+
     /// The answer was longer than the client will hold in memory, whether that refusal is
     /// the error itself or sits behind the status the answer carried.
     pub fn is_response_too_large(&self) -> bool {
@@ -448,7 +462,7 @@ impl std::error::Error for Error {
 
 impl From<serde_json::Error> for Error {
     fn from(error: serde_json::Error) -> Error {
-        Error::api(0, "unexpected JSON")
+        Error::new(ErrorCode::ApiError, "unexpected JSON")
             .with_hint(error.to_string())
             .with_source(error)
     }
@@ -472,12 +486,11 @@ fn retry_hint(retry_after: Option<u64>) -> String {
 /// all.
 pub(crate) fn retry_after_seconds(headers: &HeaderMap) -> Option<u64> {
     let asked = headers.get("retry-after")?.to_str().ok()?.trim();
-    match asked.parse::<i64>() {
-        Ok(seconds) => u64::try_from(seconds).ok(),
-        Err(_) => {
-            let until = chrono::DateTime::parse_from_rfc2822(asked).ok()?;
-            seconds_until(until.with_timezone(&chrono::Utc), chrono::Utc::now())
-        }
+    if let Ok(seconds) = asked.parse::<i64>() {
+        u64::try_from(seconds).ok()
+    } else {
+        let until = chrono::DateTime::parse_from_rfc2822(asked).ok()?;
+        seconds_until(until.with_timezone(&chrono::Utc), chrono::Utc::now())
     }
 }
 

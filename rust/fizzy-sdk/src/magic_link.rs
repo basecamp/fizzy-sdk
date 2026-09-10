@@ -44,7 +44,6 @@ use crate::generated::routes;
 use crate::generated::types::{
     CreateSessionRequestContent, PendingAuthentication, SessionAuthorization,
 };
-use crate::http::HeaderValue;
 use crate::http::header::COOKIE;
 use crate::types::SensitiveString;
 
@@ -113,9 +112,8 @@ impl MagicLinkFlow {
         *self
             .pending
             .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(SensitiveString::new(
-            pending.pending_authentication_token.clone(),
-        ));
+            .unwrap_or_else(std::sync::PoisonError::into_inner) =
+            Some(pending.pending_authentication_token.clone());
         Ok(pending)
     }
 
@@ -138,8 +136,7 @@ impl MagicLinkFlow {
                 "call create_session first, or resume with the pending token",
             )
         })?;
-        let cookie = HeaderValue::from_str(&format!("{PENDING_COOKIE}={}", pending.expose()))
-            .map_err(|_| Error::usage("pending token is not a valid cookie value"))?;
+        let cookie = crate::auth::cookie_header(PENDING_COOKIE, pending.expose())?;
         let mut operation = self.client.operation(&routes::REDEEM_MAGIC_LINK, &[])?;
         operation.operation_name("MagicLinkRedeem");
         operation.header(COOKIE, cookie);

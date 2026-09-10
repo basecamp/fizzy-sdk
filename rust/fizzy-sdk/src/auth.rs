@@ -4,6 +4,7 @@
 
 use async_trait::async_trait;
 use bytes::Bytes;
+use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, utf8_percent_encode};
 
 use crate::error::Error;
 use crate::http::header::{AUTHORIZATION, COOKIE};
@@ -12,6 +13,25 @@ use crate::types::SensitiveString;
 
 /// The cookie a signed-in session is carried in.
 pub const SESSION_COOKIE: &str = "session_token";
+
+/// What Rack's cookie parser decodes: a `%XX` escape, and `+` as a space. A token is sent
+/// with everything outside the unreserved set escaped, so a `+` or a `/` in a signed
+/// token reaches Rails as itself — the way Rails' own `cookies[]=` writes it out.
+const COOKIE_VALUE: &AsciiSet = &NON_ALPHANUMERIC
+    .remove(b'-')
+    .remove(b'_')
+    .remove(b'.')
+    .remove(b'~');
+
+/// A `Cookie` header value carrying one cookie, escaped for Rack, marked sensitive so the
+/// `http` crate's `Debug` prints it as such.
+pub(crate) fn cookie_header(name: &str, value: &str) -> Result<HeaderValue, Error> {
+    let encoded = utf8_percent_encode(value, COOKIE_VALUE);
+    let mut header = HeaderValue::from_str(&format!("{name}={encoded}"))
+        .map_err(|_| Error::auth(format!("{name} is not a valid cookie value")))?;
+    header.set_sensitive(true);
+    Ok(header)
+}
 
 /// Supplies the token each request goes out with.
 #[async_trait]
@@ -72,8 +92,9 @@ impl<P: TokenProvider> BearerAuth<P> {
 impl<P: TokenProvider> AuthStrategy for BearerAuth<P> {
     async fn authenticate(&self, request: &mut Request<Bytes>) -> Result<(), Error> {
         let token = self.provider.access_token().await?;
-        let value = HeaderValue::from_str(&format!("Bearer {token}"))
+        let mut value = HeaderValue::from_str(&format!("Bearer {token}"))
             .map_err(|_| Error::auth("access token is not a valid header value"))?;
+        value.set_sensitive(true);
         request.headers_mut().insert(AUTHORIZATION, value);
         Ok(())
     }
@@ -95,9 +116,9 @@ impl<P: TokenProvider> CookieAuth<P> {
 impl<P: TokenProvider> AuthStrategy for CookieAuth<P> {
     async fn authenticate(&self, request: &mut Request<Bytes>) -> Result<(), Error> {
         let token = self.provider.access_token().await?;
-        let value = HeaderValue::from_str(&format!("{SESSION_COOKIE}={token}"))
-            .map_err(|_| Error::auth("session token is not a valid cookie value"))?;
-        request.headers_mut().insert(COOKIE, value);
+        request
+            .headers_mut()
+            .insert(COOKIE, cookie_header(SESSION_COOKIE, &token)?);
         Ok(())
     }
 }

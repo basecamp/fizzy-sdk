@@ -130,10 +130,10 @@ impl ClientBuilder {
 ///
 /// Go also trips on any error that is not its own `*Error`, since a stray error from
 /// somewhere else says nothing about Fizzy's health. Every error here is [`Error`], so that
-/// case has no counterpart; the nearest thing, an [`ErrorCode::Api`] carrying a 5xx, trips.
+/// case has no counterpart; the nearest thing, an [`ErrorCode::ApiError`] carrying a 5xx, trips.
 pub fn should_trip_circuit(error: &Error) -> bool {
     match error.code() {
-        _ if error.refusal().is_some() => false,
+        _ if error.refusal().is_some() || error.is_cancelled() => false,
         ErrorCode::RateLimit => false,
         ErrorCode::Network => true,
         _ => error.http_status().is_some_and(|status| status >= 500),
@@ -250,7 +250,7 @@ impl Hooks for ResilienceHooks {
         if let Some(permit) = permit {
             self.pending
                 .lock()
-                .unwrap()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
                 .entry(scope)
                 .or_default()
                 .push(permit);
@@ -258,11 +258,24 @@ impl Hooks for ResilienceHooks {
         Ok(())
     }
 
+    /// A later gate in the chain turned the operation away, so the permit this one set
+    /// aside goes back to the scope rather than waiting for a start that never comes.
+    fn on_operation_abandoned(&self, op: &OperationInfo) {
+        let permit = self
+            .pending
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .get_mut(&scope_of(op))
+            .and_then(Vec::pop);
+        drop(permit);
+        self.inner.on_operation_abandoned(op);
+    }
+
     fn on_operation_start(&self, op: &OperationInfo) -> OperationState {
         let permit = self
             .pending
             .lock()
-            .unwrap()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
             .get_mut(&scope_of(op))
             .and_then(Vec::pop);
         Some(Box::new(Held {
@@ -346,7 +359,7 @@ impl<T> Registry<T> {
     fn get(&self, scope: &str) -> Arc<T> {
         self.entries
             .lock()
-            .unwrap()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
             .entry(scope.to_string())
             .or_insert_with(|| Arc::new((self.build)()))
             .clone()
@@ -400,6 +413,7 @@ mod tests {
             (Error::bulkhead_full(), false),
             (Error::rate_limited(), false),
             (Error::rate_limit(Some(3)), false),
+            (Error::cancelled(), false),
             (
                 Error::network(std::io::Error::other("connection refused")),
                 true,

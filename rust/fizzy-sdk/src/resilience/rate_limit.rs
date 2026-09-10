@@ -143,7 +143,13 @@ impl RateLimiter {
 
     /// Holds every call back for the given wait from now.
     pub fn set_retry_after_in(&self, wait: Duration) {
-        self.set_retry_after(self.clock.now() + wait);
+        // A wait too long to be a moment is held as the longest moment there is.
+        let until = self
+            .clock
+            .now()
+            .checked_add(wait)
+            .unwrap_or_else(|| self.clock.now() + Duration::from_secs(u32::MAX.into()));
+        self.set_retry_after(until);
     }
 
     /// How much of the wait Fizzy asked for is left, and zero when it asked for none.
@@ -194,7 +200,7 @@ impl RateLimiter {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used)]
+#[allow(clippy::unwrap_used, clippy::float_cmp)]
 mod tests {
     use super::super::{advance, test_clock};
     use super::*;

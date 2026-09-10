@@ -62,6 +62,26 @@ pub struct RequestResult<'a> {
     pub retry_after: Option<u64>,
 }
 
+impl<'a> RequestResult<'a> {
+    /// A request that ended in `error`, whether or not it is about to be resent.
+    pub(crate) fn failed(
+        status: Option<StatusCode>,
+        duration: Duration,
+        error: &'a Error,
+        retryable: bool,
+        retry_after: Option<u64>,
+    ) -> RequestResult<'a> {
+        RequestResult {
+            status,
+            duration,
+            error: Some(error),
+            from_cache: false,
+            retryable,
+            retry_after,
+        }
+    }
+}
+
 /// Whatever [`Hooks::on_operation_start`] hands the matching [`Hooks::on_operation_end`].
 pub type OperationState = Option<Box<dyn Any + Send>>;
 
@@ -119,6 +139,11 @@ pub trait Hooks: Send + Sync {
         None
     }
 
+    /// Told that an operation this implementation admitted through its gate will not start
+    /// after all: a later member of a [`ChainHooks`] refused it. Whatever the gate set aside
+    /// for the operation is given back here.
+    fn on_operation_abandoned(&self, _op: &OperationInfo) {}
+
     /// Told how the operation ended and how long the whole of it took, requests, waits
     /// and all.
     fn on_operation_end(
@@ -155,6 +180,10 @@ impl<H: Hooks + ?Sized> Hooks for Arc<H> {
 
     fn on_operation_start(&self, op: &OperationInfo) -> OperationState {
         (**self).on_operation_start(op)
+    }
+
+    fn on_operation_abandoned(&self, op: &OperationInfo) {
+        (**self).on_operation_abandoned(op);
     }
 
     fn on_operation_end(
@@ -224,10 +253,21 @@ impl Hooks for ChainHooks {
     /// member that implements its separate gating interface; here gating is part of
     /// [`Hooks`] itself, so the chain stops at whichever member refuses.
     async fn on_operation_gate(&self, op: &OperationInfo) -> Result<(), Error> {
-        for hook in &self.hooks {
-            hook.on_operation_gate(op).await?;
+        for (admitted, hook) in self.hooks.iter().enumerate() {
+            if let Err(refusal) = hook.on_operation_gate(op).await {
+                for earlier in self.hooks[..admitted].iter().rev() {
+                    earlier.on_operation_abandoned(op);
+                }
+                return Err(refusal);
+            }
         }
         Ok(())
+    }
+
+    fn on_operation_abandoned(&self, op: &OperationInfo) {
+        for hook in self.hooks.iter().rev() {
+            hook.on_operation_abandoned(op);
+        }
     }
 
     /// Keeps each member's own state, so [`ChainHooks::on_operation_end`] can hand every
@@ -399,7 +439,7 @@ mod tests {
     }
 
     impl Recorder {
-        fn record(&self, event: String) {
+        fn record(&self, event: &str) {
             self.entries
                 .lock()
                 .unwrap()
@@ -410,12 +450,12 @@ mod tests {
     #[async_trait]
     impl Hooks for Recorder {
         async fn on_operation_gate(&self, op: &OperationInfo) -> Result<(), Error> {
-            self.record(format!("gate {}.{}", op.service, op.operation));
+            self.record(&format!("gate {}.{}", op.service, op.operation));
             Ok(())
         }
 
         fn on_operation_start(&self, op: &OperationInfo) -> OperationState {
-            self.record(format!("start {}.{}", op.service, op.operation));
+            self.record(&format!("start {}.{}", op.service, op.operation));
             Some(Box::new(self.name.to_string()))
         }
 
@@ -430,22 +470,22 @@ mod tests {
                 Some(name) => *name,
                 None => "nothing".to_string(),
             };
-            self.record(format!(
+            self.record(&format!(
                 "end {}.{} carrying {carried}",
                 op.service, op.operation
             ));
         }
 
         fn on_request_start(&self, info: &RequestInfo) {
-            self.record(format!("request start {}", info.attempt));
+            self.record(&format!("request start {}", info.attempt));
         }
 
         fn on_request_end(&self, _info: &RequestInfo, result: &RequestResult<'_>) {
-            self.record(format!("request end {}", result.status.unwrap().as_u16()));
+            self.record(&format!("request end {}", result.status.unwrap().as_u16()));
         }
 
         fn on_retry(&self, _info: &RequestInfo, next_attempt: u32, _cause: &Error) {
-            self.record(format!("retry {next_attempt}"));
+            self.record(&format!("retry {next_attempt}"));
         }
     }
 

@@ -5,7 +5,13 @@ use url::Url;
 use crate::error::Error;
 use crate::http::{HeaderMap, HeaderValue};
 
-const SENSITIVE_HEADERS: &[&str] = &["authorization", "cookie", "set-cookie", "x-csrf-token"];
+const SENSITIVE_HEADERS: &[&str] = &[
+    "authorization",
+    "proxy-authorization",
+    "cookie",
+    "set-cookie",
+    "x-csrf-token",
+];
 
 /// Refuses an endpoint that would carry credentials over plain HTTP, unless it is on this
 /// machine.
@@ -13,7 +19,11 @@ pub fn require_secure_endpoint(url: &Url) -> Result<(), Error> {
     if url.scheme() == "https" || (url.scheme() == "http" && is_localhost(url)) {
         Ok(())
     } else {
-        Err(Error::usage(format!("{url} must use HTTPS")))
+        // Only the origin is named: a pasted URL may carry credentials or a query.
+        Err(Error::usage(format!(
+            "{} must use HTTPS",
+            url.origin().ascii_serialization()
+        )))
     }
 }
 
@@ -67,6 +77,11 @@ mod tests {
         assert!(require_secure_endpoint(&Url::parse("http://app.localhost").unwrap()).is_ok());
         assert!(require_secure_endpoint(&Url::parse("https://fizzy.do").unwrap()).is_ok());
         assert!(require_secure_endpoint(&Url::parse("http://evil.example.com").unwrap()).is_err());
+        let error = require_secure_endpoint(
+            &Url::parse("http://user:s3cret@evil.example.com/x?t=s3cret").unwrap(),
+        )
+        .unwrap_err();
+        assert!(!error.to_string().contains("s3cret"), "{error}");
     }
 
     #[test]
@@ -91,10 +106,15 @@ mod tests {
         let mut headers = HeaderMap::new();
         headers.insert("Authorization", HeaderValue::from_static("Bearer secret"));
         headers.insert("Cookie", HeaderValue::from_static("session_token=secret"));
+        headers.insert(
+            "Proxy-Authorization",
+            HeaderValue::from_static("Basic secret"),
+        );
         headers.insert("Accept", HeaderValue::from_static("application/json"));
         let redacted = redact_headers(&headers);
         assert_eq!(redacted["authorization"], "[REDACTED]");
         assert_eq!(redacted["cookie"], "[REDACTED]");
+        assert_eq!(redacted["proxy-authorization"], "[REDACTED]");
         assert_eq!(redacted["accept"], "application/json");
     }
 }

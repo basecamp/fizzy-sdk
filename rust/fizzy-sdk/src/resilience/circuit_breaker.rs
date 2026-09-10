@@ -138,6 +138,9 @@ impl CircuitBreaker {
         inner.record(true);
         inner.state = match inner.state {
             State::HalfOpen { successes } if successes + 1 >= self.config.success_threshold => {
+                // The window that opened the circuit is history: closing it means starting
+                // the count again, or the next single failure would reopen it on the old rate.
+                inner.reset_window();
                 State::Closed { failures: 0 }
             }
             State::HalfOpen { successes } => State::HalfOpen {
@@ -186,6 +189,12 @@ impl CircuitBreaker {
 }
 
 impl Inner {
+    fn reset_window(&mut self) {
+        self.window.fill(true);
+        self.index = 0;
+        self.filled = false;
+    }
+
     fn record(&mut self, success: bool) {
         self.window[self.index] = success;
         self.index = (self.index + 1) % self.window.len();
@@ -196,6 +205,7 @@ impl Inner {
 
     /// The share of the window that failed, as a percentage. A window that has not been
     /// round once yet has nothing to say, so it answers zero.
+    #[allow(clippy::cast_precision_loss)] // window sizes are small counts, exact in an f64
     fn failure_rate(&self) -> f64 {
         if self.filled {
             let failures = self.window.iter().filter(|success| !**success).count();
@@ -318,6 +328,38 @@ mod tests {
 
         assert_eq!("open", breaker.state());
         assert!(!breaker.allow());
+    }
+
+    #[test]
+    fn closing_the_circuit_starts_the_window_afresh() {
+        let (clock, now) = test_clock();
+        let breaker = CircuitBreaker::new(CircuitBreakerConfig {
+            failure_threshold: 100,
+            success_threshold: 2,
+            failure_rate_threshold: 50.0,
+            sliding_window_size: 4,
+            open_timeout: Duration::from_millis(100),
+            clock,
+        });
+
+        breaker.record_success();
+        breaker.record_success();
+        breaker.record_failure();
+        breaker.record_failure();
+        assert_eq!("open", breaker.state());
+        advance(&now, Duration::from_millis(200));
+        assert!(breaker.allow());
+        breaker.record_success();
+        breaker.record_success();
+        assert_eq!("closed", breaker.state());
+
+        breaker.record_failure();
+
+        assert_eq!(
+            "closed",
+            breaker.state(),
+            "one failure after closing is not a full bad window"
+        );
     }
 
     /// Failures spread out among successes never reach the consecutive threshold, which is

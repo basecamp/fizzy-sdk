@@ -27,6 +27,8 @@ pub struct Naming {
     operation_methods: BTreeMap<String, String>,
     #[serde(default)]
     type_names: BTreeMap<String, String>,
+    #[serde(default)]
+    sensitive_fields: Vec<String>,
 }
 
 const KEYWORDS: &[&str] = &[
@@ -82,6 +84,14 @@ impl Naming {
         } else {
             Ok(method)
         }
+    }
+
+    /// Whether `names.toml` marks a field sensitive that the model does not: a token or a
+    /// signing secret the spec has yet to annotate. Written as `Schema.field`.
+    pub fn is_sensitive(&self, schema: &str, field: &str) -> bool {
+        self.sensitive_fields
+            .iter()
+            .any(|entry| entry == &format!("{schema}.{field}"))
     }
 
     /// What a schema is called in Rust. A shape whose model name collides with something
@@ -185,7 +195,11 @@ mod tests {
     fn a_method_that_comes_out_empty_or_a_keyword_needs_an_override() {
         let naming = Naming::default();
         assert!(naming.method_for("Boards", "boards").is_err());
-        assert!(naming.method_for("MoveCard", "cards").unwrap() == "move");
+        assert!(naming.method_for("MoveCard", "cards").is_err());
+        assert_eq!(
+            naming.method_for("MoveColumnLeft", "columns").unwrap(),
+            "move_left"
+        );
     }
 
     #[test]
