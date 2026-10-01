@@ -11,7 +11,7 @@ let package = Package(
         .library(name: "Fizzy", targets: ["Fizzy"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-crypto.git", from: "4.3.1"),
+        .package(url: "https://github.com/apple/swift-crypto.git", from: "5.0.0"),
     ],
     targets: [
         .target(
