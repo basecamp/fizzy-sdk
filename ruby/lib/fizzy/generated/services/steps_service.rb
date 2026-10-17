@@ -40,7 +40,7 @@ module Fizzy
         end
       end
 
-      # update operation
+      # Updates a step. Send at least one of content or completed: the controller expects a `step` object, so an empty body is a 400.
       # @param account_id [String] account id ID
       # @param card_number [Integer] card number ID
       # @param step_id [String] step id ID

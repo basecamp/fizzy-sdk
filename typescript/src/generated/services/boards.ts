@@ -15,6 +15,7 @@ export interface CreateBoardRequest {
   /** Display name */
   name: string;
   allAccess?: boolean;
+  /** Days of inactivity before a card is auto-postponed. One of 3, 7, 11, 30, 90 or 365 (Entropy::AUTO_POSTPONE_PERIODS_IN_DAYS); any other value is rejected with 422. */
   autoPostponePeriodInDays?: number;
   publicDescription?: string;
 }
@@ -23,8 +24,10 @@ export interface UpdateBoardRequest {
   /** Display name */
   name?: string;
   allAccess?: boolean;
+  /** Days of inactivity before a card is auto-postponed. One of 3, 7, 11, 30, 90 or 365 (Entropy::AUTO_POSTPONE_PERIODS_IN_DAYS); any other value is rejected with 422. */
   autoPostponePeriodInDays?: number;
   publicDescription?: string;
+  /** Replaces the board's membership: users listed are granted access and every current member not listed loses it. Omit it to leave access unchanged. It can't be sent alone (see the operation). */
   userIds?: string[];
 }
 
@@ -103,7 +106,7 @@ export class BoardsService extends BaseService {
   }
 
   /**
-   * UpdateBoard
+   * Updates a board. Send at least one of name, all_access, auto_postpone_period_in_days or public_description: the controller expects a `board` object, so a body without any of them (including one carrying only user_ids) is a 400.
    */
   async update(boardId: string, body?: UpdateBoardRequest): Promise<Board> {
     return this.request(

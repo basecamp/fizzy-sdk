@@ -1,7 +1,7 @@
 {
   "$schema": "https://fizzy.do/schemas/sdk-metadata.json",
   "version": "1.0.0",
-  "generated": "2026-06-01T02:39:56Z",
+  "generated": "2026-10-17T08:58:07Z",
   "operations": {
     "ListAccessTokens": {
       "retry": {
@@ -154,17 +154,10 @@
     },
     "ResetJoinCode": {
       "retry": {
-        "maxAttempts": 3,
-        "baseDelayMs": 1000,
-        "backoff": "exponential",
-        "retryOn": [
-          429,
-          500,
-          503
-        ]
-      },
-      "idempotent": {
-        "natural": true
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "GetAccountSettings": {
@@ -834,17 +827,10 @@
     },
     "PostponeCard": {
       "retry": {
-        "maxAttempts": 3,
-        "baseDelayMs": 1000,
-        "backoff": "exponential",
-        "retryOn": [
-          429,
-          500,
-          503
-        ]
-      },
-      "idempotent": {
-        "natural": true
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "PinCard": {
@@ -864,17 +850,10 @@
     },
     "UnpinCard": {
       "retry": {
-        "maxAttempts": 3,
-        "baseDelayMs": 1000,
-        "backoff": "exponential",
-        "retryOn": [
-          429,
-          500,
-          503
-        ]
-      },
-      "idempotent": {
-        "natural": true
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "PublishCard": {
@@ -1030,32 +1009,18 @@
     },
     "TriageCard": {
       "retry": {
-        "maxAttempts": 3,
-        "baseDelayMs": 1000,
-        "backoff": "exponential",
-        "retryOn": [
-          429,
-          500,
-          503
-        ]
-      },
-      "idempotent": {
-        "natural": true
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "UnTriageCard": {
       "retry": {
-        "maxAttempts": 3,
-        "baseDelayMs": 1000,
-        "backoff": "exponential",
-        "retryOn": [
-          429,
-          500,
-          503
-        ]
-      },
-      "idempotent": {
-        "natural": true
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "WatchCard": {
@@ -1090,32 +1055,18 @@
     },
     "MoveColumnLeft": {
       "retry": {
-        "maxAttempts": 3,
-        "baseDelayMs": 1000,
-        "backoff": "exponential",
-        "retryOn": [
-          429,
-          500,
-          503
-        ]
-      },
-      "idempotent": {
-        "natural": true
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "MoveColumnRight": {
       "retry": {
-        "maxAttempts": 3,
-        "baseDelayMs": 1000,
-        "backoff": "exponential",
-        "retryOn": [
-          429,
-          500,
-          503
-        ]
-      },
-      "idempotent": {
-        "natural": true
+        "maxAttempts": 1,
+        "baseDelayMs": null,
+        "backoff": null,
+        "retryOn": null
       }
     },
     "RegisterDevice": {

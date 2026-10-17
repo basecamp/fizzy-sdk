@@ -95,7 +95,7 @@ export class StepsService extends BaseService {
   }
 
   /**
-   * UpdateStep
+   * Updates a step. Send at least one of content or completed: the controller expects a `step` object, so an empty body is a 400.
    */
   async update(cardNumber: number, stepId: string, body?: UpdateStepRequest): Promise<Step> {
     return this.request(

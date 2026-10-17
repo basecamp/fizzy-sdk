@@ -14,14 +14,14 @@ export type Column = components["schemas"]["Column"];
 export interface CreateColumnRequest {
   /** Display name */
   name: string;
-  /** Color value */
+  /** The column color, as its CSS value: "var(--color-card-default)" (Blue), "var(--color-card-1)" (Gray), "var(--color-card-2)" (Tan), "var(--color-card-3)" (Yellow), "var(--color-card-4)" (Lime), "var(--color-card-5)" (Aqua), "var(--color-card-6)" (Violet), "var(--color-card-7)" (Purple) or "var(--color-card-8)" (Pink) (Color::COLORS). Any other value is stored but reads back as Blue. */
   color?: string;
 }
 
 export interface UpdateColumnRequest {
   /** Display name */
   name?: string;
-  /** Color value */
+  /** The column color, as its CSS value: "var(--color-card-default)" (Blue), "var(--color-card-1)" (Gray), "var(--color-card-2)" (Tan), "var(--color-card-3)" (Yellow), "var(--color-card-4)" (Lime), "var(--color-card-5)" (Aqua), "var(--color-card-6)" (Violet), "var(--color-card-7)" (Purple) or "var(--color-card-8)" (Pink) (Color::COLORS). Any other value is stored but reads back as Blue. */
   color?: string;
 }
 
@@ -97,7 +97,7 @@ export class ColumnsService extends BaseService {
   }
 
   /**
-   * UpdateColumn
+   * Updates a column. Send at least one of name or color: the controller expects a `column` object, so an empty body is a 400.
    */
   async update(boardId: string, columnId: string, body?: UpdateColumnRequest): Promise<Column> {
     return this.request(

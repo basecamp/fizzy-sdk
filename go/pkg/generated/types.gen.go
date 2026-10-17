@@ -141,6 +141,7 @@ type BoardAccesses struct {
 
 // BulkReadNotificationsRequestContent defines model for BulkReadNotificationsRequestContent.
 type BulkReadNotificationsRequestContent struct {
+	// NotificationIds Ignored: Notifications::BulkReadingsController reads no ids and marks every unread notification read whatever this holds.
 	NotificationIds []string `json:"notification_ids,omitempty"`
 }
 
@@ -228,7 +229,9 @@ type CreateAccountExportResponseContent = AccountExport
 
 // CreateBoardRequestContent defines model for CreateBoardRequestContent.
 type CreateBoardRequestContent struct {
-	AllAccess                bool   `json:"all_access,omitempty"`
+	AllAccess bool `json:"all_access,omitempty"`
+
+	// AutoPostponePeriodInDays Days of inactivity before a card is auto-postponed. One of 3, 7, 11, 30, 90 or 365 (Entropy::AUTO_POSTPONE_PERIODS_IN_DAYS); any other value is rejected with 422.
 	AutoPostponePeriodInDays int32  `json:"auto_postpone_period_in_days,omitempty"`
 	Name                     string `json:"name"`
 	PublicDescription        string `json:"public_description,omitempty"`
@@ -247,15 +250,15 @@ type CreateCardReactionResponseContent = Reaction
 
 // CreateCardRequestContent defines model for CreateCardRequestContent.
 type CreateCardRequestContent struct {
-	AssigneeIds  []string `json:"assignee_ids,omitempty"`
-	BoardId      string   `json:"board_id,omitempty"`
-	ColumnId     string   `json:"column_id,omitempty"`
-	CreatedAt    string   `json:"created_at,omitempty"`
-	Description  string   `json:"description,omitempty"`
-	Image        string   `json:"image,omitempty"`
-	LastActiveAt string   `json:"last_active_at,omitempty"`
-	TagNames     []string `json:"tag_names,omitempty"`
-	Title        string   `json:"title"`
+	// BoardId The board to create the card on. Required: CardsController finds it unconditionally.
+	BoardId     string `json:"board_id"`
+	CreatedAt   string `json:"created_at,omitempty"`
+	Description string `json:"description,omitempty"`
+
+	// Image The signed blob id of an image uploaded with CreateDirectUpload. A caller that can't make the upload has no value to send here.
+	Image        string `json:"image,omitempty"`
+	LastActiveAt string `json:"last_active_at,omitempty"`
+	Title        string `json:"title"`
 }
 
 // CreateCardResponseContent defines model for CreateCardResponseContent.
@@ -263,6 +266,7 @@ type CreateCardResponseContent = Card
 
 // CreateColumnRequestContent defines model for CreateColumnRequestContent.
 type CreateColumnRequestContent struct {
+	// Color The column color, as its CSS value: "var(--color-card-default)" (Blue), "var(--color-card-1)" (Gray), "var(--color-card-2)" (Tan), "var(--color-card-3)" (Yellow), "var(--color-card-4)" (Lime), "var(--color-card-5)" (Aqua), "var(--color-card-6)" (Violet), "var(--color-card-7)" (Purple) or "var(--color-card-8)" (Pink) (Color::COLORS). Any other value is stored but reads back as Blue.
 	Color string `json:"color,omitempty"`
 	Name  string `json:"name"`
 }
@@ -327,7 +331,9 @@ type CreateUserDataExportResponseContent = DataExport
 
 // CreateWebhookRequestContent defines model for CreateWebhookRequestContent.
 type CreateWebhookRequestContent struct {
-	Name              string   `json:"name"`
+	Name string `json:"name"`
+
+	// SubscribedActions The events to deliver, from: "card_assigned", "card_closed", "card_postponed", "card_auto_postponed", "card_board_changed", "card_published", "card_reopened", "card_sent_back_to_triage", "card_triaged", "card_unassigned" and "comment_created" (Webhook::PERMITTED_ACTIONS). Unknown actions are dropped silently. A webhook created without any receives no deliveries.
 	SubscribedActions []string `json:"subscribed_actions,omitempty"`
 	Url               string   `json:"url"`
 }
@@ -497,8 +503,8 @@ type ListWebhooksResponseContent = []Webhook
 
 // MoveCardRequestContent defines model for MoveCardRequestContent.
 type MoveCardRequestContent struct {
-	BoardId  string `json:"board_id"`
-	ColumnId string `json:"column_id,omitempty"`
+	// BoardId The destination board. Cards::BoardsController reads no column.
+	BoardId string `json:"board_id"`
 }
 
 // MoveCardResponseContent defines model for MoveCardResponseContent.
@@ -615,12 +621,14 @@ type Tag struct {
 
 // TagCardRequestContent defines model for TagCardRequestContent.
 type TagCardRequestContent struct {
+	// TagTitle The tag's title; surrounding whitespace and a leading "#" are stripped.
 	TagTitle string `json:"tag_title"`
 }
 
 // TriageCardRequestContent defines model for TriageCardRequestContent.
 type TriageCardRequestContent struct {
-	ColumnId string `json:"column_id,omitempty"`
+	// ColumnId A column on the card's board. Required: the controller finds it unconditionally.
+	ColumnId string `json:"column_id"`
 }
 
 // UnauthorizedErrorResponseContent defines model for UnauthorizedErrorResponseContent.
@@ -630,7 +638,8 @@ type UnauthorizedErrorResponseContent struct {
 
 // UpdateAccountEntropyRequestContent defines model for UpdateAccountEntropyRequestContent.
 type UpdateAccountEntropyRequestContent struct {
-	AutoPostponePeriodInDays int32 `json:"auto_postpone_period_in_days,omitempty"`
+	// AutoPostponePeriodInDays Days of inactivity before a card is auto-postponed. One of 3, 7, 11, 30, 90 or 365 (Entropy::AUTO_POSTPONE_PERIODS_IN_DAYS); any other value is rejected with 422. Required: an empty body is a 400.
+	AutoPostponePeriodInDays int32 `json:"auto_postpone_period_in_days"`
 }
 
 // UpdateAccountEntropyResponseContent defines model for UpdateAccountEntropyResponseContent.
@@ -638,12 +647,14 @@ type UpdateAccountEntropyResponseContent = AccountSettings
 
 // UpdateAccountSettingsRequestContent defines model for UpdateAccountSettingsRequestContent.
 type UpdateAccountSettingsRequestContent struct {
-	Name string `json:"name,omitempty"`
+	// Name The account name. Required: the controller expects an `account` object, so an empty body is a 400.
+	Name string `json:"name"`
 }
 
 // UpdateBoardEntropyRequestContent defines model for UpdateBoardEntropyRequestContent.
 type UpdateBoardEntropyRequestContent struct {
-	AutoPostponePeriodInDays int32 `json:"auto_postpone_period_in_days,omitempty"`
+	// AutoPostponePeriodInDays Days of inactivity before a card is auto-postponed. One of 3, 7, 11, 30, 90 or 365 (Entropy::AUTO_POSTPONE_PERIODS_IN_DAYS); any other value is rejected with 422. Required: an empty body is a 400.
+	AutoPostponePeriodInDays int32 `json:"auto_postpone_period_in_days"`
 }
 
 // UpdateBoardEntropyResponseContent defines model for UpdateBoardEntropyResponseContent.
@@ -651,16 +662,21 @@ type UpdateBoardEntropyResponseContent = Board
 
 // UpdateBoardInvolvementRequestContent defines model for UpdateBoardInvolvementRequestContent.
 type UpdateBoardInvolvementRequestContent struct {
-	Involvement string `json:"involvement,omitempty"`
+	// Involvement The caller's involvement with the board: "access_only" or "watching" (Access#involvement). Required: the controller assigns it unconditionally.
+	Involvement string `json:"involvement"`
 }
 
 // UpdateBoardRequestContent defines model for UpdateBoardRequestContent.
 type UpdateBoardRequestContent struct {
-	AllAccess                bool     `json:"all_access,omitempty"`
-	AutoPostponePeriodInDays int32    `json:"auto_postpone_period_in_days,omitempty"`
-	Name                     string   `json:"name,omitempty"`
-	PublicDescription        string   `json:"public_description,omitempty"`
-	UserIds                  []string `json:"user_ids,omitempty"`
+	AllAccess bool `json:"all_access,omitempty"`
+
+	// AutoPostponePeriodInDays Days of inactivity before a card is auto-postponed. One of 3, 7, 11, 30, 90 or 365 (Entropy::AUTO_POSTPONE_PERIODS_IN_DAYS); any other value is rejected with 422.
+	AutoPostponePeriodInDays int32  `json:"auto_postpone_period_in_days,omitempty"`
+	Name                     string `json:"name,omitempty"`
+	PublicDescription        string `json:"public_description,omitempty"`
+
+	// UserIds Replaces the board's membership: users listed are granted access and every current member not listed loses it. Omit it to leave access unchanged. It can't be sent alone (see the operation).
+	UserIds []string `json:"user_ids,omitempty"`
 }
 
 // UpdateBoardResponseContent defines model for UpdateBoardResponseContent.
@@ -668,11 +684,12 @@ type UpdateBoardResponseContent = Board
 
 // UpdateCardRequestContent defines model for UpdateCardRequestContent.
 type UpdateCardRequestContent struct {
-	ColumnId    string `json:"column_id,omitempty"`
 	CreatedAt   string `json:"created_at,omitempty"`
 	Description string `json:"description,omitempty"`
-	Image       string `json:"image,omitempty"`
-	Title       string `json:"title,omitempty"`
+
+	// Image The signed blob id of an image uploaded with CreateDirectUpload. A caller that can't make the upload has no value to send here.
+	Image string `json:"image,omitempty"`
+	Title string `json:"title,omitempty"`
 }
 
 // UpdateCardResponseContent defines model for UpdateCardResponseContent.
@@ -680,6 +697,7 @@ type UpdateCardResponseContent = Card
 
 // UpdateColumnRequestContent defines model for UpdateColumnRequestContent.
 type UpdateColumnRequestContent struct {
+	// Color The column color, as its CSS value: "var(--color-card-default)" (Blue), "var(--color-card-1)" (Gray), "var(--color-card-2)" (Tan), "var(--color-card-3)" (Yellow), "var(--color-card-4)" (Lime), "var(--color-card-5)" (Aqua), "var(--color-card-6)" (Violet), "var(--color-card-7)" (Purple) or "var(--color-card-8)" (Pink) (Color::COLORS). Any other value is stored but reads back as Blue.
 	Color string `json:"color,omitempty"`
 	Name  string `json:"name,omitempty"`
 }
@@ -697,17 +715,20 @@ type UpdateCommentResponseContent = Comment
 
 // UpdateJoinCodeRequestContent defines model for UpdateJoinCodeRequestContent.
 type UpdateJoinCodeRequestContent struct {
-	UsageLimit int32 `json:"usage_limit,omitempty"`
+	// UsageLimit How many times the join code can be redeemed, at most 10,000,000,000. Required: an empty body is a 400.
+	UsageLimit int32 `json:"usage_limit"`
 }
 
 // UpdateMyTimezoneRequestContent defines model for UpdateMyTimezoneRequestContent.
 type UpdateMyTimezoneRequestContent struct {
+	// TimezoneName An IANA or Rails time zone name, such as "America/Chicago" or "Central Time (US & Canada)".
 	TimezoneName string `json:"timezone_name"`
 }
 
 // UpdateNotificationSettingsRequestContent defines model for UpdateNotificationSettingsRequestContent.
 type UpdateNotificationSettingsRequestContent struct {
-	BundleEmailFrequency string `json:"bundle_email_frequency,omitempty"`
+	// BundleEmailFrequency "never", "every_few_hours", "daily" or "weekly" (User::Settings#bundle_email_frequency). Required: an empty body is a 400.
+	BundleEmailFrequency string `json:"bundle_email_frequency"`
 }
 
 // UpdateStepRequestContent defines model for UpdateStepRequestContent.
@@ -721,7 +742,8 @@ type UpdateStepResponseContent = Step
 
 // UpdateUserRequestContent defines model for UpdateUserRequestContent.
 type UpdateUserRequestContent struct {
-	Name string `json:"name,omitempty"`
+	// Name Required: the controller expects a `user` object, so an empty body is a 400.
+	Name string `json:"name"`
 }
 
 // UpdateUserResponseContent defines model for UpdateUserResponseContent.
@@ -729,14 +751,16 @@ type UpdateUserResponseContent = User
 
 // UpdateUserRoleRequestContent defines model for UpdateUserRoleRequestContent.
 type UpdateUserRoleRequestContent struct {
+	// Role "member" or "admin". Any other value, including "owner", sets the role to "member" (Users::RolesController#role_params), so a typo demotes.
 	Role string `json:"role"`
 }
 
 // UpdateWebhookRequestContent defines model for UpdateWebhookRequestContent.
 type UpdateWebhookRequestContent struct {
-	Name              string   `json:"name,omitempty"`
+	Name string `json:"name,omitempty"`
+
+	// SubscribedActions The events to deliver, from: "card_assigned", "card_closed", "card_postponed", "card_auto_postponed", "card_board_changed", "card_published", "card_reopened", "card_sent_back_to_triage", "card_triaged", "card_unassigned" and "comment_created" (Webhook::PERMITTED_ACTIONS). Unknown actions are dropped silently. The list replaces the current subscription.
 	SubscribedActions []string `json:"subscribed_actions,omitempty"`
-	Url               string   `json:"url,omitempty"`
 }
 
 // UpdateWebhookResponseContent defines model for UpdateWebhookResponseContent.
@@ -831,24 +855,29 @@ type ListBoardAccessesParams struct {
 
 // ListCardsParams defines parameters for ListCards.
 type ListCardsParams struct {
-	BoardIds         []string `form:"board_ids[],omitempty" json:"board_ids[],omitempty"`
-	TagIds           []string `form:"tag_ids[],omitempty" json:"tag_ids[],omitempty"`
-	AssigneeIds      []string `form:"assignee_ids[],omitempty" json:"assignee_ids[],omitempty"`
-	CreatorIds       []string `form:"creator_ids[],omitempty" json:"creator_ids[],omitempty"`
-	CloserIds        []string `form:"closer_ids[],omitempty" json:"closer_ids[],omitempty"`
-	CardIds          []string `form:"card_ids[],omitempty" json:"card_ids[],omitempty"`
-	ColumnIds        []string `form:"column_ids[],omitempty" json:"column_ids[],omitempty"`
-	IndexedBy        string   `form:"indexed_by,omitempty" json:"indexed_by,omitempty"`
-	SortedBy         string   `form:"sorted_by,omitempty" json:"sorted_by,omitempty"`
-	AssignmentStatus string   `form:"assignment_status,omitempty" json:"assignment_status,omitempty"`
-	Creation         string   `form:"creation,omitempty" json:"creation,omitempty"`
-	Closure          string   `form:"closure,omitempty" json:"closure,omitempty"`
-	Terms            []string `form:"terms[],omitempty" json:"terms[],omitempty"`
-}
+	BoardIds    []string `form:"board_ids[],omitempty" json:"board_ids[],omitempty"`
+	TagIds      []string `form:"tag_ids[],omitempty" json:"tag_ids[],omitempty"`
+	AssigneeIds []string `form:"assignee_ids[],omitempty" json:"assignee_ids[],omitempty"`
+	CreatorIds  []string `form:"creator_ids[],omitempty" json:"creator_ids[],omitempty"`
+	CloserIds   []string `form:"closer_ids[],omitempty" json:"closer_ids[],omitempty"`
+	CardIds     []string `form:"card_ids[],omitempty" json:"card_ids[],omitempty"`
+	ColumnIds   []string `form:"column_ids[],omitempty" json:"column_ids[],omitempty"`
 
-// ListNotificationsParams defines parameters for ListNotifications.
-type ListNotificationsParams struct {
-	Read bool `form:"read,omitempty" json:"read,omitempty"`
+	// IndexedBy Which cards to list: "all" (default, open cards), "maybe" (awaiting triage), "closed", "not_now", "stalled", "postponing_soon" or "golden". Any other value lists the same cards as "all".
+	IndexedBy string `form:"indexed_by,omitempty" json:"indexed_by,omitempty"`
+
+	// SortedBy "latest" (default, most recently active first), "newest" or "oldest" (by creation). Any other value sorts as "latest".
+	SortedBy string `form:"sorted_by,omitempty" json:"sorted_by,omitempty"`
+
+	// AssignmentStatus "unassigned" lists only cards with no assignee; any other value is ignored.
+	AssignmentStatus string `form:"assignment_status,omitempty" json:"assignment_status,omitempty"`
+
+	// Creation Created within: "today", "yesterday", "thisweek", "lastweek", "thismonth", "lastmonth", "thisyear" or "lastyear" (TimeWindowParser); any other value is ignored.
+	Creation string `form:"creation,omitempty" json:"creation,omitempty"`
+
+	// Closure Closed within: "today", "yesterday", "thisweek", "lastweek", "thismonth", "lastmonth", "thisyear" or "lastyear" (TimeWindowParser); any other value is ignored.
+	Closure string   `form:"closure,omitempty" json:"closure,omitempty"`
+	Terms   []string `form:"terms[],omitempty" json:"terms[],omitempty"`
 }
 
 // GetNotificationTrayParams defines parameters for GetNotificationTray.

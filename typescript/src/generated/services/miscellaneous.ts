@@ -16,28 +16,33 @@ export interface CreateAccessTokenRequest {
 }
 
 export interface UpdateAccountEntropyRequest {
-  autoPostponePeriodInDays?: number;
+  /** Days of inactivity before a card is auto-postponed. One of 3, 7, 11, 30, 90 or 365 (Entropy::AUTO_POSTPONE_PERIODS_IN_DAYS); any other value is rejected with 422. Required: an empty body is a 400. */
+  autoPostponePeriodInDays: number;
 }
 
 export interface UpdateJoinCodeRequest {
-  usageLimit?: number;
+  /** How many times the join code can be redeemed, at most 10,000,000,000. Required: an empty body is a 400. */
+  usageLimit: number;
 }
 
 export interface UpdateAccountSettingsRequest {
-  /** Display name */
-  name?: string;
+  /** The account name. Required: the controller expects an `account` object, so an empty body is a 400. */
+  name: string;
 }
 
 export interface UpdateBoardEntropyRequest {
-  autoPostponePeriodInDays?: number;
+  /** Days of inactivity before a card is auto-postponed. One of 3, 7, 11, 30, 90 or 365 (Entropy::AUTO_POSTPONE_PERIODS_IN_DAYS); any other value is rejected with 422. Required: an empty body is a 400. */
+  autoPostponePeriodInDays: number;
 }
 
 export interface UpdateBoardInvolvementRequest {
-  involvement?: string;
+  /** The caller's involvement with the board: "access_only" or "watching" (Access#involvement). Required: the controller assigns it unconditionally. */
+  involvement: string;
 }
 
 export interface UpdateNotificationSettingsRequest {
-  bundleEmailFrequency?: string;
+  /** "never", "every_few_hours", "daily" or "weekly" (User::Settings#bundle_email_frequency). Required: an empty body is a 400. */
+  bundleEmailFrequency: string;
 }
 
 export interface CreatePushSubscriptionRequest {
@@ -47,6 +52,7 @@ export interface CreatePushSubscriptionRequest {
 }
 
 export interface UpdateUserRoleRequest {
+  /** "member" or "admin". Any other value, including "owner", sets the role to "member" (Users::RolesController#role_params), so a typo demotes. */
   role: string;
 }
 
@@ -105,7 +111,7 @@ export class MiscellaneousService extends BaseService {
   /**
    * UpdateAccountEntropy
    */
-  async updateAccountEntropy(body?: UpdateAccountEntropyRequest): Promise<components["schemas"]["AccountSettings"]> {
+  async updateAccountEntropy(body: UpdateAccountEntropyRequest): Promise<components["schemas"]["AccountSettings"]> {
     return this.request(
       {
         service: "Account entropy",
@@ -114,7 +120,7 @@ export class MiscellaneousService extends BaseService {
         isMutation: true,
       },
       () => this.client.PUT("/account/entropy.json" as never, {
-        body: { auto_postpone_period_in_days: body?.autoPostponePeriodInDays } as never,
+        body: { auto_postpone_period_in_days: body.autoPostponePeriodInDays } as never,
       } as never),
     );
   }
@@ -153,7 +159,7 @@ export class MiscellaneousService extends BaseService {
   }
 
   /**
-   * ResetJoinCode
+   * Replaces the join code with a newly generated one and resets its usage count. Each call mints a different code and invalidates the previous one, so a retry invalidates the code the first call issued: not idempotent.
    */
   async resetJoinCode(): Promise<void> {
     return this.request(
@@ -187,7 +193,7 @@ export class MiscellaneousService extends BaseService {
   /**
    * UpdateJoinCode
    */
-  async updateJoinCode(body?: UpdateJoinCodeRequest): Promise<void> {
+  async updateJoinCode(body: UpdateJoinCodeRequest): Promise<void> {
     return this.request(
       {
         service: "Join code",
@@ -196,7 +202,7 @@ export class MiscellaneousService extends BaseService {
         isMutation: true,
       },
       () => this.client.PATCH("/account/join_code.json" as never, {
-        body: { usage_limit: body?.usageLimit } as never,
+        body: { usage_limit: body.usageLimit } as never,
       } as never),
     );
   }
@@ -220,7 +226,7 @@ export class MiscellaneousService extends BaseService {
   /**
    * UpdateAccountSettings
    */
-  async updateAccountSettings(body?: UpdateAccountSettingsRequest): Promise<void> {
+  async updateAccountSettings(body: UpdateAccountSettingsRequest): Promise<void> {
     return this.request(
       {
         service: "Account settings",
@@ -229,7 +235,7 @@ export class MiscellaneousService extends BaseService {
         isMutation: true,
       },
       () => this.client.PATCH("/account/settings.json" as never, {
-        body: { name: body?.name } as never,
+        body: { name: body.name } as never,
       } as never),
     );
   }
@@ -237,7 +243,7 @@ export class MiscellaneousService extends BaseService {
   /**
    * UpdateBoardEntropy
    */
-  async updateBoardEntropy(boardId: string, body?: UpdateBoardEntropyRequest): Promise<components["schemas"]["Board"]> {
+  async updateBoardEntropy(boardId: string, body: UpdateBoardEntropyRequest): Promise<components["schemas"]["Board"]> {
     return this.request(
       {
         service: "Board entropy",
@@ -247,7 +253,7 @@ export class MiscellaneousService extends BaseService {
       },
       () => this.client.PUT("/boards/{boardId}/entropy.json" as never, {
         params: { path: { boardId } },
-        body: { auto_postpone_period_in_days: body?.autoPostponePeriodInDays } as never,
+        body: { auto_postpone_period_in_days: body.autoPostponePeriodInDays } as never,
       } as never),
     );
   }
@@ -255,7 +261,7 @@ export class MiscellaneousService extends BaseService {
   /**
    * UpdateBoardInvolvement
    */
-  async updateBoardInvolvement(boardId: string, body?: UpdateBoardInvolvementRequest): Promise<void> {
+  async updateBoardInvolvement(boardId: string, body: UpdateBoardInvolvementRequest): Promise<void> {
     return this.request(
       {
         service: "Board involvement",
@@ -265,13 +271,13 @@ export class MiscellaneousService extends BaseService {
       },
       () => this.client.PATCH("/boards/{boardId}/involvement.json" as never, {
         params: { path: { boardId } },
-        body: { involvement: body?.involvement } as never,
+        body: { involvement: body.involvement } as never,
       } as never),
     );
   }
 
   /**
-   * MarkCardUnread
+   * Marks the caller's notification for the card unread. When the caller has no notification for the card, the call succeeds without changing anything.
    */
   async markCardUnread(cardNumber: number): Promise<void> {
     return this.request(
@@ -288,7 +294,7 @@ export class MiscellaneousService extends BaseService {
   }
 
   /**
-   * MarkCardRead
+   * Marks the caller's notification for the card read. When the caller has no notification for the card, the call succeeds without changing anything.
    */
   async markCardRead(cardNumber: number): Promise<void> {
     return this.request(
@@ -305,7 +311,7 @@ export class MiscellaneousService extends BaseService {
   }
 
   /**
-   * MoveColumnLeft
+   * Swaps the column with its left neighbor. Each call moves it again, so it is not idempotent; at the leftmost edge there is no neighbor and the call succeeds without changing anything.
    */
   async moveColumnLeft(columnId: string): Promise<void> {
     return this.request(
@@ -322,7 +328,7 @@ export class MiscellaneousService extends BaseService {
   }
 
   /**
-   * MoveColumnRight
+   * Swaps the column with its right neighbor. Each call moves it again, so it is not idempotent; at the rightmost edge there is no neighbor and the call succeeds without changing anything.
    */
   async moveColumnRight(columnId: string): Promise<void> {
     return this.request(
@@ -357,7 +363,7 @@ export class MiscellaneousService extends BaseService {
   /**
    * UpdateNotificationSettings
    */
-  async updateNotificationSettings(body?: UpdateNotificationSettingsRequest): Promise<void> {
+  async updateNotificationSettings(body: UpdateNotificationSettingsRequest): Promise<void> {
     return this.request(
       {
         service: "Notification settings",
@@ -366,7 +372,7 @@ export class MiscellaneousService extends BaseService {
         isMutation: true,
       },
       () => this.client.PATCH("/notifications/settings.json" as never, {
-        body: { bundle_email_frequency: body?.bundleEmailFrequency } as never,
+        body: { bundle_email_frequency: body.bundleEmailFrequency } as never,
       } as never),
     );
   }

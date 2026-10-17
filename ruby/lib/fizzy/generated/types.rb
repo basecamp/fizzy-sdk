@@ -365,16 +365,13 @@ module Fizzy
     CreateCardReactionResponseContent = Data.define
 
     # @generated
-    CreateCardRequestContent = Data.define(:title, :board_id, :column_id, :description, :assignee_ids, :tag_names, :image, :created_at, :last_active_at) do
+    CreateCardRequestContent = Data.define(:title, :board_id, :description, :image, :created_at, :last_active_at) do
       # @param data [Hash] raw JSON response
       def self.from_json(data)
         new(
           title: data["title"],
           board_id: data["board_id"],
-          column_id: data["column_id"],
           description: data["description"],
-          assignee_ids: data["assignee_ids"],
-          tag_names: data["tag_names"],
           image: data["image"],
           created_at: data["created_at"],
           last_active_at: data["last_active_at"]
@@ -700,12 +697,11 @@ module Fizzy
     ListWebhooksResponseContent = Data.define
 
     # @generated
-    MoveCardRequestContent = Data.define(:board_id, :column_id) do
+    MoveCardRequestContent = Data.define(:board_id) do
       # @param data [Hash] raw JSON response
       def self.from_json(data)
         new(
-          board_id: data["board_id"],
-          column_id: data["column_id"]
+          board_id: data["board_id"]
         )
       end
     end
@@ -986,13 +982,12 @@ module Fizzy
     UpdateBoardResponseContent = Data.define
 
     # @generated
-    UpdateCardRequestContent = Data.define(:title, :description, :column_id, :image, :created_at) do
+    UpdateCardRequestContent = Data.define(:title, :description, :image, :created_at) do
       # @param data [Hash] raw JSON response
       def self.from_json(data)
         new(
           title: data["title"],
           description: data["description"],
-          column_id: data["column_id"],
           image: data["image"],
           created_at: data["created_at"]
         )
@@ -1097,12 +1092,11 @@ module Fizzy
     end
 
     # @generated
-    UpdateWebhookRequestContent = Data.define(:name, :url, :subscribed_actions) do
+    UpdateWebhookRequestContent = Data.define(:name, :subscribed_actions) do
       # @param data [Hash] raw JSON response
       def self.from_json(data)
         new(
           name: data["name"],
-          url: data["url"],
           subscribed_actions: data["subscribed_actions"]
         )
       end

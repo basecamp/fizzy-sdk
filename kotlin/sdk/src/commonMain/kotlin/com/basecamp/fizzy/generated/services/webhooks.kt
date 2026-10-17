@@ -13,7 +13,7 @@ import kotlinx.serialization.json.JsonElement
 class WebhooksService(client: AccountClient) : BaseService(client) {
 
     /**
-     * list operation
+     * Lists the board's webhooks. Fizzy pages this list (a Link header with rel="next"); this operation returns the first page.
      * @param boardId The board ID
      */
     suspend fun list(boardId: String): List<Webhook> {
@@ -79,7 +79,7 @@ class WebhooksService(client: AccountClient) : BaseService(client) {
     }
 
     /**
-     * update operation
+     * Updates a webhook's name or subscribed actions. Send at least one: the controller expects a `webhook` object, so an empty body is a 400. The URL can't change after creation; delete the webhook and create a new one.
      * @param boardId The board ID
      * @param webhookId The webhook ID
      * @param body Request body
@@ -96,7 +96,6 @@ class WebhooksService(client: AccountClient) : BaseService(client) {
         return request(info, {
             httpPatch("/boards/${boardId}/webhooks/${webhookId}", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
                 body.name?.let { put("name", kotlinx.serialization.json.JsonPrimitive(it)) }
-                body.url?.let { put("url", kotlinx.serialization.json.JsonPrimitive(it)) }
                 body.subscribedActions?.let { put("subscribed_actions", kotlinx.serialization.json.JsonArray(it.map { kotlinx.serialization.json.JsonPrimitive(it) })) }
             }), operationName = info.operation)
         }) { body ->

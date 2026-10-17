@@ -32,7 +32,7 @@ class IdentityService(client: AccountClient) : BaseService(client) {
     }
 
     /**
-     * updateTimezone operation
+     * Sets the caller's time zone. The name isn't validated: one that ActiveSupport::TimeZone doesn't recognize is stored, succeeds with 204, and reads back as UTC.
      * @param body Request body
      */
     suspend fun updateTimezone(body: UpdateMyTimezoneBody): Unit {

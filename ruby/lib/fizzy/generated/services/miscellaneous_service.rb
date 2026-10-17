@@ -37,9 +37,9 @@ module Fizzy
 
       # update_account_entropy operation
       # @param account_id [String] account id ID
-      # @param auto_postpone_period_in_days [Integer, nil] auto postpone period in days
+      # @param auto_postpone_period_in_days [Integer] Days of inactivity before a card is auto-postponed. One of 3, 7, 11, 30, 90 or 365 (Entropy::AUTO_POSTPONE_PERIODS_IN_DAYS); any other value is rejected with 422. Required: an empty body is a 400.
       # @return [Hash] response data
-      def update_account_entropy(account_id:, auto_postpone_period_in_days: nil)
+      def update_account_entropy(account_id:, auto_postpone_period_in_days:)
         with_operation(service: "miscellaneous", operation: "UpdateAccountEntropy", is_mutation: true, resource_id: account_id) do
           http_put("/#{account_id}/account/entropy.json", body: compact_params(auto_postpone_period_in_days: auto_postpone_period_in_days)).json
         end
@@ -75,21 +75,21 @@ module Fizzy
 
       # update_join_code operation
       # @param account_id [String] account id ID
-      # @param usage_limit [Integer, nil] usage limit
+      # @param usage_limit [Integer] How many times the join code can be redeemed, at most 10,000,000,000. Required: an empty body is a 400.
       # @return [void]
-      def update_join_code(account_id:, usage_limit: nil)
+      def update_join_code(account_id:, usage_limit:)
         with_operation(service: "miscellaneous", operation: "UpdateJoinCode", is_mutation: true, resource_id: account_id) do
           http_patch("/#{account_id}/account/join_code.json", body: compact_params(usage_limit: usage_limit))
           nil
         end
       end
 
-      # reset_join_code operation
+      # Replaces the join code with a newly generated one and resets its usage count. Each call mints a different code and invalidates the previous one, so a retry invalidates the code the first call issued: not idempotent.
       # @param account_id [String] account id ID
       # @return [void]
       def reset_join_code(account_id:)
         with_operation(service: "miscellaneous", operation: "ResetJoinCode", is_mutation: true, resource_id: account_id) do
-          http_delete("/#{account_id}/account/join_code.json")
+          http_delete("/#{account_id}/account/join_code.json", retryable: false)
           nil
         end
       end
@@ -105,9 +105,9 @@ module Fizzy
 
       # update_account_settings operation
       # @param account_id [String] account id ID
-      # @param name [String, nil] name
+      # @param name [String] The account name. Required: the controller expects an `account` object, so an empty body is a 400.
       # @return [void]
-      def update_account_settings(account_id:, name: nil)
+      def update_account_settings(account_id:, name:)
         with_operation(service: "miscellaneous", operation: "UpdateAccountSettings", is_mutation: true, resource_id: account_id) do
           http_patch("/#{account_id}/account/settings.json", body: compact_params(name: name))
           nil
@@ -117,9 +117,9 @@ module Fizzy
       # update_board_entropy operation
       # @param account_id [String] account id ID
       # @param board_id [String] board id ID
-      # @param auto_postpone_period_in_days [Integer, nil] auto postpone period in days
+      # @param auto_postpone_period_in_days [Integer] Days of inactivity before a card is auto-postponed. One of 3, 7, 11, 30, 90 or 365 (Entropy::AUTO_POSTPONE_PERIODS_IN_DAYS); any other value is rejected with 422. Required: an empty body is a 400.
       # @return [Hash] response data
-      def update_board_entropy(account_id:, board_id:, auto_postpone_period_in_days: nil)
+      def update_board_entropy(account_id:, board_id:, auto_postpone_period_in_days:)
         with_operation(service: "miscellaneous", operation: "UpdateBoardEntropy", is_mutation: true, resource_id: board_id) do
           http_put("/#{account_id}/boards/#{board_id}/entropy.json", body: compact_params(auto_postpone_period_in_days: auto_postpone_period_in_days)).json
         end
@@ -128,16 +128,16 @@ module Fizzy
       # update_board_involvement operation
       # @param account_id [String] account id ID
       # @param board_id [String] board id ID
-      # @param involvement [String, nil] involvement
+      # @param involvement [String] The caller's involvement with the board: "access_only" or "watching" (Access#involvement). Required: the controller assigns it unconditionally.
       # @return [void]
-      def update_board_involvement(account_id:, board_id:, involvement: nil)
+      def update_board_involvement(account_id:, board_id:, involvement:)
         with_operation(service: "miscellaneous", operation: "UpdateBoardInvolvement", is_mutation: true, resource_id: board_id) do
           http_patch("/#{account_id}/boards/#{board_id}/involvement.json", body: compact_params(involvement: involvement))
           nil
         end
       end
 
-      # mark_card_read operation
+      # Marks the caller's notification for the card read. When the caller has no notification for the card, the call succeeds without changing anything.
       # @param account_id [String] account id ID
       # @param card_number [Integer] card number ID
       # @return [void]
@@ -148,7 +148,7 @@ module Fizzy
         end
       end
 
-      # mark_card_unread operation
+      # Marks the caller's notification for the card unread. When the caller has no notification for the card, the call succeeds without changing anything.
       # @param account_id [String] account id ID
       # @param card_number [Integer] card number ID
       # @return [void]
@@ -159,24 +159,24 @@ module Fizzy
         end
       end
 
-      # move_column_left operation
+      # Swaps the column with its left neighbor. Each call moves it again, so it is not idempotent; at the leftmost edge there is no neighbor and the call succeeds without changing anything.
       # @param account_id [String] account id ID
       # @param column_id [String] column id ID
       # @return [void]
       def move_column_left(account_id:, column_id:)
         with_operation(service: "miscellaneous", operation: "MoveColumnLeft", is_mutation: true, resource_id: column_id) do
-          http_post("/#{account_id}/columns/#{column_id}/left_position.json", retryable: true)
+          http_post("/#{account_id}/columns/#{column_id}/left_position.json")
           nil
         end
       end
 
-      # move_column_right operation
+      # Swaps the column with its right neighbor. Each call moves it again, so it is not idempotent; at the rightmost edge there is no neighbor and the call succeeds without changing anything.
       # @param account_id [String] account id ID
       # @param column_id [String] column id ID
       # @return [void]
       def move_column_right(account_id:, column_id:)
         with_operation(service: "miscellaneous", operation: "MoveColumnRight", is_mutation: true, resource_id: column_id) do
-          http_post("/#{account_id}/columns/#{column_id}/right_position.json", retryable: true)
+          http_post("/#{account_id}/columns/#{column_id}/right_position.json")
           nil
         end
       end
@@ -192,9 +192,9 @@ module Fizzy
 
       # update_notification_settings operation
       # @param account_id [String] account id ID
-      # @param bundle_email_frequency [String, nil] bundle email frequency
+      # @param bundle_email_frequency [String] "never", "every_few_hours", "daily" or "weekly" (User::Settings#bundle_email_frequency). Required: an empty body is a 400.
       # @return [void]
-      def update_notification_settings(account_id:, bundle_email_frequency: nil)
+      def update_notification_settings(account_id:, bundle_email_frequency:)
         with_operation(service: "miscellaneous", operation: "UpdateNotificationSettings", is_mutation: true, resource_id: account_id) do
           http_patch("/#{account_id}/notifications/settings.json", body: compact_params(bundle_email_frequency: bundle_email_frequency))
           nil
@@ -241,7 +241,7 @@ module Fizzy
       # update_user_role operation
       # @param account_id [String] account id ID
       # @param user_id [String] user id ID
-      # @param role [String] role
+      # @param role [String] "member" or "admin". Any other value, including "owner", sets the role to "member" (Users::RolesController#role_params), so a typo demotes.
       # @return [void]
       def update_user_role(account_id:, user_id:, role:)
         with_operation(service: "miscellaneous", operation: "UpdateUserRole", is_mutation: true, resource_id: user_id) do

@@ -15,9 +15,9 @@ module Fizzy
         end
       end
 
-      # update_timezone operation
+      # Sets the caller's time zone. The name isn't validated: one that ActiveSupport::TimeZone doesn't recognize is stored, succeeds with 204, and reads back as UTC.
       # @param account_id [String] account id ID
-      # @param timezone_name [String] timezone name
+      # @param timezone_name [String] An IANA or Rails time zone name, such as "America/Chicago" or "Central Time (US & Canada)".
       # @return [void]
       def update_timezone(account_id:, timezone_name:)
         with_operation(service: "identity", operation: "UpdateMyTimezone", is_mutation: true, resource_id: account_id) do

@@ -13,10 +13,10 @@ import kotlinx.serialization.json.JsonElement
 class NotificationsService(client: AccountClient) : BaseService(client) {
 
     /**
-     * list operation
+     * Lists the caller's notifications. It takes no read/unread filter: the first page holds up to 100 unread notifications followed by a page of read ones, and later pages hold read ones only.
      * @param options Optional query parameters and pagination control
      */
-    suspend fun list(options: ListNotificationsOptions? = null): ListResult<Notification> {
+    suspend fun list(options: PaginationOptions? = null): ListResult<Notification> {
         val info = OperationInfo(
             service = "Notifications",
             operation = "ListNotifications",
@@ -25,18 +25,15 @@ class NotificationsService(client: AccountClient) : BaseService(client) {
             boardId = null,
             resourceId = null,
         )
-        val qs = buildQueryString(
-            "read" to options?.read,
-        )
-        return requestPaginated(info, options?.toPaginationOptions(), {
-            httpGet("/notifications.json" + qs, operationName = info.operation)
+        return requestPaginated(info, options, {
+            httpGet("/notifications.json", operationName = info.operation)
         }) { body ->
             json.decodeFromString<List<Notification>>(body)
         }
     }
 
     /**
-     * bulkRead operation
+     * Marks every unread notification of the caller read. It takes no selection.
      * @param body Request body
      */
     suspend fun bulkRead(body: BulkReadNotificationsBody): Unit {

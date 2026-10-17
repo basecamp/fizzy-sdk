@@ -2,9 +2,9 @@
 import Foundation
 
 public struct UpdateBoardInvolvementRequest: Codable, Sendable {
-    public var involvement: String?
+    public let involvement: String
 
-    public init(involvement: String? = nil) {
+    public init(involvement: String) {
         self.involvement = involvement
     }
 }

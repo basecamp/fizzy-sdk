@@ -10,11 +10,9 @@ public struct TrayNotificationOptions: Sendable {
 }
 
 public struct ListNotificationOptions: Sendable {
-    public var read: Bool?
     public var maxItems: Int?
 
-    public init(read: Bool? = nil, maxItems: Int? = nil) {
-        self.read = read
+    public init(maxItems: Int? = nil) {
         self.maxItems = maxItems
     }
 }
@@ -45,14 +43,9 @@ public final class NotificationsService: BaseService, @unchecked Sendable {
     }
 
     public func list(accountId: String, options: ListNotificationOptions? = nil) async throws -> ListResult<Notification> {
-        var queryItems: [URLQueryItem] = []
-        if let read = options?.read {
-            queryItems.append(URLQueryItem(name: "read", value: String(read)))
-        }
         return try await requestPaginated(
             OperationInfo(service: "Notifications", operation: "ListNotifications", resourceType: "notification", isMutation: false),
             path: "/\(accountId)/notifications.json",
-            queryItems: queryItems.isEmpty ? nil : queryItems,
             paginationOpts: options.flatMap { PaginationOptions(maxItems: $0.maxItems) },
             retryConfig: Metadata.retryConfig(for: "ListNotifications")
         )

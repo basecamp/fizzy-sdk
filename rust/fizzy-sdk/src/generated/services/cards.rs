@@ -237,7 +237,7 @@ impl<'a> CardsService<'a> {
 
     /// `PostponeCard` — `POST /{accountId}/cards/{cardNumber}/not_now.json`.
     ///
-    /// Sent up to 3 times, backing off from 1000 ms, when the answer is 429, 500 or 503. Idempotent, so a resend is safe.
+    /// Sent once and never resent.
     pub async fn postpone(&self, card_number: i32) -> Result<(), Error> {
         let mut operation = self
             .scope
@@ -291,7 +291,7 @@ impl<'a> CardsService<'a> {
 
     /// `TriageCard` — `POST /{accountId}/cards/{cardNumber}/triage.json`.
     ///
-    /// Sent up to 3 times, backing off from 1000 ms, when the answer is 429, 500 or 503. Idempotent, so a resend is safe.
+    /// Sent once and never resent.
     pub async fn triage(
         &self,
         card_number: i32,
@@ -307,7 +307,7 @@ impl<'a> CardsService<'a> {
 
     /// `UnTriageCard` — `DELETE /{accountId}/cards/{cardNumber}/triage.json`.
     ///
-    /// Sent up to 3 times, backing off from 1000 ms, when the answer is 429, 500 or 503.
+    /// Sent once and never resent.
     pub async fn un_triage(&self, card_number: i32) -> Result<(), Error> {
         let mut operation = self
             .scope
@@ -329,7 +329,7 @@ impl<'a> CardsService<'a> {
 
     /// `UnpinCard` — `DELETE /{accountId}/cards/{cardNumber}/pin.json`.
     ///
-    /// Sent up to 3 times, backing off from 1000 ms, when the answer is 429, 500 or 503.
+    /// Sent once and never resent.
     pub async fn unpin(&self, card_number: i32) -> Result<(), Error> {
         let mut operation = self.scope.operation(&routes::UNPIN_CARD, &[&card_number])?;
         operation.resource_id(card_number);

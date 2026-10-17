@@ -67,7 +67,7 @@ impl<'a> ColumnsService<'a> {
 
     /// `MoveColumnLeft` — `POST /{accountId}/columns/{columnId}/left_position.json`.
     ///
-    /// Sent up to 3 times, backing off from 1000 ms, when the answer is 429, 500 or 503. Idempotent, so a resend is safe.
+    /// Sent once and never resent.
     pub async fn move_left(&self, column_id: &str) -> Result<(), Error> {
         let mut operation = self
             .scope
@@ -78,7 +78,7 @@ impl<'a> ColumnsService<'a> {
 
     /// `MoveColumnRight` — `POST /{accountId}/columns/{columnId}/right_position.json`.
     ///
-    /// Sent up to 3 times, backing off from 1000 ms, when the answer is 429, 500 or 503. Idempotent, so a resend is safe.
+    /// Sent once and never resent.
     pub async fn move_right(&self, column_id: &str) -> Result<(), Error> {
         let mut operation = self
             .scope

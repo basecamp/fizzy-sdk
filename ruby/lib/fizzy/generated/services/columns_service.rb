@@ -21,7 +21,7 @@ module Fizzy
       # @param account_id [String] account id ID
       # @param board_id [String] board id ID
       # @param name [String] name
-      # @param color [String, nil] color
+      # @param color [String, nil] The column color, as its CSS value: "var(--color-card-default)" (Blue), "var(--color-card-1)" (Gray), "var(--color-card-2)" (Tan), "var(--color-card-3)" (Yellow), "var(--color-card-4)" (Lime), "var(--color-card-5)" (Aqua), "var(--color-card-6)" (Violet), "var(--color-card-7)" (Purple) or "var(--color-card-8)" (Pink) (Color::COLORS). Any other value is stored but reads back as Blue.
       # @return [Hash] response data
       def create(account_id:, board_id:, name:, color: nil)
         with_operation(service: "columns", operation: "CreateColumn", is_mutation: true, resource_id: board_id) do
@@ -40,12 +40,12 @@ module Fizzy
         end
       end
 
-      # update operation
+      # Updates a column. Send at least one of name or color: the controller expects a `column` object, so an empty body is a 400.
       # @param account_id [String] account id ID
       # @param board_id [String] board id ID
       # @param column_id [String] column id ID
       # @param name [String, nil] name
-      # @param color [String, nil] color
+      # @param color [String, nil] The column color, as its CSS value: "var(--color-card-default)" (Blue), "var(--color-card-1)" (Gray), "var(--color-card-2)" (Tan), "var(--color-card-3)" (Yellow), "var(--color-card-4)" (Lime), "var(--color-card-5)" (Aqua), "var(--color-card-6)" (Violet), "var(--color-card-7)" (Purple) or "var(--color-card-8)" (Pink) (Color::COLORS). Any other value is stored but reads back as Blue.
       # @return [Hash] response data
       def update(account_id:, board_id:, column_id:, name: nil, color: nil)
         with_operation(service: "columns", operation: "UpdateColumn", is_mutation: true, resource_id: column_id) do

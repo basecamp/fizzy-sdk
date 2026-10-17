@@ -11,11 +11,8 @@ import type { components } from "../schema.js";
 
 export type Notification = components["schemas"]["Notification"];
 
-export interface ListNotificationsOptions extends PaginationOptions {
-  read?: boolean;
-}
-
 export interface BulkReadNotificationsRequest {
+  /** Ignored: Notifications::BulkReadingsController reads no ids and marks every unread notification read whatever this holds. */
   notificationIds?: string[];
 }
 
@@ -26,9 +23,9 @@ export interface TrayNotificationtrayOptions extends PaginationOptions {
 export class NotificationsService extends BaseService {
 
   /**
-   * ListNotifications
+   * Lists the caller's notifications. It takes no read/unread filter: the first page holds up to 100 unread notifications followed by a page of read ones, and later pages hold read ones only.
    */
-  async list(options?: ListNotificationsOptions): Promise<ListResult<Notification>> {
+  async list(options?: PaginationOptions): Promise<ListResult<Notification>> {
     return this.requestPaginated(
       {
         service: "Notifications",
@@ -37,14 +34,13 @@ export class NotificationsService extends BaseService {
         isMutation: false,
       },
       () => this.client.GET("/notifications.json" as never, {
-        params: { query: { "read": options?.read } },
       } as never),
       options,
     );
   }
 
   /**
-   * BulkReadNotifications
+   * Marks every unread notification of the caller read. It takes no selection.
    */
   async bulkRead(body?: BulkReadNotificationsRequest): Promise<void> {
     return this.request(

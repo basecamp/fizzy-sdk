@@ -865,6 +865,7 @@ structure GetMyIdentityOutput {
     identity: Identity
 }
 
+/// Sets the caller's time zone. The name isn't validated: one that ActiveSupport::TimeZone doesn't recognize is stored, succeeds with 204, and reads back as UTC.
 @http(method: "PATCH", uri: "/{accountId}/my/timezone.json", code: 204)
 @tags(["Identity"])
 @fizzyIdempotent(natural: true)
@@ -879,6 +880,7 @@ structure UpdateMyTimezoneInput {
     @httpLabel
     accountId: AccountId
 
+    /// An IANA or Rails time zone name, such as "America/Chicago" or "Central Time (US & Canada)".
     @required
     timezone_name: String
 }
@@ -972,6 +974,8 @@ structure UpdateAccountSettingsInput {
     @httpLabel
     accountId: AccountId
 
+    /// The account name. Required: the controller expects an `account` object, so an empty body is a 400.
+    @required
     name: String
 }
 
@@ -1004,14 +1008,16 @@ structure UpdateJoinCodeInput {
     @httpLabel
     accountId: AccountId
 
+    /// How many times the join code can be redeemed, at most 10,000,000,000. Required: an empty body is a 400.
+    @required
     usage_limit: Integer
 }
 
-@idempotent
+/// Replaces the join code with a newly generated one and resets its usage count. Each call mints a different code and invalidates the previous one, so a retry invalidates the code the first call issued: not idempotent.
+@suppress(["HttpMethodSemantics.MissingIdempotentTrait"])
 @http(method: "DELETE", uri: "/{accountId}/account/join_code.json")
 @tags(["Account"])
-@fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+@fizzyRetry(maxAttempts: 1)
 operation ResetJoinCode {
     input: AccountIdInput
     errors: [UnauthorizedError, ForbiddenError]
@@ -1033,6 +1039,8 @@ structure UpdateAccountEntropyInput {
     @httpLabel
     accountId: AccountId
 
+    /// Days of inactivity before a card is auto-postponed. One of 3, 7, 11, 30, 90 or 365 (Entropy::AUTO_POSTPONE_PERIODS_IN_DAYS); any other value is rejected with 422. Required: an empty body is a 400.
+    @required
     auto_postpone_period_in_days: Integer
 }
 
@@ -1132,6 +1140,7 @@ structure CreateBoardInput {
 
     all_access: Boolean
 
+    /// Days of inactivity before a card is auto-postponed. One of 3, 7, 11, 30, 90 or 365 (Entropy::AUTO_POSTPONE_PERIODS_IN_DAYS); any other value is rejected with 422.
     auto_postpone_period_in_days: Integer
 
     public_description: String
@@ -1195,6 +1204,7 @@ structure GetBoardOutput {
     board: Board
 }
 
+/// Updates a board. Send at least one of name, all_access, auto_postpone_period_in_days or public_description: the controller expects a `board` object, so a body without any of them (including one carrying only user_ids) is a 400.
 @http(method: "PATCH", uri: "/{accountId}/boards/{boardId}")
 @tags(["Boards"])
 @fizzyIdempotent(natural: true)
@@ -1218,10 +1228,12 @@ structure UpdateBoardInput {
 
     all_access: Boolean
 
+    /// Days of inactivity before a card is auto-postponed. One of 3, 7, 11, 30, 90 or 365 (Entropy::AUTO_POSTPONE_PERIODS_IN_DAYS); any other value is rejected with 422.
     auto_postpone_period_in_days: Integer
 
     public_description: String
 
+    /// Replaces the board's membership: users listed are granted access and every current member not listed loses it. Omit it to leave access unchanged. It can't be sent alone (see the operation).
     user_ids: StringList
 }
 
@@ -1287,6 +1299,8 @@ structure UpdateBoardInvolvementInput {
     @httpLabel
     boardId: BoardId
 
+    /// The caller's involvement with the board: "access_only" or "watching" (Access#involvement). Required: the controller assigns it unconditionally.
+    @required
     involvement: String
 }
 
@@ -1310,6 +1324,8 @@ structure UpdateBoardEntropyInput {
     @httpLabel
     boardId: BoardId
 
+    /// Days of inactivity before a card is auto-postponed. One of 3, 7, 11, 30, 90 or 365 (Entropy::AUTO_POSTPONE_PERIODS_IN_DAYS); any other value is rejected with 422. Required: an empty body is a 400.
+    @required
     auto_postpone_period_in_days: Integer
 }
 
@@ -1457,6 +1473,7 @@ structure CreateColumnInput {
     @required
     name: String
 
+    /// The column color, as its CSS value: "var(--color-card-default)" (Blue), "var(--color-card-1)" (Gray), "var(--color-card-2)" (Tan), "var(--color-card-3)" (Yellow), "var(--color-card-4)" (Lime), "var(--color-card-5)" (Aqua), "var(--color-card-6)" (Violet), "var(--color-card-7)" (Purple) or "var(--color-card-8)" (Pink) (Color::COLORS). Any other value is stored but reads back as Blue.
     color: String
 }
 
@@ -1494,6 +1511,7 @@ structure GetColumnOutput {
     column: Column
 }
 
+/// Updates a column. Send at least one of name or color: the controller expects a `column` object, so an empty body is a 400.
 @http(method: "PATCH", uri: "/{accountId}/boards/{boardId}/columns/{columnId}")
 @tags(["Columns"])
 @fizzyIdempotent(natural: true)
@@ -1519,6 +1537,7 @@ structure UpdateColumnInput {
 
     name: String
 
+    /// The column color, as its CSS value: "var(--color-card-default)" (Blue), "var(--color-card-1)" (Gray), "var(--color-card-2)" (Tan), "var(--color-card-3)" (Yellow), "var(--color-card-4)" (Lime), "var(--color-card-5)" (Aqua), "var(--color-card-6)" (Violet), "var(--color-card-7)" (Purple) or "var(--color-card-8)" (Pink) (Color::COLORS). Any other value is stored but reads back as Blue.
     color: String
 }
 
@@ -1551,19 +1570,19 @@ structure DeleteColumnInput {
     columnId: ColumnId
 }
 
+/// Swaps the column with its left neighbor. Each call moves it again, so it is not idempotent; at the leftmost edge there is no neighbor and the call succeeds without changing anything.
 @http(method: "POST", uri: "/{accountId}/columns/{columnId}/left_position.json")
 @tags(["Columns"])
-@fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+@fizzyRetry(maxAttempts: 1)
 operation MoveColumnLeft {
     input: ColumnPositionInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
 }
 
+/// Swaps the column with its right neighbor. Each call moves it again, so it is not idempotent; at the rightmost edge there is no neighbor and the call succeeds without changing anything.
 @http(method: "POST", uri: "/{accountId}/columns/{columnId}/right_position.json")
 @tags(["Columns"])
-@fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+@fizzyRetry(maxAttempts: 1)
 operation MoveColumnRight {
     input: ColumnPositionInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -1620,18 +1639,23 @@ structure ListCardsInput {
     @httpQuery("column_ids[]")
     column_ids: StringList
 
+    /// Which cards to list: "all" (default, open cards), "maybe" (awaiting triage), "closed", "not_now", "stalled", "postponing_soon" or "golden". Any other value lists the same cards as "all".
     @httpQuery("indexed_by")
     indexed_by: String
 
+    /// "latest" (default, most recently active first), "newest" or "oldest" (by creation). Any other value sorts as "latest".
     @httpQuery("sorted_by")
     sorted_by: String
 
+    /// "unassigned" lists only cards with no assignee; any other value is ignored.
     @httpQuery("assignment_status")
     assignment_status: String
 
+    /// Created within: "today", "yesterday", "thisweek", "lastweek", "thismonth", "lastmonth", "thisyear" or "lastyear" (TimeWindowParser); any other value is ignored.
     @httpQuery("creation")
     creation: String
 
+    /// Closed within: "today", "yesterday", "thisweek", "lastweek", "thismonth", "lastmonth", "thisyear" or "lastyear" (TimeWindowParser); any other value is ignored.
     @httpQuery("closure")
     closure: String
 
@@ -1661,16 +1685,13 @@ structure CreateCardInput {
     @required
     title: String
 
+    /// The board to create the card on. Required: CardsController finds it unconditionally.
+    @required
     board_id: String
-
-    column_id: String
 
     description: String
 
-    assignee_ids: StringList
-
-    tag_names: TagNames
-
+    /// The signed blob id of an image uploaded with CreateDirectUpload. A caller that can't make the upload has no value to send here.
     image: String
 
     created_at: String
@@ -1712,6 +1733,7 @@ structure GetCardOutput {
     card: Card
 }
 
+/// Updates a card. Send at least one of title, description, image or created_at: the controller expects a `card` object, so an empty body is a 400. Moving a card between columns is TriageCard, and between boards MoveCard.
 @http(method: "PATCH", uri: "/{accountId}/cards/{cardNumber}")
 @tags(["Cards"])
 @fizzyIdempotent(natural: true)
@@ -1735,8 +1757,7 @@ structure UpdateCardInput {
 
     description: String
 
-    column_id: String
-
+    /// The signed blob id of an image uploaded with CreateDirectUpload. A caller that can't make the upload has no value to send here.
     image: String
 
     created_at: String
@@ -1788,19 +1809,19 @@ operation ReopenCard {
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
 }
 
+/// Moves the card to Not Now. Each call records an event, which notifies webhooks and adds a system comment to the card, even when the card's state doesn't change, so it is not safe to retry.
 @http(method: "POST", uri: "/{accountId}/cards/{cardNumber}/not_now.json")
 @tags(["Cards"])
-@fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+@fizzyRetry(maxAttempts: 1)
 operation PostponeCard {
     input: CardNumberInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
 }
 
+/// Triages the card into a column of its board. Each call records an event, which notifies webhooks and adds a system comment to the card, even when the card's state doesn't change, so it is not safe to retry.
 @http(method: "POST", uri: "/{accountId}/cards/{cardNumber}/triage.json")
 @tags(["Cards"])
-@fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+@fizzyRetry(maxAttempts: 1)
 operation TriageCard {
     input: TriageCardInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -1815,14 +1836,16 @@ structure TriageCardInput {
     @httpLabel
     cardNumber: CardNumber
 
+    /// A column on the card's board. Required: the controller finds it unconditionally.
+    @required
     column_id: String
 }
 
-@idempotent
+/// Sends the card back to triage (Maybe?). Each call records an event, which notifies webhooks and adds a system comment to the card, even when the card's state doesn't change, so it is not safe to retry.
+@suppress(["HttpMethodSemantics.MissingIdempotentTrait"])
 @http(method: "DELETE", uri: "/{accountId}/cards/{cardNumber}/triage.json")
 @tags(["Cards"])
-@fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+@fizzyRetry(maxAttempts: 1)
 operation UnTriageCard {
     input: CardNumberInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -1847,6 +1870,7 @@ operation UngoldCard {
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
 }
 
+/// Assigns the user to the card, or unassigns them if they are already assigned. This is a toggle: calling it again undoes it, and both outcomes return 204, so a retry or a repeat reverses the first call. Check the card first when the outcome matters.
 @http(method: "POST", uri: "/{accountId}/cards/{cardNumber}/assignments.json")
 @tags(["Cards"])
 @fizzyRetry(maxAttempts: 1)
@@ -1868,6 +1892,7 @@ structure AssignCardInput {
     assignee_id: UserId
 }
 
+/// Assigns the caller to the card, or unassigns them if they are already assigned. This is a toggle: calling it again undoes it, and both outcomes return 204, so a retry or a repeat reverses the first call. Check the card first when the outcome matters.
 @http(method: "POST", uri: "/{accountId}/cards/{cardNumber}/self_assignment.json")
 @tags(["Cards"])
 @fizzyRetry(maxAttempts: 1)
@@ -1876,6 +1901,7 @@ operation SelfAssignCard {
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
 }
 
+/// Tags the card, or untags it if it already has the tag. The tag is created when the account has none with that title. This is a toggle: calling it again undoes it, and both outcomes return 204, so a retry or a repeat reverses the first call. Check the card first when the outcome matters.
 @http(method: "POST", uri: "/{accountId}/cards/{cardNumber}/taggings.json")
 @tags(["Cards"])
 @fizzyRetry(maxAttempts: 1)
@@ -1893,6 +1919,7 @@ structure TagCardInput {
     @httpLabel
     cardNumber: CardNumber
 
+    /// The tag's title; surrounding whitespace and a leading "#" are stripped.
     @required
     tag_title: String
 }
@@ -1925,11 +1952,11 @@ operation PinCard {
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
 }
 
-@idempotent
+/// Unpins the card for the caller. Unpinning a card the caller hasn't pinned currently fails with a 500 (Card::Pinnable#unpin_by destroys a pin it didn't find), so a retry after a success fails: not idempotent.
+@suppress(["HttpMethodSemantics.MissingIdempotentTrait"])
 @http(method: "DELETE", uri: "/{accountId}/cards/{cardNumber}/pin.json")
 @tags(["Cards"])
-@fizzyIdempotent(natural: true)
-@fizzyRetry(maxAttempts: 3, baseDelayMs: 1000, backoff: "exponential", retryOn: [429, 500, 503])
+@fizzyRetry(maxAttempts: 1)
 operation UnpinCard {
     input: CardNumberInput
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
@@ -1954,10 +1981,9 @@ structure MoveCardInput {
     @httpLabel
     cardNumber: CardNumber
 
+    /// The destination board. Cards::BoardsController reads no column.
     @required
     board_id: BoardId
-
-    column_id: ColumnId
 }
 
 structure MoveCardOutput {
@@ -1975,6 +2001,7 @@ operation DeleteCardImage {
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
 }
 
+/// Marks the caller's notification for the card read. When the caller has no notification for the card, the call succeeds without changing anything.
 @http(method: "POST", uri: "/{accountId}/cards/{cardNumber}/reading.json")
 @tags(["Cards"])
 @fizzyIdempotent(natural: true)
@@ -1984,6 +2011,7 @@ operation MarkCardRead {
     errors: [UnauthorizedError, ForbiddenError, NotFoundError]
 }
 
+/// Marks the caller's notification for the card unread. When the caller has no notification for the card, the call succeeds without changing anything.
 @idempotent
 @http(method: "DELETE", uri: "/{accountId}/cards/{cardNumber}/reading.json")
 @tags(["Cards"])
@@ -2234,6 +2262,7 @@ structure GetStepOutput {
     step: Step
 }
 
+/// Updates a step. Send at least one of content or completed: the controller expects a `step` object, so an empty body is a 400.
 @http(method: "PATCH", uri: "/{accountId}/cards/{cardNumber}/steps/{stepId}")
 @tags(["Steps"])
 @fizzyIdempotent(natural: true)
@@ -2457,6 +2486,7 @@ structure DeleteCommentReactionInput {
 // Notifications
 // ═══════════════════════════════════════════════════════════════════════════
 
+/// Lists the caller's notifications. It takes no read/unread filter: the first page holds up to 100 unread notifications followed by a page of read ones, and later pages hold read ones only.
 @readonly
 @http(method: "GET", uri: "/{accountId}/notifications.json")
 @tags(["Notifications"])
@@ -2472,9 +2502,6 @@ structure ListNotificationsInput {
     @required
     @httpLabel
     accountId: AccountId
-
-    @httpQuery("read")
-    read: Boolean
 }
 
 structure ListNotificationsOutput {
@@ -2521,6 +2548,7 @@ structure UnreadNotificationInput {
     notificationId: NotificationId
 }
 
+/// Marks every unread notification of the caller read. It takes no selection.
 @http(method: "POST", uri: "/{accountId}/notifications/bulk_reading.json")
 @tags(["Notifications"])
 @fizzyRetry(maxAttempts: 1)
@@ -2534,6 +2562,7 @@ structure BulkReadNotificationsInput {
     @httpLabel
     accountId: AccountId
 
+    /// Ignored: Notifications::BulkReadingsController reads no ids and marks every unread notification read whatever this holds.
     notification_ids: NotificationIdList
 }
 
@@ -2600,6 +2629,8 @@ structure UpdateNotificationSettingsInput {
     @httpLabel
     accountId: AccountId
 
+    /// "never", "every_few_hours", "daily" or "weekly" (User::Settings#bundle_email_frequency). Required: an empty body is a 400.
+    @required
     bundle_email_frequency: String
 }
 
@@ -2761,6 +2792,8 @@ structure UpdateUserInput {
     @httpLabel
     userId: UserId
 
+    /// Required: the controller expects a `user` object, so an empty body is a 400.
+    @required
     name: String
 }
 
@@ -2904,6 +2937,7 @@ structure UpdateUserRoleInput {
     @httpLabel
     userId: UserId
 
+    /// "member" or "admin". Any other value, including "owner", sets the role to "member" (Users::RolesController#role_params), so a typo demotes.
     @required
     role: String
 }
@@ -3044,6 +3078,7 @@ structure CreateDirectUploadOutput {
 // Webhooks
 // ═══════════════════════════════════════════════════════════════════════════
 
+/// Lists the board's webhooks. Fizzy pages this list (a Link header with rel="next"); this operation returns the first page.
 @readonly
 @http(method: "GET", uri: "/{accountId}/boards/{boardId}/webhooks.json")
 @tags(["Webhooks"])
@@ -3093,6 +3128,7 @@ structure CreateWebhookInput {
     @required
     url: URL
 
+    /// The events to deliver, from: "card_assigned", "card_closed", "card_postponed", "card_auto_postponed", "card_board_changed", "card_published", "card_reopened", "card_sent_back_to_triage", "card_triaged", "card_unassigned" and "comment_created" (Webhook::PERMITTED_ACTIONS). Unknown actions are dropped silently. A webhook created without any receives no deliveries.
     subscribed_actions: WebhookActions
 }
 
@@ -3130,6 +3166,7 @@ structure GetWebhookOutput {
     webhook: Webhook
 }
 
+/// Updates a webhook's name or subscribed actions. Send at least one: the controller expects a `webhook` object, so an empty body is a 400. The URL can't change after creation; delete the webhook and create a new one.
 @http(method: "PATCH", uri: "/{accountId}/boards/{boardId}/webhooks/{webhookId}")
 @tags(["Webhooks"])
 @fizzyIdempotent(natural: true)
@@ -3155,8 +3192,7 @@ structure UpdateWebhookInput {
 
     name: String
 
-    url: URL
-
+    /// The events to deliver, from: "card_assigned", "card_closed", "card_postponed", "card_auto_postponed", "card_board_changed", "card_published", "card_reopened", "card_sent_back_to_triage", "card_triaged", "card_unassigned" and "comment_created" (Webhook::PERMITTED_ACTIONS). Unknown actions are dropped silently. The list replaces the current subscription.
     subscribed_actions: WebhookActions
 }
 

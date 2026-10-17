@@ -68,7 +68,7 @@ class UsersService(client: AccountClient) : BaseService(client) {
         )
         return request(info, {
             httpPatch("/users/${userId}", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
-                body.name?.let { put("name", kotlinx.serialization.json.JsonPrimitive(it)) }
+                put("name", kotlinx.serialization.json.JsonPrimitive(body.name))
             }), operationName = info.operation)
         }) { body ->
             json.decodeFromString<User>(body)

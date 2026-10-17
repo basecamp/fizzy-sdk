@@ -65,11 +65,8 @@ data class ListCardsOptions(
 /** Request body for CreateCard. */
 data class CreateCardBody(
     val title: String,
-    val boardId: String? = null,
-    val columnId: String? = null,
+    val boardId: String,
     val description: String? = null,
-    val assigneeIds: List<String>? = null,
-    val tagNames: List<String>? = null,
     val image: String? = null,
     val createdAt: String? = null,
     val lastActiveAt: String? = null
@@ -79,7 +76,6 @@ data class CreateCardBody(
 data class UpdateCardBody(
     val title: String? = null,
     val description: String? = null,
-    val columnId: String? = null,
     val image: String? = null,
     val createdAt: String? = null
 )
@@ -91,8 +87,7 @@ data class AssignCardBody(
 
 /** Request body for MoveCard. */
 data class MoveCardBody(
-    val boardId: String,
-    val columnId: String? = null
+    val boardId: String
 )
 
 /** Request body for TagCard. */
@@ -102,7 +97,7 @@ data class TagCardBody(
 
 /** Request body for TriageCard. */
 data class TriageCardBody(
-    val columnId: String? = null
+    val columnId: String
 )
 
 /** Request body for CreateColumn. */
@@ -148,32 +143,32 @@ data class CreateAccessTokenBody(
 
 /** Request body for UpdateAccountEntropy. */
 data class UpdateAccountEntropyBody(
-    val autoPostponePeriodInDays: Int? = null
+    val autoPostponePeriodInDays: Int
 )
 
 /** Request body for UpdateJoinCode. */
 data class UpdateJoinCodeBody(
-    val usageLimit: Int? = null
+    val usageLimit: Int
 )
 
 /** Request body for UpdateAccountSettings. */
 data class UpdateAccountSettingsBody(
-    val name: String? = null
+    val name: String
 )
 
 /** Request body for UpdateBoardEntropy. */
 data class UpdateBoardEntropyBody(
-    val autoPostponePeriodInDays: Int? = null
+    val autoPostponePeriodInDays: Int
 )
 
 /** Request body for UpdateBoardInvolvement. */
 data class UpdateBoardInvolvementBody(
-    val involvement: String? = null
+    val involvement: String
 )
 
 /** Request body for UpdateNotificationSettings. */
 data class UpdateNotificationSettingsBody(
-    val bundleEmailFrequency: String? = null
+    val bundleEmailFrequency: String
 )
 
 /** Request body for CreatePushSubscription. */
@@ -187,14 +182,6 @@ data class CreatePushSubscriptionBody(
 data class UpdateUserRoleBody(
     val role: String
 )
-
-/** Options for ListNotifications. */
-data class ListNotificationsOptions(
-    val read: Boolean? = null,
-    val maxItems: Int? = null
-) {
-    fun toPaginationOptions(): PaginationOptions = PaginationOptions(maxItems = maxItems)
-}
 
 /** Request body for BulkReadNotifications. */
 data class BulkReadNotificationsBody(
@@ -259,7 +246,7 @@ data class CreateDirectUploadBody(
 
 /** Request body for UpdateUser. */
 data class UpdateUserBody(
-    val name: String? = null
+    val name: String
 )
 
 /** Request body for RequestEmailAddressChange. */
@@ -277,7 +264,6 @@ data class CreateWebhookBody(
 /** Request body for UpdateWebhook. */
 data class UpdateWebhookBody(
     val name: String? = null,
-    val url: String? = null,
     val subscribedActions: List<String>? = null
 )
 

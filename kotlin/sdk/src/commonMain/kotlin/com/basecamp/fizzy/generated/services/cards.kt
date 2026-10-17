@@ -172,11 +172,8 @@ class CardsService(client: AccountClient) : BaseService(client) {
         return request(info, {
             httpPost("/cards.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
                 put("title", kotlinx.serialization.json.JsonPrimitive(body.title))
-                body.boardId?.let { put("board_id", kotlinx.serialization.json.JsonPrimitive(it)) }
-                body.columnId?.let { put("column_id", kotlinx.serialization.json.JsonPrimitive(it)) }
+                put("board_id", kotlinx.serialization.json.JsonPrimitive(body.boardId))
                 body.description?.let { put("description", kotlinx.serialization.json.JsonPrimitive(it)) }
-                body.assigneeIds?.let { put("assignee_ids", kotlinx.serialization.json.JsonArray(it.map { kotlinx.serialization.json.JsonPrimitive(it) })) }
-                body.tagNames?.let { put("tag_names", kotlinx.serialization.json.JsonArray(it.map { kotlinx.serialization.json.JsonPrimitive(it) })) }
                 body.image?.let { put("image", kotlinx.serialization.json.JsonPrimitive(it)) }
                 body.createdAt?.let { put("created_at", kotlinx.serialization.json.JsonPrimitive(it)) }
                 body.lastActiveAt?.let { put("last_active_at", kotlinx.serialization.json.JsonPrimitive(it)) }
@@ -207,7 +204,7 @@ class CardsService(client: AccountClient) : BaseService(client) {
     }
 
     /**
-     * update operation
+     * Updates a card. Send at least one of title, description, image or created_at: the controller expects a `card` object, so an empty body is a 400. Moving a card between columns is TriageCard, and between boards MoveCard.
      * @param cardNumber The card number
      * @param body Request body
      */
@@ -224,7 +221,6 @@ class CardsService(client: AccountClient) : BaseService(client) {
             httpPatch("/cards/${cardNumber}", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
                 body.title?.let { put("title", kotlinx.serialization.json.JsonPrimitive(it)) }
                 body.description?.let { put("description", kotlinx.serialization.json.JsonPrimitive(it)) }
-                body.columnId?.let { put("column_id", kotlinx.serialization.json.JsonPrimitive(it)) }
                 body.image?.let { put("image", kotlinx.serialization.json.JsonPrimitive(it)) }
                 body.createdAt?.let { put("created_at", kotlinx.serialization.json.JsonPrimitive(it)) }
             }), operationName = info.operation)
@@ -252,7 +248,7 @@ class CardsService(client: AccountClient) : BaseService(client) {
     }
 
     /**
-     * assign operation
+     * Assigns the user to the card, or unassigns them if they are already assigned. This is a toggle: calling it again undoes it, and both outcomes return 204, so a retry or a repeat reverses the first call. Check the card first when the outcome matters.
      * @param cardNumber The card number
      * @param body Request body
      */
@@ -289,7 +285,6 @@ class CardsService(client: AccountClient) : BaseService(client) {
         return request(info, {
             httpPatch("/cards/${cardNumber}/board.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
                 put("board_id", kotlinx.serialization.json.JsonPrimitive(body.boardId))
-                body.columnId?.let { put("column_id", kotlinx.serialization.json.JsonPrimitive(it)) }
             }), operationName = info.operation)
         }) { body ->
             json.decodeFromString<Card>(body)
@@ -387,7 +382,7 @@ class CardsService(client: AccountClient) : BaseService(client) {
     }
 
     /**
-     * postpone operation
+     * Moves the card to Not Now. Each call records an event, which notifies webhooks and adds a system comment to the card, even when the card's state doesn't change, so it is not safe to retry.
      * @param cardNumber The card number
      */
     suspend fun postpone(cardNumber: Long): Unit {
@@ -423,7 +418,7 @@ class CardsService(client: AccountClient) : BaseService(client) {
     }
 
     /**
-     * unpin operation
+     * Unpins the card for the caller. Unpinning a card the caller hasn't pinned currently fails with a 500 (Card::Pinnable#unpin_by destroys a pin it didn't find), so a retry after a success fails: not idempotent.
      * @param cardNumber The card number
      */
     suspend fun unpin(cardNumber: Long): Unit {
@@ -459,7 +454,7 @@ class CardsService(client: AccountClient) : BaseService(client) {
     }
 
     /**
-     * selfAssign operation
+     * Assigns the caller to the card, or unassigns them if they are already assigned. This is a toggle: calling it again undoes it, and both outcomes return 204, so a retry or a repeat reverses the first call. Check the card first when the outcome matters.
      * @param cardNumber The card number
      */
     suspend fun selfAssign(cardNumber: Long): Unit {
@@ -477,7 +472,7 @@ class CardsService(client: AccountClient) : BaseService(client) {
     }
 
     /**
-     * tag operation
+     * Tags the card, or untags it if it already has the tag. The tag is created when the account has none with that title. This is a toggle: calling it again undoes it, and both outcomes return 204, so a retry or a repeat reverses the first call. Check the card first when the outcome matters.
      * @param cardNumber The card number
      * @param body Request body
      */
@@ -498,7 +493,7 @@ class CardsService(client: AccountClient) : BaseService(client) {
     }
 
     /**
-     * triage operation
+     * Triages the card into a column of its board. Each call records an event, which notifies webhooks and adds a system comment to the card, even when the card's state doesn't change, so it is not safe to retry.
      * @param cardNumber The card number
      * @param body Request body
      */
@@ -513,13 +508,13 @@ class CardsService(client: AccountClient) : BaseService(client) {
         )
         request(info, {
             httpPost("/cards/${cardNumber}/triage.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
-                body.columnId?.let { put("column_id", kotlinx.serialization.json.JsonPrimitive(it)) }
+                put("column_id", kotlinx.serialization.json.JsonPrimitive(body.columnId))
             }), operationName = info.operation)
         }) { Unit }
     }
 
     /**
-     * untriage operation
+     * Sends the card back to triage (Maybe?). Each call records an event, which notifies webhooks and adds a system comment to the card, even when the card's state doesn't change, so it is not safe to retry.
      * @param cardNumber The card number
      */
     suspend fun untriage(cardNumber: Long): Unit {

@@ -13,13 +13,6 @@ pub struct GetNotificationTrayParams {
     pub include_read: Option<bool>,
 }
 
-/// Optional query parameters for `ListNotifications`.
-#[derive(Debug, Clone, Default, PartialEq)]
-pub struct ListNotificationsParams {
-    /// `read`.
-    pub read: Option<bool>,
-}
-
 /// The `Notifications` operations.
 pub struct NotificationsService<'a> {
     scope: Scope<'a>,
@@ -73,12 +66,8 @@ impl<'a> NotificationsService<'a> {
     /// Sent up to 3 times, backing off from 1000 ms, when the answer is 429, 500 or 503.
     ///
     /// Paginated: the answer is a page with `page` as its cursor, and the next one is read with `next_page`.
-    pub async fn list(
-        &self,
-        params: &ListNotificationsParams,
-    ) -> Result<Page<Vec<Notification>>, Error> {
-        let mut operation = self.scope.operation(&routes::LIST_NOTIFICATIONS, &[])?;
-        operation.query_optional("read", params.read.as_ref());
+    pub async fn list(&self) -> Result<Page<Vec<Notification>>, Error> {
+        let operation = self.scope.operation(&routes::LIST_NOTIFICATIONS, &[])?;
         self.scope.client().send_page(operation).await
     }
 

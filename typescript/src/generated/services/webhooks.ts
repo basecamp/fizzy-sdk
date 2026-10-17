@@ -15,20 +15,21 @@ export interface CreateWebhookRequest {
   /** Display name */
   name: string;
   url: string;
+  /** The events to deliver, from: "card_assigned", "card_closed", "card_postponed", "card_auto_postponed", "card_board_changed", "card_published", "card_reopened", "card_sent_back_to_triage", "card_triaged", "card_unassigned" and "comment_created" (Webhook::PERMITTED_ACTIONS). Unknown actions are dropped silently. A webhook created without any receives no deliveries. */
   subscribedActions?: string[];
 }
 
 export interface UpdateWebhookRequest {
   /** Display name */
   name?: string;
-  url?: string;
+  /** The events to deliver, from: "card_assigned", "card_closed", "card_postponed", "card_auto_postponed", "card_board_changed", "card_published", "card_reopened", "card_sent_back_to_triage", "card_triaged", "card_unassigned" and "comment_created" (Webhook::PERMITTED_ACTIONS). Unknown actions are dropped silently. The list replaces the current subscription. */
   subscribedActions?: string[];
 }
 
 export class WebhooksService extends BaseService {
 
   /**
-   * ListWebhooks
+   * Lists the board's webhooks. Fizzy pages this list (a Link header with rel="next"); this operation returns the first page.
    */
   async list(boardId: string): Promise<ListResult<Webhook>> {
     return this.request(
@@ -97,7 +98,7 @@ export class WebhooksService extends BaseService {
   }
 
   /**
-   * UpdateWebhook
+   * Updates a webhook's name or subscribed actions. Send at least one: the controller expects a `webhook` object, so an empty body is a 400. The URL can't change after creation; delete the webhook and create a new one.
    */
   async update(boardId: string, webhookId: string, body?: UpdateWebhookRequest): Promise<Webhook> {
     return this.request(
@@ -109,7 +110,7 @@ export class WebhooksService extends BaseService {
       },
       () => this.client.PATCH("/boards/{boardId}/webhooks/{webhookId}" as never, {
         params: { path: { boardId, webhookId } },
-        body: { name: body?.name, url: body?.url, subscribed_actions: body?.subscribedActions } as never,
+        body: { name: body?.name, subscribed_actions: body?.subscribedActions } as never,
       } as never),
     );
   }

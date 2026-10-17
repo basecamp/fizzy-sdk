@@ -78,7 +78,7 @@ class StepsService(client: AccountClient) : BaseService(client) {
     }
 
     /**
-     * update operation
+     * Updates a step. Send at least one of content or completed: the controller expects a `step` object, so an empty body is a 400.
      * @param cardNumber The card number
      * @param stepId The step ID
      * @param body Request body

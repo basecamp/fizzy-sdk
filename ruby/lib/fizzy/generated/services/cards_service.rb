@@ -69,11 +69,11 @@ module Fizzy
       # @param closer_ids [Array, nil] closer ids
       # @param card_ids [Array, nil] card ids
       # @param column_ids [Array, nil] column ids
-      # @param indexed_by [String, nil] indexed by
-      # @param sorted_by [String, nil] sorted by
-      # @param assignment_status [String, nil] assignment status
-      # @param creation [String, nil] creation
-      # @param closure [String, nil] closure
+      # @param indexed_by [String, nil] Which cards to list: "all" (default, open cards), "maybe" (awaiting triage), "closed", "not_now", "stalled", "postponing_soon" or "golden". Any other value lists the same cards as "all".
+      # @param sorted_by [String, nil] "latest" (default, most recently active first), "newest" or "oldest" (by creation). Any other value sorts as "latest".
+      # @param assignment_status [String, nil] "unassigned" lists only cards with no assignee; any other value is ignored.
+      # @param creation [String, nil] Created within: "today", "yesterday", "thisweek", "lastweek", "thismonth", "lastmonth", "thisyear" or "lastyear" (TimeWindowParser); any other value is ignored.
+      # @param closure [String, nil] Closed within: "today", "yesterday", "thisweek", "lastweek", "thismonth", "lastmonth", "thisyear" or "lastyear" (TimeWindowParser); any other value is ignored.
       # @param terms [Array, nil] terms
       # @return [Enumerator<Hash>] paginated results
       def list(account_id:, board_ids: nil, tag_ids: nil, assignee_ids: nil, creator_ids: nil, closer_ids: nil, card_ids: nil, column_ids: nil, indexed_by: nil, sorted_by: nil, assignment_status: nil, creation: nil, closure: nil, terms: nil)
@@ -86,18 +86,15 @@ module Fizzy
       # create operation
       # @param account_id [String] account id ID
       # @param title [String] title
-      # @param board_id [String, nil] board id
-      # @param column_id [String, nil] column id
+      # @param board_id [String] The board to create the card on. Required: CardsController finds it unconditionally.
       # @param description [String, nil] description
-      # @param assignee_ids [Array, nil] assignee ids
-      # @param tag_names [Array, nil] tag names
-      # @param image [String, nil] image
+      # @param image [String, nil] The signed blob id of an image uploaded with CreateDirectUpload. A caller that can't make the upload has no value to send here.
       # @param created_at [String, nil] created at
       # @param last_active_at [String, nil] last active at
       # @return [Hash] response data
-      def create(account_id:, title:, board_id: nil, column_id: nil, description: nil, assignee_ids: nil, tag_names: nil, image: nil, created_at: nil, last_active_at: nil)
+      def create(account_id:, title:, board_id:, description: nil, image: nil, created_at: nil, last_active_at: nil)
         with_operation(service: "cards", operation: "CreateCard", is_mutation: true, resource_id: account_id) do
-          http_post("/#{account_id}/cards.json", body: compact_params(title: title, board_id: board_id, column_id: column_id, description: description, assignee_ids: assignee_ids, tag_names: tag_names, image: image, created_at: created_at, last_active_at: last_active_at)).json
+          http_post("/#{account_id}/cards.json", body: compact_params(title: title, board_id: board_id, description: description, image: image, created_at: created_at, last_active_at: last_active_at)).json
         end
       end
 
@@ -111,18 +108,17 @@ module Fizzy
         end
       end
 
-      # update operation
+      # Updates a card. Send at least one of title, description, image or created_at: the controller expects a `card` object, so an empty body is a 400. Moving a card between columns is TriageCard, and between boards MoveCard.
       # @param account_id [String] account id ID
       # @param card_number [Integer] card number ID
       # @param title [String, nil] title
       # @param description [String, nil] description
-      # @param column_id [String, nil] column id
-      # @param image [String, nil] image
+      # @param image [String, nil] The signed blob id of an image uploaded with CreateDirectUpload. A caller that can't make the upload has no value to send here.
       # @param created_at [String, nil] created at
       # @return [Hash] response data
-      def update(account_id:, card_number:, title: nil, description: nil, column_id: nil, image: nil, created_at: nil)
+      def update(account_id:, card_number:, title: nil, description: nil, image: nil, created_at: nil)
         with_operation(service: "cards", operation: "UpdateCard", is_mutation: true, resource_id: card_number) do
-          http_patch("/#{account_id}/cards/#{card_number}", body: compact_params(title: title, description: description, column_id: column_id, image: image, created_at: created_at)).json
+          http_patch("/#{account_id}/cards/#{card_number}", body: compact_params(title: title, description: description, image: image, created_at: created_at)).json
         end
       end
 
@@ -137,7 +133,7 @@ module Fizzy
         end
       end
 
-      # assign operation
+      # Assigns the user to the card, or unassigns them if they are already assigned. This is a toggle: calling it again undoes it, and both outcomes return 204, so a retry or a repeat reverses the first call. Check the card first when the outcome matters.
       # @param account_id [String] account id ID
       # @param card_number [Integer] card number ID
       # @param assignee_id [String] assignee id
@@ -152,12 +148,11 @@ module Fizzy
       # move operation
       # @param account_id [String] account id ID
       # @param card_number [Integer] card number ID
-      # @param board_id [String] board id
-      # @param column_id [String, nil] column id
+      # @param board_id [String] The destination board. Cards::BoardsController reads no column.
       # @return [Hash] response data
-      def move(account_id:, card_number:, board_id:, column_id: nil)
+      def move(account_id:, card_number:, board_id:)
         with_operation(service: "cards", operation: "MoveCard", is_mutation: true, resource_id: card_number) do
-          http_patch("/#{account_id}/cards/#{card_number}/board.json", body: compact_params(board_id: board_id, column_id: column_id)).json
+          http_patch("/#{account_id}/cards/#{card_number}/board.json", body: compact_params(board_id: board_id)).json
         end
       end
 
@@ -216,13 +211,13 @@ module Fizzy
         end
       end
 
-      # postpone operation
+      # Moves the card to Not Now. Each call records an event, which notifies webhooks and adds a system comment to the card, even when the card's state doesn't change, so it is not safe to retry.
       # @param account_id [String] account id ID
       # @param card_number [Integer] card number ID
       # @return [void]
       def postpone(account_id:, card_number:)
         with_operation(service: "cards", operation: "PostponeCard", is_mutation: true, resource_id: card_number) do
-          http_post("/#{account_id}/cards/#{card_number}/not_now.json", retryable: true)
+          http_post("/#{account_id}/cards/#{card_number}/not_now.json")
           nil
         end
       end
@@ -238,13 +233,13 @@ module Fizzy
         end
       end
 
-      # unpin operation
+      # Unpins the card for the caller. Unpinning a card the caller hasn't pinned currently fails with a 500 (Card::Pinnable#unpin_by destroys a pin it didn't find), so a retry after a success fails: not idempotent.
       # @param account_id [String] account id ID
       # @param card_number [Integer] card number ID
       # @return [void]
       def unpin(account_id:, card_number:)
         with_operation(service: "cards", operation: "UnpinCard", is_mutation: true, resource_id: card_number) do
-          http_delete("/#{account_id}/cards/#{card_number}/pin.json")
+          http_delete("/#{account_id}/cards/#{card_number}/pin.json", retryable: false)
           nil
         end
       end
@@ -260,7 +255,7 @@ module Fizzy
         end
       end
 
-      # self_assign operation
+      # Assigns the caller to the card, or unassigns them if they are already assigned. This is a toggle: calling it again undoes it, and both outcomes return 204, so a retry or a repeat reverses the first call. Check the card first when the outcome matters.
       # @param account_id [String] account id ID
       # @param card_number [Integer] card number ID
       # @return [void]
@@ -271,10 +266,10 @@ module Fizzy
         end
       end
 
-      # tag operation
+      # Tags the card, or untags it if it already has the tag. The tag is created when the account has none with that title. This is a toggle: calling it again undoes it, and both outcomes return 204, so a retry or a repeat reverses the first call. Check the card first when the outcome matters.
       # @param account_id [String] account id ID
       # @param card_number [Integer] card number ID
-      # @param tag_title [String] tag title
+      # @param tag_title [String] The tag's title; surrounding whitespace and a leading "#" are stripped.
       # @return [void]
       def tag(account_id:, card_number:, tag_title:)
         with_operation(service: "cards", operation: "TagCard", is_mutation: true, resource_id: card_number) do
@@ -283,25 +278,25 @@ module Fizzy
         end
       end
 
-      # triage operation
+      # Triages the card into a column of its board. Each call records an event, which notifies webhooks and adds a system comment to the card, even when the card's state doesn't change, so it is not safe to retry.
       # @param account_id [String] account id ID
       # @param card_number [Integer] card number ID
-      # @param column_id [String, nil] column id
+      # @param column_id [String] A column on the card's board. Required: the controller finds it unconditionally.
       # @return [void]
-      def triage(account_id:, card_number:, column_id: nil)
+      def triage(account_id:, card_number:, column_id:)
         with_operation(service: "cards", operation: "TriageCard", is_mutation: true, resource_id: card_number) do
-          http_post("/#{account_id}/cards/#{card_number}/triage.json", body: compact_params(column_id: column_id), retryable: true)
+          http_post("/#{account_id}/cards/#{card_number}/triage.json", body: compact_params(column_id: column_id))
           nil
         end
       end
 
-      # untriage operation
+      # Sends the card back to triage (Maybe?). Each call records an event, which notifies webhooks and adds a system comment to the card, even when the card's state doesn't change, so it is not safe to retry.
       # @param account_id [String] account id ID
       # @param card_number [Integer] card number ID
       # @return [void]
       def untriage(account_id:, card_number:)
         with_operation(service: "cards", operation: "UnTriageCard", is_mutation: true, resource_id: card_number) do
-          http_delete("/#{account_id}/cards/#{card_number}/triage.json")
+          http_delete("/#{account_id}/cards/#{card_number}/triage.json", retryable: false)
           nil
         end
       end

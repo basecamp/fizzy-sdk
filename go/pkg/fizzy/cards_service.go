@@ -142,7 +142,7 @@ func (s *CardsService) Pin(ctx context.Context, cardNumber string) (*Response, e
 
 // Postpone performs the Postpone operation on a card.
 func (s *CardsService) Postpone(ctx context.Context, cardNumber string) (*Response, error) {
-	resp, err := s.client.Post(WithIdempotent(ctx), fmt.Sprintf("/cards/%s/not_now.json", cardNumber), nil)
+	resp, err := s.client.Post(ctx, fmt.Sprintf("/cards/%s/not_now.json", cardNumber), nil)
 	return resp, err
 }
 
@@ -171,13 +171,13 @@ func (s *CardsService) Tag(ctx context.Context, cardNumber string, req *generate
 
 // Triage performs the Triage operation on a card.
 func (s *CardsService) Triage(ctx context.Context, cardNumber string, req *generated.TriageCardRequest) (*Response, error) {
-	resp, err := s.client.Post(WithIdempotent(ctx), fmt.Sprintf("/cards/%s/triage.json", cardNumber), req)
+	resp, err := s.client.Post(ctx, fmt.Sprintf("/cards/%s/triage.json", cardNumber), req)
 	return resp, err
 }
 
 // UnTriage performs the UnTriage operation on a card.
 func (s *CardsService) UnTriage(ctx context.Context, cardNumber string) (*Response, error) {
-	return s.client.Delete(ctx, fmt.Sprintf("/cards/%s/triage.json", cardNumber))
+	return s.client.Delete(WithNoRetry(ctx), fmt.Sprintf("/cards/%s/triage.json", cardNumber))
 }
 
 // Ungold performs the Ungold operation on a card.
@@ -187,7 +187,7 @@ func (s *CardsService) Ungold(ctx context.Context, cardNumber string) (*Response
 
 // Unpin performs the Unpin operation on a card.
 func (s *CardsService) Unpin(ctx context.Context, cardNumber string) (*Response, error) {
-	return s.client.Delete(ctx, fmt.Sprintf("/cards/%s/pin.json", cardNumber))
+	return s.client.Delete(WithNoRetry(ctx), fmt.Sprintf("/cards/%s/pin.json", cardNumber))
 }
 
 // Unwatch performs the Unwatch operation on a card.
