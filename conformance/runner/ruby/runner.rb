@@ -198,7 +198,7 @@ class ConformanceRunner
     when "TagCard"
       client.cards.tag(account_id: account_id, card_number: pp["cardNumber"], **symbolize_body(body))
     when "TriageCard"
-      client.cards.triage(account_id: account_id, card_number: pp["cardNumber"])
+      client.cards.triage(account_id: account_id, card_number: pp["cardNumber"], **symbolize_body(body))
     when "UnTriageCard"
       client.cards.untriage(account_id: account_id, card_number: pp["cardNumber"])
     when "WatchCard"

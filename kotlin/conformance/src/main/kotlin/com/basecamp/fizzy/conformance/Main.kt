@@ -364,7 +364,7 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
             terms = qp.stringListOrSingleton("terms[]"),
         ))
         "CreateCard" -> account.cards.create(
-            CreateCardBody(title = body?.str("title") ?: "")
+            CreateCardBody(title = body?.str("title") ?: "", boardId = body?.str("board_id") ?: "")
         )
         "GetCard" -> account.cards.get(pp.long("cardNumber"))
         "UpdateCard" -> account.cards.update(
@@ -372,7 +372,6 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
             UpdateCardBody(
                 title = body?.strOrNull("title"),
                 description = body?.strOrNull("description"),
-                columnId = body?.strOrNull("column_id"),
             ),
         )
         "DeleteCard" -> account.cards.delete(pp.long("cardNumber"))
@@ -384,7 +383,6 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
             pp.long("cardNumber"),
             MoveCardBody(
                 boardId = body?.str("board_id") ?: "",
-                columnId = body?.strOrNull("column_id"),
             ),
         )
         "CloseCard" -> account.cards.close(pp.long("cardNumber"))
@@ -400,7 +398,7 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
             pp.long("cardNumber"),
             TagCardBody(tagTitle = body?.str("tag_title") ?: ""),
         )
-        "TriageCard" -> account.cards.triage(pp.long("cardNumber"), TriageCardBody())
+        "TriageCard" -> account.cards.triage(pp.long("cardNumber"), TriageCardBody(columnId = body?.str("column_id") ?: ""))
         "UnTriageCard" -> account.cards.untriage(pp.long("cardNumber"))
         "WatchCard" -> account.cards.watch(pp.long("cardNumber"))
         "UnwatchCard" -> account.cards.unwatch(pp.long("cardNumber"))
@@ -552,7 +550,7 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
         "GetUser" -> account.users.get(pp.string("userId"))
         "UpdateUser" -> account.users.update(
             pp.string("userId"),
-            UpdateUserBody(name = body?.strOrNull("name")),
+            UpdateUserBody(name = body?.str("name") ?: ""),
         )
         "DeactivateUser" -> account.users.deactivate(pp.string("userId"))
         "RequestEmailAddressChange" -> account.users.requestEmailAddressChange(
@@ -582,7 +580,6 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
             pp.string("webhookId"),
             UpdateWebhookBody(
                 name = body?.strOrNull("name"),
-                url = body?.strOrNull("url"),
                 subscribedActions = body?.stringListOrNull("subscribed_actions"),
             ),
         )
@@ -603,7 +600,7 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
         // Miscellaneous — Account
         "UpdateAccountEntropy" -> account.miscellaneous.updateAccountEntropy(
             UpdateAccountEntropyBody(
-                autoPostponePeriodInDays = body?.longOrNull("auto_postpone_period_in_days")?.toInt(),
+                autoPostponePeriodInDays = body?.longOrNull("auto_postpone_period_in_days")?.toInt() ?: 0,
             )
         )
         "CreateAccountExport" -> account.miscellaneous.createAccountExport()
@@ -611,14 +608,14 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
         "GetJoinCode" -> account.miscellaneous.joinCode()
         "UpdateJoinCode" -> account.miscellaneous.updateJoinCode(
             UpdateJoinCodeBody(
-                usageLimit = body?.longOrNull("usage_limit")?.toInt(),
+                usageLimit = body?.longOrNull("usage_limit")?.toInt() ?: 0,
             )
         )
         "ResetJoinCode" -> account.miscellaneous.resetJoinCode()
         "GetAccountSettings" -> account.miscellaneous.accountSettings()
         "UpdateAccountSettings" -> account.miscellaneous.updateAccountSettings(
             UpdateAccountSettingsBody(
-                name = body?.strOrNull("name"),
+                name = body?.str("name") ?: "",
             )
         )
 
@@ -626,13 +623,13 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
         "UpdateBoardEntropy" -> account.miscellaneous.updateBoardEntropy(
             pp.string("boardId"),
             UpdateBoardEntropyBody(
-                autoPostponePeriodInDays = body?.longOrNull("auto_postpone_period_in_days")?.toInt(),
+                autoPostponePeriodInDays = body?.longOrNull("auto_postpone_period_in_days")?.toInt() ?: 0,
             ),
         )
         "UpdateBoardInvolvement" -> account.miscellaneous.updateBoardInvolvement(
             pp.string("boardId"),
             UpdateBoardInvolvementBody(
-                involvement = body?.strOrNull("involvement"),
+                involvement = body?.str("involvement") ?: "",
             ),
         )
 
@@ -648,7 +645,7 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
         "GetNotificationSettings" -> account.miscellaneous.notificationSettings()
         "UpdateNotificationSettings" -> account.miscellaneous.updateNotificationSettings(
             UpdateNotificationSettingsBody(
-                bundleEmailFrequency = body?.strOrNull("bundle_email_frequency"),
+                bundleEmailFrequency = body?.str("bundle_email_frequency") ?: "",
             )
         )
 

@@ -57,7 +57,7 @@
     "method": "POST",
     "path": "/{accountId}/cards.json",
     "pathParams": { "accountId": "999" },
-    "requestBody": { "title": "Test Card" },
+    "requestBody": { "title": "Test Card", "board_id": "1" },
     "mockResponses": [
       {
         "status": 503,
@@ -116,8 +116,8 @@
     "tags": ["idempotency"]
   },
   {
-    "name": "MoveColumnLeft POST retries on 503 (naturally idempotent)",
-    "description": "MoveColumnLeft is a naturally idempotent POST and should be retried",
+    "name": "MoveColumnLeft POST does NOT retry on 503 (each call moves the column again)",
+    "description": "MoveColumnLeft swaps the column with its neighbor on every call, so a retry would move it twice; it must not be retried",
     "operation": "MoveColumnLeft",
     "method": "POST",
     "path": "/{accountId}/columns/{columnId}/left_position.json",
@@ -127,16 +127,71 @@
         "status": 503,
         "headers": { "Content-Type": "application/json" },
         "body": { "error": "Service unavailable" }
-      },
-      {
-        "status": 200,
-        "headers": { "Content-Type": "application/json" },
-        "body": null
       }
     ],
     "assertions": [
-      { "type": "requestCount", "expected": 2 },
-      { "type": "noError" }
+      { "type": "requestCount", "expected": 1 },
+      { "type": "statusCode", "expected": 503 }
+    ],
+    "tags": ["idempotency"]
+  },
+  {
+    "name": "PostponeCard POST does NOT retry on 503 (records an event per call)",
+    "description": "PostponeCard records a postponed event on every call, even for a card already postponed, so a retry would record it twice; it must not be retried",
+    "operation": "PostponeCard",
+    "method": "POST",
+    "path": "/{accountId}/cards/{cardNumber}/not_now.json",
+    "pathParams": { "accountId": "999", "cardNumber": 42 },
+    "mockResponses": [
+      {
+        "status": 503,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Service unavailable" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestCount", "expected": 1 },
+      { "type": "statusCode", "expected": 503 }
+    ],
+    "tags": ["idempotency"]
+  },
+  {
+    "name": "UnpinCard DELETE does NOT retry on 503 (a repeat fails)",
+    "description": "UnpinCard fails once the card is no longer pinned, so it is not idempotent; even though it is DELETE, it must not be retried",
+    "operation": "UnpinCard",
+    "method": "DELETE",
+    "path": "/{accountId}/cards/{cardNumber}/pin.json",
+    "pathParams": { "accountId": "999", "cardNumber": 42 },
+    "mockResponses": [
+      {
+        "status": 503,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Service unavailable" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestCount", "expected": 1 },
+      { "type": "statusCode", "expected": 503 }
+    ],
+    "tags": ["idempotency"]
+  },
+  {
+    "name": "ResetJoinCode DELETE does NOT retry on 503 (each call mints a new code)",
+    "description": "ResetJoinCode replaces the join code on every call, so a retry would invalidate the code the first call issued; even though it is DELETE, it must not be retried",
+    "operation": "ResetJoinCode",
+    "method": "DELETE",
+    "path": "/{accountId}/account/join_code.json",
+    "pathParams": { "accountId": "999" },
+    "mockResponses": [
+      {
+        "status": 503,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Service unavailable" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestCount", "expected": 1 },
+      { "type": "statusCode", "expected": 503 }
     ],
     "tags": ["idempotency"]
   },
