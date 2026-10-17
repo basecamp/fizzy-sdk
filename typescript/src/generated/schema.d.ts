@@ -61,6 +61,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * @description Starts a magic-link sign-in and answers the pending authentication token.
+         *
+         *     Fizzy answers 201 and also sets the token as the pending_authentication_token cookie, which
+         *     RedeemMagicLink reads.
+         */
         post: operations["CreateSession"];
         delete: operations["DestroySession"];
         options?: never;
@@ -77,6 +83,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * @description Redeems the code from a magic-link email for a session token.
+         *
+         *     Fizzy reads the pending sign-in from the pending_authentication_token cookie CreateSession
+         *     set, not from the body, so the request must carry it as
+         *     `Cookie: pending_authentication_token=<token>`. The session_token it answers is sent back as
+         *     `Cookie: session_token=<token>`.
+         */
         post: operations["RedeemMagicLink"];
         delete?: never;
         options?: never;
@@ -1635,7 +1649,8 @@ export interface components {
             url: string;
         };
         RedeemMagicLinkRequestContent: {
-            token: string;
+            /** @description The code from the magic-link email. */
+            code: string;
         };
         RedeemMagicLinkResponseContent: components["schemas"]["SessionAuthorization"];
         RegisterDeviceRequestContent: {
@@ -2191,8 +2206,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description CreateSession 200 response */
-            200: {
+            /** @description CreateSession 201 response */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2274,8 +2289,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description DestroySession 200 response */
-            200: {
+            /** @description DestroySession 204 response */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };

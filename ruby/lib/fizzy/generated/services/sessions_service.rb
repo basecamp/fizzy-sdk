@@ -7,7 +7,7 @@ module Fizzy
     # @generated from OpenAPI spec
     class SessionsService < BaseService
 
-      # create operation
+      # Starts a magic-link sign-in and answers the pending authentication token.
       # @param email_address [String] email address
       # @return [Hash] response data
       def create(email_address:)
@@ -25,12 +25,12 @@ module Fizzy
         end
       end
 
-      # redeem_magic_link operation
-      # @param token [String] token
+      # Redeems the code from a magic-link email for a session token.
+      # @param code [String] The code from the magic-link email.
       # @return [Hash] response data
-      def redeem_magic_link(token:)
+      def redeem_magic_link(code:)
         with_operation(service: "sessions", operation: "RedeemMagicLink", is_mutation: true) do
-          http_post("/session/magic_link.json", body: compact_params(token: token)).json
+          http_post("/session/magic_link.json", body: compact_params(code: code)).json
         end
       end
 

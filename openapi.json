@@ -413,8 +413,8 @@
             "delete": {
                 "operationId": "DestroySession",
                 "responses": {
-                    "200": {
-                        "description": "DestroySession 200 response"
+                    "204": {
+                        "description": "DestroySession 204 response"
                     },
                     "400": {
                         "description": "BadRequestError 400 response",
@@ -492,6 +492,7 @@
                 }
             },
             "post": {
+                "description": "Starts a magic-link sign-in and answers the pending authentication token.\n\nFizzy answers 201 and also sets the token as the pending_authentication_token cookie, which\nRedeemMagicLink reads.",
                 "operationId": "CreateSession",
                 "requestBody": {
                     "content": {
@@ -504,8 +505,8 @@
                     "required": true
                 },
                 "responses": {
-                    "200": {
-                        "description": "CreateSession 200 response",
+                    "201": {
+                        "description": "CreateSession 201 response",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -592,6 +593,7 @@
         },
         "/session/magic_link.json": {
             "post": {
+                "description": "Redeems the code from a magic-link email for a session token.\n\nFizzy reads the pending sign-in from the pending_authentication_token cookie CreateSession\nset, not from the body, so the request must carry it as\n`Cookie: pending_authentication_token=<token>`. The session_token it answers is sent back as\n`Cookie: session_token=<token>`.",
                 "operationId": "RedeemMagicLink",
                 "requestBody": {
                     "content": {
@@ -14255,12 +14257,13 @@
             "RedeemMagicLinkRequestContent": {
                 "type": "object",
                 "properties": {
-                    "token": {
-                        "type": "string"
+                    "code": {
+                        "type": "string",
+                        "description": "The code from the magic-link email."
                     }
                 },
                 "required": [
-                    "token"
+                    "code"
                 ]
             },
             "RedeemMagicLinkResponseContent": {

@@ -13,7 +13,7 @@ import kotlinx.serialization.json.JsonElement
 class SessionsService(client: AccountClient) : BaseService(client) {
 
     /**
-     * create operation
+     * Starts a magic-link sign-in and answers the pending authentication token.
      * @param body Request body
      */
     suspend fun create(body: CreateSessionBody): PendingAuthentication {
@@ -52,7 +52,7 @@ class SessionsService(client: AccountClient) : BaseService(client) {
     }
 
     /**
-     * redeemMagicLink operation
+     * Redeems the code from a magic-link email for a session token.
      * @param body Request body
      */
     suspend fun redeemMagicLink(body: RedeemMagicLinkBody): SessionAuthorization {
@@ -66,7 +66,7 @@ class SessionsService(client: AccountClient) : BaseService(client) {
         )
         return request(info, {
             httpPostRoot("/session/magic_link.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
-                put("token", kotlinx.serialization.json.JsonPrimitive(body.token))
+                put("code", kotlinx.serialization.json.JsonPrimitive(body.code))
             }), operationName = info.operation)
         }) { body ->
             json.decodeFromString<SessionAuthorization>(body)

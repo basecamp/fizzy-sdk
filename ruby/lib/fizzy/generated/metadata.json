@@ -1,7 +1,7 @@
 {
   "$schema": "https://fizzy.do/schemas/sdk-metadata.json",
   "version": "1.0.0",
-  "generated": "2026-10-17T09:24:49Z",
+  "generated": "2026-10-17T23:45:49Z",
   "operations": {
     "ListAccessTokens": {
       "retry": {

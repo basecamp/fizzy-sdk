@@ -211,7 +211,7 @@ data class CreateSessionBody(
 
 /** Request body for RedeemMagicLink. */
 data class RedeemMagicLinkBody(
-    val token: String
+    val code: String
 )
 
 /** Request body for CompleteSignup. */

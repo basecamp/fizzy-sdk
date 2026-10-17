@@ -3282,7 +3282,11 @@ structure ListWebhookDeliveriesOutput {
 // Sessions (no account prefix — server-root-scoped)
 // ═══════════════════════════════════════════════════════════════════════════
 
-@http(method: "POST", uri: "/session.json")
+/// Starts a magic-link sign-in and answers the pending authentication token.
+///
+/// Fizzy answers 201 and also sets the token as the pending_authentication_token cookie, which
+/// RedeemMagicLink reads.
+@http(method: "POST", uri: "/session.json", code: 201)
 @tags(["Sessions"])
 @fizzyRetry(maxAttempts: 1)
 operation CreateSession {
@@ -3302,6 +3306,12 @@ structure CreateSessionOutput {
     pending_authentication: PendingAuthentication
 }
 
+/// Redeems the code from a magic-link email for a session token.
+///
+/// Fizzy reads the pending sign-in from the pending_authentication_token cookie CreateSession
+/// set, not from the body, so the request must carry it as
+/// `Cookie: pending_authentication_token=<token>`. The session_token it answers is sent back as
+/// `Cookie: session_token=<token>`.
 @http(method: "POST", uri: "/session/magic_link.json")
 @tags(["Sessions"])
 @fizzyRetry(maxAttempts: 1)
@@ -3312,8 +3322,9 @@ operation RedeemMagicLink {
 }
 
 structure RedeemMagicLinkInput {
+    /// The code from the magic-link email.
     @required
-    token: String
+    code: String
 }
 
 structure RedeemMagicLinkOutput {
@@ -3322,7 +3333,7 @@ structure RedeemMagicLinkOutput {
 }
 
 @idempotent
-@http(method: "DELETE", uri: "/session.json")
+@http(method: "DELETE", uri: "/session.json", code: 204)
 @tags(["Sessions"])
 @fizzyRetry(maxAttempts: 1)
 operation DestroySession {

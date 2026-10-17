@@ -11,7 +11,7 @@ pub static PATHS: &[(&str, &[&str])] = &[
     ("CreateSessionRequestContent", &["$.email_address"]),
     ("Identity", &["$.name", "$.email_address"]),
     ("PendingAuthentication", &["$.pending_authentication_token"]),
-    ("RedeemMagicLinkRequestContent", &["$.token"]),
+    ("RedeemMagicLinkRequestContent", &["$.code"]),
     (
         "RequestEmailAddressChangeRequestContent",
         &["$.email_address"],
