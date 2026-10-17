@@ -180,7 +180,14 @@ async function dispatch(
         break;
       }
       case "CreateCard":
-        data = await (client as any).cards.create(body);
+        data = await (client as any).cards.create({
+          title: body.title,
+          boardId: body.board_id,
+          description: body.description,
+          image: body.image,
+          createdAt: body.created_at,
+          lastActiveAt: body.last_active_at,
+        });
         break;
       case "GetCard":
         data = await (client as any).cards.get(p.cardNumber as number);
@@ -196,6 +203,12 @@ async function dispatch(
         break;
       case "MoveCard":
         data = await (client as any).cards.move(p.cardNumber as number, { boardId: body.board_id as number });
+        break;
+      case "TriageCard":
+        data = await (client as any).cards.triage(p.cardNumber as number, { columnId: body.column_id });
+        break;
+      case "UnTriageCard":
+        data = await (client as any).cards.untriage(p.cardNumber as number);
         break;
       case "PostponeCard":
         data = await (client as any).cards.postpone(p.cardNumber as number);

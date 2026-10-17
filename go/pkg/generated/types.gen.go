@@ -715,7 +715,7 @@ type UpdateCommentResponseContent = Comment
 
 // UpdateJoinCodeRequestContent defines model for UpdateJoinCodeRequestContent.
 type UpdateJoinCodeRequestContent struct {
-	// UsageLimit How many times the join code can be redeemed, at most 10,000,000,000. Required: an empty body is a 400.
+	// UsageLimit How many times the join code can be redeemed. Fizzy accepts up to 10,000,000,000, but this 32-bit field holds at most 2,147,483,647. Required: an empty body is a 400.
 	UsageLimit int32 `json:"usage_limit"`
 }
 

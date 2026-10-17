@@ -75,7 +75,7 @@ module Fizzy
 
       # update_join_code operation
       # @param account_id [String] account id ID
-      # @param usage_limit [Integer] How many times the join code can be redeemed, at most 10,000,000,000. Required: an empty body is a 400.
+      # @param usage_limit [Integer] How many times the join code can be redeemed. Fizzy accepts up to 10,000,000,000, but this 32-bit field holds at most 2,147,483,647. Required: an empty body is a 400.
       # @return [void]
       def update_join_code(account_id:, usage_limit:)
         with_operation(service: "miscellaneous", operation: "UpdateJoinCode", is_mutation: true, resource_id: account_id) do

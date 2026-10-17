@@ -74,6 +74,7 @@
     ],
     "assertions": [
       { "type": "statusCode", "expected": 201 },
+      { "type": "requestBodyField", "expected": "board_id" },
       { "type": "noError" }
     ],
     "tags": ["status-codes"]

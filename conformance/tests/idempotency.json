@@ -67,7 +67,8 @@
     ],
     "assertions": [
       { "type": "requestCount", "expected": 1 },
-      { "type": "statusCode", "expected": 503 }
+      { "type": "statusCode", "expected": 503 },
+      { "type": "requestBodyField", "expected": "board_id" }
     ],
     "tags": ["idempotency"]
   },
@@ -122,6 +123,67 @@
     "method": "POST",
     "path": "/{accountId}/columns/{columnId}/left_position.json",
     "pathParams": { "accountId": "999", "columnId": 10 },
+    "mockResponses": [
+      {
+        "status": 503,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Service unavailable" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestCount", "expected": 1 },
+      { "type": "statusCode", "expected": 503 }
+    ],
+    "tags": ["idempotency"]
+  },
+  {
+    "name": "MoveColumnRight POST does NOT retry on 503 (each call moves the column again)",
+    "description": "MoveColumnRight swaps the column with its neighbor on every call, so a retry would move it twice; it must not be retried",
+    "operation": "MoveColumnRight",
+    "method": "POST",
+    "path": "/{accountId}/columns/{columnId}/right_position.json",
+    "pathParams": { "accountId": "999", "columnId": 10 },
+    "mockResponses": [
+      {
+        "status": 503,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Service unavailable" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestCount", "expected": 1 },
+      { "type": "statusCode", "expected": 503 }
+    ],
+    "tags": ["idempotency"]
+  },
+  {
+    "name": "TriageCard POST does NOT retry on 503 (records an event per call)",
+    "description": "TriageCard records a triaged event on every call, so a retry would record it twice; it must not be retried",
+    "operation": "TriageCard",
+    "method": "POST",
+    "path": "/{accountId}/cards/{cardNumber}/triage.json",
+    "pathParams": { "accountId": "999", "cardNumber": 42 },
+    "requestBody": { "column_id": "7" },
+    "mockResponses": [
+      {
+        "status": 503,
+        "headers": { "Content-Type": "application/json" },
+        "body": { "error": "Service unavailable" }
+      }
+    ],
+    "assertions": [
+      { "type": "requestCount", "expected": 1 },
+      { "type": "statusCode", "expected": 503 }
+    ],
+    "tags": ["idempotency"]
+  },
+  {
+    "name": "UnTriageCard DELETE does NOT retry on 503 (records an event per call)",
+    "description": "UnTriageCard records a sent-back-to-triage event on every call, so it is not idempotent; even though it is DELETE, it must not be retried",
+    "operation": "UnTriageCard",
+    "method": "DELETE",
+    "path": "/{accountId}/cards/{cardNumber}/triage.json",
+    "pathParams": { "accountId": "999", "cardNumber": 42 },
     "mockResponses": [
       {
         "status": 503,
