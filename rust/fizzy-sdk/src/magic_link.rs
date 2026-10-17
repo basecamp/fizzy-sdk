@@ -23,18 +23,15 @@
 //! # }
 //! ```
 //!
-//! # Where this parts company with the model
+//! # What the flow adds to the generated operations
 //!
-//! The Smithy model spells `RedeemMagicLink`'s body as `{"token": …}` and says nothing of
-//! the cookie; upstream Fizzy reads `code` and requires the cookie. The flow follows
-//! upstream, since that is what answers, and sends both spellings of the code so it also
-//! works against a server built from the model as written. The generated
-//! [`crate::services::sessions::SessionsService::redeem_magic_link`] is the model's shape and
-//! cannot complete a login on its own until the model catches up.
+//! The model documents the cookie but cannot send it: the generated
+//! [`crate::services::sessions::SessionsService::redeem_magic_link`] sends the code alone, so
+//! it completes a sign-in only on a client that already carries the pending cookie. The flow
+//! sends the generated `RedeemMagicLinkRequestContent` with the cookie set from the token it
+//! kept.
 
 use std::sync::Mutex;
-
-use serde::Serialize;
 
 use crate::auth::NoAuth;
 use crate::client::{Client, ClientBuilder};
@@ -42,7 +39,8 @@ use crate::config::Config;
 use crate::error::Error;
 use crate::generated::routes;
 use crate::generated::types::{
-    CreateSessionRequestContent, PendingAuthentication, SessionAuthorization,
+    CreateSessionRequestContent, PendingAuthentication, RedeemMagicLinkRequestContent,
+    SessionAuthorization,
 };
 use crate::http::header::COOKIE;
 use crate::types::SensitiveString;
@@ -55,12 +53,6 @@ pub const PENDING_COOKIE: &str = "pending_authentication_token";
 pub struct MagicLinkFlow {
     client: Client,
     pending: Mutex<Option<SensitiveString>>,
-}
-
-#[derive(Serialize)]
-struct Redeem<'a> {
-    code: &'a str,
-    token: &'a str,
 }
 
 impl MagicLinkFlow {
@@ -140,7 +132,9 @@ impl MagicLinkFlow {
         let mut operation = self.client.operation(&routes::REDEEM_MAGIC_LINK, &[])?;
         operation.operation_name("MagicLinkRedeem");
         operation.header(COOKIE, cookie);
-        operation.json(&Redeem { code, token: code })?;
+        operation.json(&RedeemMagicLinkRequestContent {
+            code: SensitiveString::from(code),
+        })?;
         let session: SessionAuthorization = self.client.send(operation).await?;
         *self
             .pending

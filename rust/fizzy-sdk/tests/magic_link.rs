@@ -25,7 +25,7 @@ async fn the_flow_carries_the_pending_token_from_create_to_redeem() {
     Mock::given(method("POST"))
         .and(path("/session/magic_link.json"))
         .and(header("Cookie", "pending_authentication_token=pend-1"))
-        .and(body_json(json!({"code": "ABC123", "token": "ABC123"})))
+        .and(body_json(json!({"code": "ABC123"})))
         .respond_with(
             ResponseTemplate::new(200).set_body_json(
                 json!({"session_token": "sess-1", "requires_signup_completion": false}),
