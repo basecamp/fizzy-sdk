@@ -29,9 +29,9 @@ module Fizzy
       # update operation
       # @param account_id [String] account id ID
       # @param user_id [String] user id ID
-      # @param name [String, nil] name
+      # @param name [String] Required: the controller expects a `user` object, so an empty body is a 400.
       # @return [Hash] response data
-      def update(account_id:, user_id:, name: nil)
+      def update(account_id:, user_id:, name:)
         with_operation(service: "users", operation: "UpdateUser", is_mutation: true, resource_id: user_id) do
           http_patch("/#{account_id}/users/#{user_id}", body: compact_params(name: name)).json
         end

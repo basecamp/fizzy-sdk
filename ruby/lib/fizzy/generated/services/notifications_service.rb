@@ -7,20 +7,18 @@ module Fizzy
     # @generated from OpenAPI spec
     class NotificationsService < BaseService
 
-      # list operation
+      # Lists the caller's notifications. It takes no read/unread filter: the first page holds up to 100 unread notifications followed by a page of read ones, and later pages hold read ones only.
       # @param account_id [String] account id ID
-      # @param read [Boolean, nil] read
       # @return [Enumerator<Hash>] paginated results
-      def list(account_id:, read: nil)
+      def list(account_id:)
         wrap_paginated(service: "notifications", operation: "ListNotifications", is_mutation: false, resource_id: account_id) do
-          params = compact_params(read: read)
-          paginate("/#{account_id}/notifications.json", params: params)
+          paginate("/#{account_id}/notifications.json")
         end
       end
 
-      # bulk_read operation
+      # Marks every unread notification of the caller read. It takes no selection.
       # @param account_id [String] account id ID
-      # @param notification_ids [Array, nil] notification ids
+      # @param notification_ids [Array, nil] Ignored: Notifications::BulkReadingsController reads no ids and marks every unread notification read whatever this holds.
       # @return [void]
       def bulk_read(account_id:, notification_ids: nil)
         with_operation(service: "notifications", operation: "BulkReadNotifications", is_mutation: true, resource_id: account_id) do

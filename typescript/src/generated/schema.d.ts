@@ -174,6 +174,7 @@ export interface paths {
         get: operations["GetJoinCode"];
         put?: never;
         post?: never;
+        /** @description Replaces the join code with a newly generated one and resets its usage count. Each call mints a different code and invalidates the previous one, so a retry invalidates the code the first call issued: not idempotent. */
         delete: operations["ResetJoinCode"];
         options?: never;
         head?: never;
@@ -241,6 +242,7 @@ export interface paths {
         delete: operations["DeleteBoard"];
         options?: never;
         head?: never;
+        /** @description Updates a board. Send at least one of name, all_access, auto_postpone_period_in_days or public_description: the controller expects a `board` object, so a body without any of them (including one carrying only user_ids) is a 400. */
         patch: operations["UpdateBoard"];
         trace?: never;
     };
@@ -337,6 +339,7 @@ export interface paths {
         delete: operations["DeleteColumn"];
         options?: never;
         head?: never;
+        /** @description Updates a column. Send at least one of name or color: the controller expects a `column` object, so an empty body is a 400. */
         patch: operations["UpdateColumn"];
         trace?: never;
     };
@@ -411,6 +414,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** @description Lists the board's webhooks. Fizzy pages this list (a Link header with rel="next"); this operation returns the first page. */
         get: operations["ListWebhooks"];
         put?: never;
         post: operations["CreateWebhook"];
@@ -433,6 +437,7 @@ export interface paths {
         delete: operations["DeleteWebhook"];
         options?: never;
         head?: never;
+        /** @description Updates a webhook's name or subscribed actions. Send at least one: the controller expects a `webhook` object, so an empty body is a 400. The URL can't change after creation; delete the webhook and create a new one. */
         patch: operations["UpdateWebhook"];
         trace?: never;
     };
@@ -497,6 +502,7 @@ export interface paths {
         delete: operations["DeleteCard"];
         options?: never;
         head?: never;
+        /** @description Updates a card. Send at least one of title, description, image or created_at: the controller expects a `card` object, so an empty body is a 400. Moving a card between columns is TriageCard, and between boards MoveCard. */
         patch: operations["UpdateCard"];
         trace?: never;
     };
@@ -509,6 +515,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** @description Assigns the user to the card, or unassigns them if they are already assigned. This is a toggle: calling it again undoes it, and both outcomes return 204, so a retry or a repeat reverses the first call. Check the card first when the outcome matters. */
         post: operations["AssignCard"];
         delete?: never;
         options?: never;
@@ -653,6 +660,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** @description Moves the card to Not Now. Each call records an event, which notifies webhooks and adds a system comment to the card, even when the card's state doesn't change, so it is not safe to retry. */
         post: operations["PostponeCard"];
         delete?: never;
         options?: never;
@@ -670,6 +678,7 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["PinCard"];
+        /** @description Unpins the card for the caller. Unpinning a card the caller hasn't pinned currently fails with a 500 (Card::Pinnable#unpin_by destroys a pin it didn't find), so a retry after a success fails: not idempotent. */
         delete: operations["UnpinCard"];
         options?: never;
         head?: never;
@@ -733,7 +742,9 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** @description Marks the caller's notification for the card read. When the caller has no notification for the card, the call succeeds without changing anything. */
         post: operations["MarkCardRead"];
+        /** @description Marks the caller's notification for the card unread. When the caller has no notification for the card, the call succeeds without changing anything. */
         delete: operations["MarkCardUnread"];
         options?: never;
         head?: never;
@@ -749,6 +760,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** @description Assigns the caller to the card, or unassigns them if they are already assigned. This is a toggle: calling it again undoes it, and both outcomes return 204, so a retry or a repeat reverses the first call. Check the card first when the outcome matters. */
         post: operations["SelfAssignCard"];
         delete?: never;
         options?: never;
@@ -785,6 +797,7 @@ export interface paths {
         delete: operations["DeleteStep"];
         options?: never;
         head?: never;
+        /** @description Updates a step. Send at least one of content or completed: the controller expects a `step` object, so an empty body is a 400. */
         patch: operations["UpdateStep"];
         trace?: never;
     };
@@ -797,6 +810,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** @description Tags the card, or untags it if it already has the tag. The tag is created when the account has none with that title. This is a toggle: calling it again undoes it, and both outcomes return 204, so a retry or a repeat reverses the first call. Check the card first when the outcome matters. */
         post: operations["TagCard"];
         delete?: never;
         options?: never;
@@ -813,7 +827,9 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** @description Triages the card into a column of its board. Each call records an event, which notifies webhooks and adds a system comment to the card, even when the card's state doesn't change, so it is not safe to retry. */
         post: operations["TriageCard"];
+        /** @description Sends the card back to triage (Maybe?). Each call records an event, which notifies webhooks and adds a system comment to the card, even when the card's state doesn't change, so it is not safe to retry. */
         delete: operations["UnTriageCard"];
         options?: never;
         head?: never;
@@ -845,6 +861,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** @description Swaps the column with its left neighbor. Each call moves it again, so it is not idempotent; at the leftmost edge there is no neighbor and the call succeeds without changing anything. */
         post: operations["MoveColumnLeft"];
         delete?: never;
         options?: never;
@@ -861,6 +878,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** @description Swaps the column with its right neighbor. Each call moves it again, so it is not idempotent; at the rightmost edge there is no neighbor and the call succeeds without changing anything. */
         post: operations["MoveColumnRight"];
         delete?: never;
         options?: never;
@@ -929,6 +947,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
+        /** @description Sets the caller's time zone. The name isn't validated: one that ActiveSupport::TimeZone doesn't recognize is stored, succeeds with 204, and reads back as UTC. */
         patch: operations["UpdateMyTimezone"];
         trace?: never;
     };
@@ -939,6 +958,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** @description Lists the caller's notifications. It takes no read/unread filter: the first page holds up to 100 unread notifications followed by a page of read ones, and later pages hold read ones only. */
         get: operations["ListNotifications"];
         put?: never;
         post?: never;
@@ -957,6 +977,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** @description Marks every unread notification of the caller read. It takes no selection. */
         post: operations["BulkReadNotifications"];
         delete?: never;
         options?: never;
@@ -1343,6 +1364,7 @@ export interface components {
             users: components["schemas"]["BoardAccessUser"][];
         };
         BulkReadNotificationsRequestContent: {
+            /** @description Ignored: Notifications::BulkReadingsController reads no ids and marks every unread notification read whatever this holds. */
             notification_ids?: string[];
         };
         Card: {
@@ -1413,7 +1435,10 @@ export interface components {
         CreateBoardRequestContent: {
             name: string;
             all_access?: boolean;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Days of inactivity before a card is auto-postponed. One of 3, 7, 11, 30, 90 or 365 (Entropy::AUTO_POSTPONE_PERIODS_IN_DAYS); any other value is rejected with 422.
+             */
             auto_postpone_period_in_days?: number;
             public_description?: string;
         };
@@ -1424,11 +1449,10 @@ export interface components {
         CreateCardReactionResponseContent: components["schemas"]["Reaction"];
         CreateCardRequestContent: {
             title: string;
-            board_id?: string;
-            column_id?: string;
+            /** @description The board to create the card on. Required: CardsController finds it unconditionally. */
+            board_id: string;
             description?: string;
-            assignee_ids?: string[];
-            tag_names?: string[];
+            /** @description The signed blob id of an image uploaded with CreateDirectUpload. A caller that can't make the upload has no value to send here. */
             image?: string;
             created_at?: string;
             last_active_at?: string;
@@ -1436,6 +1460,7 @@ export interface components {
         CreateCardResponseContent: components["schemas"]["Card"];
         CreateColumnRequestContent: {
             name: string;
+            /** @description The column color, as its CSS value: "var(--color-card-default)" (Blue), "var(--color-card-1)" (Gray), "var(--color-card-2)" (Tan), "var(--color-card-3)" (Yellow), "var(--color-card-4)" (Lime), "var(--color-card-5)" (Aqua), "var(--color-card-6)" (Violet), "var(--color-card-7)" (Purple) or "var(--color-card-8)" (Pink) (Color::COLORS). Any other value is stored but reads back as Blue. */
             color?: string;
         };
         CreateColumnResponseContent: components["schemas"]["Column"];
@@ -1475,6 +1500,7 @@ export interface components {
         CreateWebhookRequestContent: {
             name: string;
             url: string;
+            /** @description The events to deliver, from: "card_assigned", "card_closed", "card_postponed", "card_auto_postponed", "card_board_changed", "card_published", "card_reopened", "card_sent_back_to_triage", "card_triaged", "card_unassigned" and "comment_created" (Webhook::PERMITTED_ACTIONS). Unknown actions are dropped silently. A webhook created without any receives no deliveries. */
             subscribed_actions?: string[];
         };
         CreateWebhookResponseContent: components["schemas"]["Webhook"];
@@ -1560,8 +1586,8 @@ export interface components {
         ListWebhookDeliveriesResponseContent: components["schemas"]["WebhookDelivery"][];
         ListWebhooksResponseContent: components["schemas"]["Webhook"][];
         MoveCardRequestContent: {
+            /** @description The destination board. Cards::BoardsController reads no column. */
             board_id: string;
-            column_id?: string;
         };
         MoveCardResponseContent: components["schemas"]["Card"];
         NotFoundErrorResponseContent: {
@@ -1645,49 +1671,64 @@ export interface components {
             url?: string;
         };
         TagCardRequestContent: {
+            /** @description The tag's title; surrounding whitespace and a leading "#" are stripped. */
             tag_title: string;
         };
         TriageCardRequestContent: {
-            column_id?: string;
+            /** @description A column on the card's board. Required: the controller finds it unconditionally. */
+            column_id: string;
         };
         UnauthorizedErrorResponseContent: {
             message: string;
         };
         UpdateAccountEntropyRequestContent: {
-            /** Format: int32 */
-            auto_postpone_period_in_days?: number;
+            /**
+             * Format: int32
+             * @description Days of inactivity before a card is auto-postponed. One of 3, 7, 11, 30, 90 or 365 (Entropy::AUTO_POSTPONE_PERIODS_IN_DAYS); any other value is rejected with 422. Required: an empty body is a 400.
+             */
+            auto_postpone_period_in_days: number;
         };
         UpdateAccountEntropyResponseContent: components["schemas"]["AccountSettings"];
         UpdateAccountSettingsRequestContent: {
-            name?: string;
+            /** @description The account name. Required: the controller expects an `account` object, so an empty body is a 400. */
+            name: string;
         };
         UpdateBoardEntropyRequestContent: {
-            /** Format: int32 */
-            auto_postpone_period_in_days?: number;
+            /**
+             * Format: int32
+             * @description Days of inactivity before a card is auto-postponed. One of 3, 7, 11, 30, 90 or 365 (Entropy::AUTO_POSTPONE_PERIODS_IN_DAYS); any other value is rejected with 422. Required: an empty body is a 400.
+             */
+            auto_postpone_period_in_days: number;
         };
         UpdateBoardEntropyResponseContent: components["schemas"]["Board"];
         UpdateBoardInvolvementRequestContent: {
-            involvement?: string;
+            /** @description The caller's involvement with the board: "access_only" or "watching" (Access#involvement). Required: the controller assigns it unconditionally. */
+            involvement: string;
         };
         UpdateBoardRequestContent: {
             name?: string;
             all_access?: boolean;
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description Days of inactivity before a card is auto-postponed. One of 3, 7, 11, 30, 90 or 365 (Entropy::AUTO_POSTPONE_PERIODS_IN_DAYS); any other value is rejected with 422.
+             */
             auto_postpone_period_in_days?: number;
             public_description?: string;
+            /** @description Replaces the board's membership: users listed are granted access and every current member not listed loses it. Omit it to leave access unchanged. It can't be sent alone (see the operation). */
             user_ids?: string[];
         };
         UpdateBoardResponseContent: components["schemas"]["Board"];
         UpdateCardRequestContent: {
             title?: string;
             description?: string;
-            column_id?: string;
+            /** @description The signed blob id of an image uploaded with CreateDirectUpload. A caller that can't make the upload has no value to send here. */
             image?: string;
             created_at?: string;
         };
         UpdateCardResponseContent: components["schemas"]["Card"];
         UpdateColumnRequestContent: {
             name?: string;
+            /** @description The column color, as its CSS value: "var(--color-card-default)" (Blue), "var(--color-card-1)" (Gray), "var(--color-card-2)" (Tan), "var(--color-card-3)" (Yellow), "var(--color-card-4)" (Lime), "var(--color-card-5)" (Aqua), "var(--color-card-6)" (Violet), "var(--color-card-7)" (Purple) or "var(--color-card-8)" (Pink) (Color::COLORS). Any other value is stored but reads back as Blue. */
             color?: string;
         };
         UpdateColumnResponseContent: components["schemas"]["Column"];
@@ -1696,14 +1737,19 @@ export interface components {
         };
         UpdateCommentResponseContent: components["schemas"]["Comment"];
         UpdateJoinCodeRequestContent: {
-            /** Format: int32 */
-            usage_limit?: number;
+            /**
+             * Format: int32
+             * @description How many times the join code can be redeemed. Fizzy accepts up to 10,000,000,000, but this 32-bit field holds at most 2,147,483,647. Required: an empty body is a 400.
+             */
+            usage_limit: number;
         };
         UpdateMyTimezoneRequestContent: {
+            /** @description An IANA or Rails time zone name, such as "America/Chicago" or "Central Time (US & Canada)". */
             timezone_name: string;
         };
         UpdateNotificationSettingsRequestContent: {
-            bundle_email_frequency?: string;
+            /** @description "never", "every_few_hours", "daily" or "weekly" (User::Settings#bundle_email_frequency). Required: an empty body is a 400. */
+            bundle_email_frequency: string;
         };
         UpdateStepRequestContent: {
             content?: string;
@@ -1711,15 +1757,17 @@ export interface components {
         };
         UpdateStepResponseContent: components["schemas"]["Step"];
         UpdateUserRequestContent: {
-            name?: string;
+            /** @description Required: the controller expects a `user` object, so an empty body is a 400. */
+            name: string;
         };
         UpdateUserResponseContent: components["schemas"]["User"];
         UpdateUserRoleRequestContent: {
+            /** @description "member" or "admin". Any other value, including "owner", sets the role to "member" (Users::RolesController#role_params), so a typo demotes. */
             role: string;
         };
         UpdateWebhookRequestContent: {
             name?: string;
-            url?: string;
+            /** @description The events to deliver, from: "card_assigned", "card_closed", "card_postponed", "card_auto_postponed", "card_board_changed", "card_published", "card_reopened", "card_sent_back_to_triage", "card_triaged", "card_unassigned" and "comment_created" (Webhook::PERMITTED_ACTIONS). Unknown actions are dropped silently. The list replaces the current subscription. */
             subscribed_actions?: string[];
         };
         UpdateWebhookResponseContent: components["schemas"]["Webhook"];
@@ -2562,7 +2610,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "application/json": components["schemas"]["UpdateAccountEntropyRequestContent"];
             };
@@ -2981,7 +3029,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "application/json": components["schemas"]["UpdateJoinCodeRequestContent"];
             };
@@ -3149,7 +3197,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "application/json": components["schemas"]["UpdateAccountSettingsRequestContent"];
             };
@@ -4611,7 +4659,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "application/json": components["schemas"]["UpdateBoardEntropyRequestContent"];
             };
@@ -4700,7 +4748,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "application/json": components["schemas"]["UpdateBoardInvolvementRequestContent"];
             };
@@ -5558,10 +5606,15 @@ export interface operations {
                 "closer_ids[]"?: string[];
                 "card_ids[]"?: string[];
                 "column_ids[]"?: string[];
+                /** @description Which cards to list: "all" (default, open cards), "maybe" (awaiting triage), "closed", "not_now", "stalled", "postponing_soon" or "golden". Any other value lists the same cards as "all". */
                 indexed_by?: string;
+                /** @description "latest" (default, most recently active first), "newest" or "oldest" (by creation). Any other value sorts as "latest". */
                 sorted_by?: string;
+                /** @description "unassigned" lists only cards with no assignee; any other value is ignored. */
                 assignment_status?: string;
+                /** @description Created within: "today", "yesterday", "thisweek", "lastweek", "thismonth", "lastmonth", "thisyear" or "lastyear" (TimeWindowParser); any other value is ignored. */
                 creation?: string;
+                /** @description Closed within: "today", "yesterday", "thisweek", "lastweek", "thismonth", "lastmonth", "thisyear" or "lastyear" (TimeWindowParser); any other value is ignored. */
                 closure?: string;
                 "terms[]"?: string[];
             };
@@ -8644,7 +8697,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "application/json": components["schemas"]["TriageCardRequestContent"];
             };
@@ -9475,9 +9528,7 @@ export interface operations {
     };
     ListNotifications: {
         parameters: {
-            query?: {
-                read?: boolean;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -9733,7 +9784,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "application/json": components["schemas"]["UpdateNotificationSettingsRequestContent"];
             };
@@ -10577,7 +10628,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
                 "application/json": components["schemas"]["UpdateUserRequestContent"];
             };

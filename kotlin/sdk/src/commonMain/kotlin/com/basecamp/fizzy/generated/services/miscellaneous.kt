@@ -87,7 +87,7 @@ class MiscellaneousService(client: AccountClient) : BaseService(client) {
         )
         return request(info, {
             httpPut("/account/entropy.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
-                body.autoPostponePeriodInDays?.let { put("auto_postpone_period_in_days", kotlinx.serialization.json.JsonPrimitive(it)) }
+                put("auto_postpone_period_in_days", kotlinx.serialization.json.JsonPrimitive(body.autoPostponePeriodInDays))
             }), operationName = info.operation)
         }) { body ->
             json.decodeFromString<JsonElement>(body)
@@ -167,13 +167,13 @@ class MiscellaneousService(client: AccountClient) : BaseService(client) {
         )
         request(info, {
             httpPatch("/account/join_code.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
-                body.usageLimit?.let { put("usage_limit", kotlinx.serialization.json.JsonPrimitive(it)) }
+                put("usage_limit", kotlinx.serialization.json.JsonPrimitive(body.usageLimit))
             }), operationName = info.operation)
         }) { Unit }
     }
 
     /**
-     * resetJoinCode operation
+     * Replaces the join code with a newly generated one and resets its usage count. Each call mints a different code and invalidates the previous one, so a retry invalidates the code the first call issued: not idempotent.
      */
     suspend fun resetJoinCode(): Unit {
         val info = OperationInfo(
@@ -223,7 +223,7 @@ class MiscellaneousService(client: AccountClient) : BaseService(client) {
         )
         request(info, {
             httpPatch("/account/settings.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
-                body.name?.let { put("name", kotlinx.serialization.json.JsonPrimitive(it)) }
+                put("name", kotlinx.serialization.json.JsonPrimitive(body.name))
             }), operationName = info.operation)
         }) { Unit }
     }
@@ -244,7 +244,7 @@ class MiscellaneousService(client: AccountClient) : BaseService(client) {
         )
         return request(info, {
             httpPut("/boards/${boardId}/entropy.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
-                body.autoPostponePeriodInDays?.let { put("auto_postpone_period_in_days", kotlinx.serialization.json.JsonPrimitive(it)) }
+                put("auto_postpone_period_in_days", kotlinx.serialization.json.JsonPrimitive(body.autoPostponePeriodInDays))
             }), operationName = info.operation)
         }) { body ->
             json.decodeFromString<Board>(body)
@@ -267,13 +267,13 @@ class MiscellaneousService(client: AccountClient) : BaseService(client) {
         )
         request(info, {
             httpPatch("/boards/${boardId}/involvement.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
-                body.involvement?.let { put("involvement", kotlinx.serialization.json.JsonPrimitive(it)) }
+                put("involvement", kotlinx.serialization.json.JsonPrimitive(body.involvement))
             }), operationName = info.operation)
         }) { Unit }
     }
 
     /**
-     * markCardRead operation
+     * Marks the caller's notification for the card read. When the caller has no notification for the card, the call succeeds without changing anything.
      * @param cardNumber The card number
      */
     suspend fun markCardRead(cardNumber: Long): Unit {
@@ -291,7 +291,7 @@ class MiscellaneousService(client: AccountClient) : BaseService(client) {
     }
 
     /**
-     * markCardUnread operation
+     * Marks the caller's notification for the card unread. When the caller has no notification for the card, the call succeeds without changing anything.
      * @param cardNumber The card number
      */
     suspend fun markCardUnread(cardNumber: Long): Unit {
@@ -309,7 +309,7 @@ class MiscellaneousService(client: AccountClient) : BaseService(client) {
     }
 
     /**
-     * moveColumnLeft operation
+     * Swaps the column with its left neighbor. Each call moves it again, so it is not idempotent; at the leftmost edge there is no neighbor and the call succeeds without changing anything.
      * @param columnId The column ID
      */
     suspend fun moveColumnLeft(columnId: String): Unit {
@@ -327,7 +327,7 @@ class MiscellaneousService(client: AccountClient) : BaseService(client) {
     }
 
     /**
-     * moveColumnRight operation
+     * Swaps the column with its right neighbor. Each call moves it again, so it is not idempotent; at the rightmost edge there is no neighbor and the call succeeds without changing anything.
      * @param columnId The column ID
      */
     suspend fun moveColumnRight(columnId: String): Unit {
@@ -378,7 +378,7 @@ class MiscellaneousService(client: AccountClient) : BaseService(client) {
         )
         request(info, {
             httpPatch("/notifications/settings.json", json.encodeToString(kotlinx.serialization.json.buildJsonObject {
-                body.bundleEmailFrequency?.let { put("bundle_email_frequency", kotlinx.serialization.json.JsonPrimitive(it)) }
+                put("bundle_email_frequency", kotlinx.serialization.json.JsonPrimitive(body.bundleEmailFrequency))
             }), operationName = info.operation)
         }) { Unit }
     }

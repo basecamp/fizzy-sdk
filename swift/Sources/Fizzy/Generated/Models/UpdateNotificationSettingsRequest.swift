@@ -2,9 +2,9 @@
 import Foundation
 
 public struct UpdateNotificationSettingsRequest: Codable, Sendable {
-    public var bundleEmailFrequency: String?
+    public let bundleEmailFrequency: String
 
-    public init(bundleEmailFrequency: String? = nil) {
+    public init(bundleEmailFrequency: String) {
         self.bundleEmailFrequency = bundleEmailFrequency
     }
 }

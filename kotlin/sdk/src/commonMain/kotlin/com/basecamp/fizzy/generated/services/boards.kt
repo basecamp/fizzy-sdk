@@ -78,7 +78,7 @@ class BoardsService(client: AccountClient) : BaseService(client) {
     }
 
     /**
-     * update operation
+     * Updates a board. Send at least one of name, all_access, auto_postpone_period_in_days or public_description: the controller expects a `board` object, so a body without any of them (including one carrying only user_ids) is a 400.
      * @param boardId The board ID
      * @param body Request body
      */

@@ -78,7 +78,7 @@ class ColumnsService(client: AccountClient) : BaseService(client) {
     }
 
     /**
-     * update operation
+     * Updates a column. Send at least one of name or color: the controller expects a `column` object, so an empty body is a 400.
      * @param boardId The board ID
      * @param columnId The column ID
      * @param body Request body

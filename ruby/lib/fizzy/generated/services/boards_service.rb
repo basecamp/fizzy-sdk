@@ -20,7 +20,7 @@ module Fizzy
       # @param account_id [String] account id ID
       # @param name [String] name
       # @param all_access [Boolean, nil] all access
-      # @param auto_postpone_period_in_days [Integer, nil] auto postpone period in days
+      # @param auto_postpone_period_in_days [Integer, nil] Days of inactivity before a card is auto-postponed. One of 3, 7, 11, 30, 90 or 365 (Entropy::AUTO_POSTPONE_PERIODS_IN_DAYS); any other value is rejected with 422.
       # @param public_description [String, nil] public description
       # @return [Hash] response data
       def create(account_id:, name:, all_access: nil, auto_postpone_period_in_days: nil, public_description: nil)
@@ -39,14 +39,14 @@ module Fizzy
         end
       end
 
-      # update operation
+      # Updates a board. Send at least one of name, all_access, auto_postpone_period_in_days or public_description: the controller expects a `board` object, so a body without any of them (including one carrying only user_ids) is a 400.
       # @param account_id [String] account id ID
       # @param board_id [String] board id ID
       # @param name [String, nil] name
       # @param all_access [Boolean, nil] all access
-      # @param auto_postpone_period_in_days [Integer, nil] auto postpone period in days
+      # @param auto_postpone_period_in_days [Integer, nil] Days of inactivity before a card is auto-postponed. One of 3, 7, 11, 30, 90 or 365 (Entropy::AUTO_POSTPONE_PERIODS_IN_DAYS); any other value is rejected with 422.
       # @param public_description [String, nil] public description
-      # @param user_ids [Array, nil] user ids
+      # @param user_ids [Array, nil] Replaces the board's membership: users listed are granted access and every current member not listed loses it. Omit it to leave access unchanged. It can't be sent alone (see the operation).
       # @return [Hash] response data
       def update(account_id:, board_id:, name: nil, all_access: nil, auto_postpone_period_in_days: nil, public_description: nil, user_ids: nil)
         with_operation(service: "boards", operation: "UpdateBoard", is_mutation: true, resource_id: board_id) do

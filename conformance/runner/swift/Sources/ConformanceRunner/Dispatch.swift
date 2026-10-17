@@ -71,6 +71,14 @@ extension Optional where Wrapped == [String: JSON] {
         return narrowed
     }
 
+    /// A required 32-bit integer, read like `optInt32`.
+    func int32Param(_ key: String) throws -> Int32 {
+        guard let int = try optInt32(key) else {
+            throw RunnerError.badParameter("missing integer parameter \"\(key)\"")
+        }
+        return int
+    }
+
     /// Same for booleans: `"include_read": "true"` in a query, `true` in a body.
     func optBool(_ key: String) throws -> Bool? {
         guard let value = self?[key], value != .null else { return nil }
@@ -210,14 +218,11 @@ func dispatchOperation(_ tc: TestCase, _ client: FizzyClient) async throws -> Di
         _ = try await client.cards.create(
             accountId: account(),
             req: CreateCardRequest(
-                assigneeIds: rb.optStringList("assignee_ids"),
-                boardId: rb.optString("board_id"),
-                columnId: rb.optString("column_id"),
+                boardId: rb.stringParam("board_id"),
                 createdAt: rb.optString("created_at"),
                 description: rb.optString("description"),
                 image: rb.optString("image"),
                 lastActiveAt: rb.optString("last_active_at"),
-                tagNames: rb.optStringList("tag_names"),
                 title: rb.stringParam("title")))
     case "GetCard":
         _ = try await client.cards.get(accountId: account(), cardNumber: cardNumber())
@@ -225,7 +230,6 @@ func dispatchOperation(_ tc: TestCase, _ client: FizzyClient) async throws -> Di
         _ = try await client.cards.update(
             accountId: account(), cardNumber: cardNumber(),
             req: UpdateCardRequest(
-                columnId: rb.optString("column_id"),
                 createdAt: rb.optString("created_at"),
                 description: rb.optString("description"),
                 image: rb.optString("image"),
@@ -239,7 +243,7 @@ func dispatchOperation(_ tc: TestCase, _ client: FizzyClient) async throws -> Di
     case "MoveCard":
         _ = try await client.cards.move(
             accountId: account(), cardNumber: cardNumber(),
-            req: MoveCardRequest(boardId: rb.stringParam("board_id"), columnId: rb.optString("column_id")))
+            req: MoveCardRequest(boardId: rb.stringParam("board_id")))
     case "CloseCard":
         try await client.cards.close(accountId: account(), cardNumber: cardNumber())
     case "ReopenCard":
@@ -267,7 +271,7 @@ func dispatchOperation(_ tc: TestCase, _ client: FizzyClient) async throws -> Di
     case "TriageCard":
         try await client.cards.triage(
             accountId: account(), cardNumber: cardNumber(),
-            req: TriageCardRequest(columnId: rb.optString("column_id")))
+            req: TriageCardRequest(columnId: rb.stringParam("column_id")))
     case "UnTriageCard":
         try await client.cards.untriage(accountId: account(), cardNumber: cardNumber())
     case "WatchCard":
@@ -420,7 +424,7 @@ func dispatchOperation(_ tc: TestCase, _ client: FizzyClient) async throws -> Di
     case "ListNotifications":
         return result(try await client.notifications.list(
             accountId: account(),
-            options: ListNotificationOptions(read: qp.optBool("read"), maxItems: cap)))
+            options: ListNotificationOptions(maxItems: cap)))
     case "GetNotificationTray":
         _ = try await client.notifications.tray(
             accountId: account(), options: TrayNotificationOptions(includeRead: qp.optBool("include_read")))
@@ -437,7 +441,7 @@ func dispatchOperation(_ tc: TestCase, _ client: FizzyClient) async throws -> Di
     case "UpdateNotificationSettings":
         try await client.miscellaneous.updateNotificationSettings(
             accountId: account(),
-            req: UpdateNotificationSettingsRequest(bundleEmailFrequency: rb.optString("bundle_email_frequency")))
+            req: UpdateNotificationSettingsRequest(bundleEmailFrequency: rb.stringParam("bundle_email_frequency")))
 
     // Uploads
     case "CreateDirectUpload":
@@ -456,7 +460,7 @@ func dispatchOperation(_ tc: TestCase, _ client: FizzyClient) async throws -> Di
         _ = try await client.users.get(accountId: account(), userId: userId())
     case "UpdateUser":
         _ = try await client.users.update(
-            accountId: account(), userId: userId(), req: UpdateUserRequest(name: rb.optString("name")))
+            accountId: account(), userId: userId(), req: UpdateUserRequest(name: rb.stringParam("name")))
     case "DeactivateUser":
         try await client.users.deactivate(accountId: account(), userId: userId())
     case "RequestEmailAddressChange":
@@ -504,8 +508,7 @@ func dispatchOperation(_ tc: TestCase, _ client: FizzyClient) async throws -> Di
             accountId: account(), boardId: boardId(), webhookId: webhookId(),
             req: UpdateWebhookRequest(
                 name: rb.optString("name"),
-                subscribedActions: rb.optStringList("subscribed_actions"),
-                url: rb.optString("url")))
+                subscribedActions: rb.optStringList("subscribed_actions")))
     case "DeleteWebhook":
         try await client.webhooks.delete(accountId: account(), boardId: boardId(), webhookId: webhookId())
     case "ActivateWebhook":
@@ -530,11 +533,11 @@ func dispatchOperation(_ tc: TestCase, _ client: FizzyClient) async throws -> Di
         _ = try await client.miscellaneous.accountSettings(accountId: account())
     case "UpdateAccountSettings":
         try await client.miscellaneous.updateAccountSettings(
-            accountId: account(), req: UpdateAccountSettingsRequest(name: rb.optString("name")))
+            accountId: account(), req: UpdateAccountSettingsRequest(name: rb.stringParam("name")))
     case "UpdateAccountEntropy":
         _ = try await client.miscellaneous.updateAccountEntropy(
             accountId: account(),
-            req: UpdateAccountEntropyRequest(autoPostponePeriodInDays: rb.optInt32("auto_postpone_period_in_days")))
+            req: UpdateAccountEntropyRequest(autoPostponePeriodInDays: rb.int32Param("auto_postpone_period_in_days")))
     case "CreateAccountExport":
         _ = try await client.miscellaneous.createAccountExport(accountId: account())
     case "GetAccountExport":
@@ -543,17 +546,17 @@ func dispatchOperation(_ tc: TestCase, _ client: FizzyClient) async throws -> Di
         _ = try await client.miscellaneous.joinCode(accountId: account())
     case "UpdateJoinCode":
         try await client.miscellaneous.updateJoinCode(
-            accountId: account(), req: UpdateJoinCodeRequest(usageLimit: rb.optInt32("usage_limit")))
+            accountId: account(), req: UpdateJoinCodeRequest(usageLimit: rb.int32Param("usage_limit")))
     case "ResetJoinCode":
         try await client.miscellaneous.resetJoinCode(accountId: account())
     case "UpdateBoardEntropy":
         _ = try await client.miscellaneous.updateBoardEntropy(
             accountId: account(), boardId: boardId(),
-            req: UpdateBoardEntropyRequest(autoPostponePeriodInDays: rb.optInt32("auto_postpone_period_in_days")))
+            req: UpdateBoardEntropyRequest(autoPostponePeriodInDays: rb.int32Param("auto_postpone_period_in_days")))
     case "UpdateBoardInvolvement":
         try await client.miscellaneous.updateBoardInvolvement(
             accountId: account(), boardId: boardId(),
-            req: UpdateBoardInvolvementRequest(involvement: rb.optString("involvement")))
+            req: UpdateBoardInvolvementRequest(involvement: rb.stringParam("involvement")))
 
     default:
         throw RunnerError.unknownOperation(tc.operation)

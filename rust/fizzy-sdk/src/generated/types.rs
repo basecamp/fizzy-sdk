@@ -736,20 +736,14 @@ pub struct CreateCardRequestContent {
     )]
     pub title: String,
     /// `board_id`.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub board_id: Option<String>,
-    /// `column_id`.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub column_id: Option<String>,
+    #[serde(
+        default,
+        deserialize_with = "crate::types::null_as_default::deserialize"
+    )]
+    pub board_id: String,
     /// `description`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    /// `assignee_ids`.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub assignee_ids: Option<Vec<String>>,
-    /// `tag_names`.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tag_names: Option<Vec<String>>,
     /// `image`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub image: Option<String>,
@@ -1210,9 +1204,6 @@ pub struct MoveCardRequestContent {
         deserialize_with = "crate::types::null_as_default::deserialize"
     )]
     pub board_id: String,
-    /// `column_id`.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub column_id: Option<String>,
 }
 
 /// `MoveCardResponseContent`, as the model names it.
@@ -1549,8 +1540,11 @@ pub struct TagCardRequestContent {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct TriageCardRequestContent {
     /// `column_id`.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub column_id: Option<String>,
+    #[serde(
+        default,
+        deserialize_with = "crate::types::null_as_default::deserialize"
+    )]
+    pub column_id: String,
 }
 
 /// `UnauthorizedErrorResponseContent`, as Fizzy sends it. Read-only, so a field added later is not a breaking change.
@@ -1569,8 +1563,11 @@ pub struct UnauthorizedErrorResponseContent {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateAccountEntropyRequestContent {
     /// `auto_postpone_period_in_days`.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub auto_postpone_period_in_days: Option<i32>,
+    #[serde(
+        default,
+        deserialize_with = "crate::types::null_as_default::deserialize"
+    )]
+    pub auto_postpone_period_in_days: i32,
 }
 
 /// `UpdateAccountEntropyResponseContent`, as the model names it.
@@ -1580,16 +1577,22 @@ pub type UpdateAccountEntropyResponseContent = AccountSettings;
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateAccountSettingsRequestContent {
     /// `name`.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+    #[serde(
+        default,
+        deserialize_with = "crate::types::null_as_default::deserialize"
+    )]
+    pub name: String,
 }
 
 /// `UpdateBoardEntropyRequestContent`. Built by hand, so it derives `Default` and takes `..Default::default()`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateBoardEntropyRequestContent {
     /// `auto_postpone_period_in_days`.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub auto_postpone_period_in_days: Option<i32>,
+    #[serde(
+        default,
+        deserialize_with = "crate::types::null_as_default::deserialize"
+    )]
+    pub auto_postpone_period_in_days: i32,
 }
 
 /// `UpdateBoardEntropyResponseContent`, as the model names it.
@@ -1599,8 +1602,11 @@ pub type UpdateBoardEntropyResponseContent = Board;
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateBoardInvolvementRequestContent {
     /// `involvement`.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub involvement: Option<String>,
+    #[serde(
+        default,
+        deserialize_with = "crate::types::null_as_default::deserialize"
+    )]
+    pub involvement: String,
 }
 
 /// `UpdateBoardRequestContent`. Built by hand, so it derives `Default` and takes `..Default::default()`.
@@ -1635,9 +1641,6 @@ pub struct UpdateCardRequestContent {
     /// `description`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    /// `column_id`.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub column_id: Option<String>,
     /// `image`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub image: Option<String>,
@@ -1681,8 +1684,11 @@ pub type UpdateCommentResponseContent = Comment;
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateJoinCodeRequestContent {
     /// `usage_limit`.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub usage_limit: Option<i32>,
+    #[serde(
+        default,
+        deserialize_with = "crate::types::null_as_default::deserialize"
+    )]
+    pub usage_limit: i32,
 }
 
 /// `UpdateMyTimezoneRequestContent`. Built by hand, so it derives `Default` and takes `..Default::default()`.
@@ -1700,8 +1706,11 @@ pub struct UpdateMyTimezoneRequestContent {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateNotificationSettingsRequestContent {
     /// `bundle_email_frequency`.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub bundle_email_frequency: Option<String>,
+    #[serde(
+        default,
+        deserialize_with = "crate::types::null_as_default::deserialize"
+    )]
+    pub bundle_email_frequency: String,
 }
 
 /// `UpdateStepRequestContent`. Built by hand, so it derives `Default` and takes `..Default::default()`.
@@ -1722,8 +1731,11 @@ pub type UpdateStepResponseContent = Step;
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateUserRequestContent {
     /// `name`.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+    #[serde(
+        default,
+        deserialize_with = "crate::types::null_as_default::deserialize"
+    )]
+    pub name: String,
 }
 
 /// `UpdateUserResponseContent`, as the model names it.
@@ -1746,9 +1758,6 @@ pub struct UpdateWebhookRequestContent {
     /// `name`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    /// `url`.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub url: Option<String>,
     /// `subscribed_actions`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subscribed_actions: Option<Vec<String>>,

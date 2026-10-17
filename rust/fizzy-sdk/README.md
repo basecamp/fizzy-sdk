@@ -100,7 +100,7 @@ let board = account.boards().create(&CreateBoardRequestContent {
 }).await?;
 
 account.cards().create(&CreateCardRequestContent {
-    board_id: Some(board.id.clone()),
+    board_id: board.id.clone(),
     title: "Write the announcement".into(),
     ..Default::default()
 }).await?;

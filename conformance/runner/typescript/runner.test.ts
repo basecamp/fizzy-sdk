@@ -180,7 +180,14 @@ async function dispatch(
         break;
       }
       case "CreateCard":
-        data = await (client as any).cards.create(body);
+        data = await (client as any).cards.create({
+          title: body.title,
+          boardId: body.board_id,
+          description: body.description,
+          image: body.image,
+          createdAt: body.created_at,
+          lastActiveAt: body.last_active_at,
+        });
         break;
       case "GetCard":
         data = await (client as any).cards.get(p.cardNumber as number);
@@ -195,7 +202,19 @@ async function dispatch(
         data = await (client as any).cards.assign(p.cardNumber as number, { assigneeId: body.assignee_id });
         break;
       case "MoveCard":
-        data = await (client as any).cards.move(p.cardNumber as number, { boardId: body.board_id as number, columnId: body.column_id as number | undefined });
+        data = await (client as any).cards.move(p.cardNumber as number, { boardId: body.board_id as number });
+        break;
+      case "TriageCard":
+        data = await (client as any).cards.triage(p.cardNumber as number, { columnId: body.column_id });
+        break;
+      case "UnTriageCard":
+        data = await (client as any).cards.untriage(p.cardNumber as number);
+        break;
+      case "PostponeCard":
+        data = await (client as any).cards.postpone(p.cardNumber as number);
+        break;
+      case "UnpinCard":
+        data = await (client as any).cards.unpin(p.cardNumber as number);
         break;
       case "CloseCard":
         data = await (client as any).cards.close(p.cardNumber as number);
@@ -355,13 +374,9 @@ async function dispatch(
         break;
 
       // Notifications
-      case "ListNotifications": {
-        const qn = tc.queryParams ?? {};
-        data = await (client as any).notifications.list({
-          read: qn.read === "true" ? true : qn.read === "false" ? false : undefined,
-        });
+      case "ListNotifications":
+        data = await (client as any).notifications.list();
         break;
-      }
       case "GetNotificationTray": {
         const qt = tc.queryParams ?? {};
         data = await (client as any).notifications.tray({

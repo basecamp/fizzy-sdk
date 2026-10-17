@@ -2,9 +2,9 @@
 import Foundation
 
 public struct TriageCardRequest: Codable, Sendable {
-    public var columnId: String?
+    public let columnId: String
 
-    public init(columnId: String? = nil) {
+    public init(columnId: String) {
         self.columnId = columnId
     }
 }

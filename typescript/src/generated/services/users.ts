@@ -12,8 +12,8 @@ import type { components } from "../schema.js";
 export type User = components["schemas"]["User"];
 
 export interface UpdateUserRequest {
-  /** Display name */
-  name?: string;
+  /** Required: the controller expects a `user` object, so an empty body is a 400. */
+  name: string;
 }
 
 export interface RequestEmailAddressChangeRequest {
@@ -76,7 +76,7 @@ export class UsersService extends BaseService {
   /**
    * UpdateUser
    */
-  async update(userId: string, body?: UpdateUserRequest): Promise<User> {
+  async update(userId: string, body: UpdateUserRequest): Promise<User> {
     return this.request(
       {
         service: "User",
@@ -86,7 +86,7 @@ export class UsersService extends BaseService {
       },
       () => this.client.PATCH("/users/{userId}" as never, {
         params: { path: { userId } },
-        body: { name: body?.name } as never,
+        body: { name: body.name } as never,
       } as never),
     );
   }

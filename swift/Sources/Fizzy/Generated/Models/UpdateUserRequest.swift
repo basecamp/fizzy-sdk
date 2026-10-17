@@ -2,9 +2,9 @@
 import Foundation
 
 public struct UpdateUserRequest: Codable, Sendable {
-    public var name: String?
+    public let name: String
 
-    public init(name: String? = nil) {
+    public init(name: String) {
         self.name = name
     }
 }

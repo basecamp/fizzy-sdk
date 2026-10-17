@@ -11,6 +11,7 @@ import type { components } from "../schema.js";
 export type Identity = components["schemas"]["Identity"];
 
 export interface UpdateMyTimezoneRequest {
+  /** An IANA or Rails time zone name, such as "America/Chicago" or "Central Time (US & Canada)". */
   timezoneName: string;
 }
 
@@ -33,7 +34,7 @@ export class IdentityService extends BaseService {
   }
 
   /**
-   * UpdateMyTimezone
+   * Sets the caller's time zone. The name isn't validated: one that ActiveSupport::TimeZone doesn't recognize is stored, succeeds with 204, and reads back as UTC.
    */
   async updateTimezone(body: UpdateMyTimezoneRequest): Promise<void> {
     return this.request(

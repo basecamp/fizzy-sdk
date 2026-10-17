@@ -914,29 +914,19 @@
       }
     },
     "MoveColumnLeft": {
-      "idempotent": true,
       "retry": {
-        "max": 3,
-        "base_delay_ms": 1000,
-        "backoff": "exponential",
-        "retry_on": [
-          429,
-          500,
-          503
-        ]
+        "max": 1,
+        "base_delay_ms": null,
+        "backoff": null,
+        "retry_on": null
       }
     },
     "MoveColumnRight": {
-      "idempotent": true,
       "retry": {
-        "max": 3,
-        "base_delay_ms": 1000,
-        "backoff": "exponential",
-        "retry_on": [
-          429,
-          500,
-          503
-        ]
+        "max": 1,
+        "base_delay_ms": null,
+        "backoff": null,
+        "retry_on": null
       }
     },
     "PinCard": {
@@ -953,16 +943,11 @@
       }
     },
     "PostponeCard": {
-      "idempotent": true,
       "retry": {
-        "max": 3,
-        "base_delay_ms": 1000,
-        "backoff": "exponential",
-        "retry_on": [
-          429,
-          500,
-          503
-        ]
+        "max": 1,
+        "base_delay_ms": null,
+        "backoff": null,
+        "retry_on": null
       }
     },
     "PublishBoard": {
@@ -1037,16 +1022,11 @@
       }
     },
     "ResetJoinCode": {
-      "idempotent": true,
       "retry": {
-        "max": 3,
-        "base_delay_ms": 1000,
-        "backoff": "exponential",
-        "retry_on": [
-          429,
-          500,
-          503
-        ]
+        "max": 1,
+        "base_delay_ms": null,
+        "backoff": null,
+        "retry_on": null
       }
     },
     "SearchCards": {
@@ -1084,29 +1064,19 @@
       }
     },
     "TriageCard": {
-      "idempotent": true,
       "retry": {
-        "max": 3,
-        "base_delay_ms": 1000,
-        "backoff": "exponential",
-        "retry_on": [
-          429,
-          500,
-          503
-        ]
+        "max": 1,
+        "base_delay_ms": null,
+        "backoff": null,
+        "retry_on": null
       }
     },
     "UnTriageCard": {
-      "idempotent": true,
       "retry": {
-        "max": 3,
-        "base_delay_ms": 1000,
-        "backoff": "exponential",
-        "retry_on": [
-          429,
-          500,
-          503
-        ]
+        "max": 1,
+        "base_delay_ms": null,
+        "backoff": null,
+        "retry_on": null
       }
     },
     "UngoldCard": {
@@ -1123,16 +1093,11 @@
       }
     },
     "UnpinCard": {
-      "idempotent": true,
       "retry": {
-        "max": 3,
-        "base_delay_ms": 1000,
-        "backoff": "exponential",
-        "retry_on": [
-          429,
-          500,
-          503
-        ]
+        "max": 1,
+        "base_delay_ms": null,
+        "backoff": null,
+        "retry_on": null
       }
     },
     "UnpublishBoard": {

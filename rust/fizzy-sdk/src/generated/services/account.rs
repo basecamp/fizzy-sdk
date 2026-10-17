@@ -57,7 +57,7 @@ impl<'a> AccountService<'a> {
 
     /// `ResetJoinCode` — `DELETE /{accountId}/account/join_code.json`.
     ///
-    /// Sent up to 3 times, backing off from 1000 ms, when the answer is 429, 500 or 503.
+    /// Sent once and never resent.
     pub async fn reset_join_code(&self) -> Result<(), Error> {
         let operation = self.scope.operation(&routes::RESET_JOIN_CODE, &[])?;
         self.scope.client().send_unit(operation).await

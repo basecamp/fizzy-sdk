@@ -2,9 +2,9 @@
 import Foundation
 
 public struct UpdateJoinCodeRequest: Codable, Sendable {
-    public var usageLimit: Int32?
+    public let usageLimit: Int32
 
-    public init(usageLimit: Int32? = nil) {
+    public init(usageLimit: Int32) {
         self.usageLimit = usageLimit
     }
 }

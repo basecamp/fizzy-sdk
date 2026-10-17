@@ -86,10 +86,8 @@ async fn get_tray() {
 async fn list() {
     let server = MockServer::start().await;
     let expected: Vec<Notification> = Default::default();
-    let params = ListNotificationsParams { read: Some(true) };
     Mock::given(method("GET"))
         .and(path("/999/notifications.json"))
-        .and(query_param("read", "true"))
         .respond_with(
             ResponseTemplate::new(200).set_body_json(serde_json::to_value(&expected).unwrap()),
         )
@@ -100,7 +98,7 @@ async fn list() {
         .for_account("999")
         .unwrap()
         .notifications()
-        .list(&params)
+        .list()
         .await
         .unwrap();
     assert_eq!(answer.value(), &expected);

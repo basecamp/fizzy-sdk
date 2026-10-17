@@ -1886,7 +1886,7 @@ pub static MOVE_CARD: Route = Route {
 
 /// `MoveColumnLeft` — `POST /{accountId}/columns/{columnId}/left_position.json`.
 ///
-/// Sent up to 3 times, backing off from 1000 ms, when the answer is 429, 500 or 503. Idempotent, so a resend is safe.
+/// Sent once and never resent.
 pub static MOVE_COLUMN_LEFT: Route = Route {
     id: "MoveColumnLeft",
     service: "Columns",
@@ -1900,19 +1900,15 @@ pub static MOVE_COLUMN_LEFT: Route = Route {
         role: ParamRole::Parent,
         kind: ParamKind::String,
     }],
-    idempotent: true,
+    idempotent: false,
     readonly: false,
     pagination: Pagination::None,
-    retry: Some(Retry {
-        max: 3,
-        base_delay_ms: 1000,
-        retry_on: &[429, 500, 503],
-    }),
+    retry: None,
 };
 
 /// `MoveColumnRight` — `POST /{accountId}/columns/{columnId}/right_position.json`.
 ///
-/// Sent up to 3 times, backing off from 1000 ms, when the answer is 429, 500 or 503. Idempotent, so a resend is safe.
+/// Sent once and never resent.
 pub static MOVE_COLUMN_RIGHT: Route = Route {
     id: "MoveColumnRight",
     service: "Columns",
@@ -1926,14 +1922,10 @@ pub static MOVE_COLUMN_RIGHT: Route = Route {
         role: ParamRole::Parent,
         kind: ParamKind::String,
     }],
-    idempotent: true,
+    idempotent: false,
     readonly: false,
     pagination: Pagination::None,
-    retry: Some(Retry {
-        max: 3,
-        base_delay_ms: 1000,
-        retry_on: &[429, 500, 503],
-    }),
+    retry: None,
 };
 
 /// `PinCard` — `POST /{accountId}/cards/{cardNumber}/pin.json`.
@@ -1964,7 +1956,7 @@ pub static PIN_CARD: Route = Route {
 
 /// `PostponeCard` — `POST /{accountId}/cards/{cardNumber}/not_now.json`.
 ///
-/// Sent up to 3 times, backing off from 1000 ms, when the answer is 429, 500 or 503. Idempotent, so a resend is safe.
+/// Sent once and never resent.
 pub static POSTPONE_CARD: Route = Route {
     id: "PostponeCard",
     service: "Cards",
@@ -1978,14 +1970,10 @@ pub static POSTPONE_CARD: Route = Route {
         role: ParamRole::Parent,
         kind: ParamKind::Int32,
     }],
-    idempotent: true,
+    idempotent: false,
     readonly: false,
     pagination: Pagination::None,
-    retry: Some(Retry {
-        max: 3,
-        base_delay_ms: 1000,
-        retry_on: &[429, 500, 503],
-    }),
+    retry: None,
 };
 
 /// `PublishBoard` — `POST /{accountId}/boards/{boardId}/publication.json`.
@@ -2148,7 +2136,7 @@ pub static REQUEST_EMAIL_ADDRESS_CHANGE: Route = Route {
 
 /// `ResetJoinCode` — `DELETE /{accountId}/account/join_code.json`.
 ///
-/// Sent up to 3 times, backing off from 1000 ms, when the answer is 429, 500 or 503.
+/// Sent once and never resent.
 pub static RESET_JOIN_CODE: Route = Route {
     id: "ResetJoinCode",
     service: "Account",
@@ -2161,11 +2149,7 @@ pub static RESET_JOIN_CODE: Route = Route {
     idempotent: true,
     readonly: false,
     pagination: Pagination::None,
-    retry: Some(Retry {
-        max: 3,
-        base_delay_ms: 1000,
-        retry_on: &[429, 500, 503],
-    }),
+    retry: None,
 };
 
 /// `SearchCards` — `GET /{accountId}/search.json`.
@@ -2238,7 +2222,7 @@ pub static TAG_CARD: Route = Route {
 
 /// `TriageCard` — `POST /{accountId}/cards/{cardNumber}/triage.json`.
 ///
-/// Sent up to 3 times, backing off from 1000 ms, when the answer is 429, 500 or 503. Idempotent, so a resend is safe.
+/// Sent once and never resent.
 pub static TRIAGE_CARD: Route = Route {
     id: "TriageCard",
     service: "Cards",
@@ -2252,19 +2236,15 @@ pub static TRIAGE_CARD: Route = Route {
         role: ParamRole::Parent,
         kind: ParamKind::Int32,
     }],
-    idempotent: true,
+    idempotent: false,
     readonly: false,
     pagination: Pagination::None,
-    retry: Some(Retry {
-        max: 3,
-        base_delay_ms: 1000,
-        retry_on: &[429, 500, 503],
-    }),
+    retry: None,
 };
 
 /// `UnTriageCard` — `DELETE /{accountId}/cards/{cardNumber}/triage.json`.
 ///
-/// Sent up to 3 times, backing off from 1000 ms, when the answer is 429, 500 or 503.
+/// Sent once and never resent.
 pub static UN_TRIAGE_CARD: Route = Route {
     id: "UnTriageCard",
     service: "Cards",
@@ -2281,11 +2261,7 @@ pub static UN_TRIAGE_CARD: Route = Route {
     idempotent: true,
     readonly: false,
     pagination: Pagination::None,
-    retry: Some(Retry {
-        max: 3,
-        base_delay_ms: 1000,
-        retry_on: &[429, 500, 503],
-    }),
+    retry: None,
 };
 
 /// `UngoldCard` — `DELETE /{accountId}/cards/{cardNumber}/goldness.json`.
@@ -2316,7 +2292,7 @@ pub static UNGOLD_CARD: Route = Route {
 
 /// `UnpinCard` — `DELETE /{accountId}/cards/{cardNumber}/pin.json`.
 ///
-/// Sent up to 3 times, backing off from 1000 ms, when the answer is 429, 500 or 503.
+/// Sent once and never resent.
 pub static UNPIN_CARD: Route = Route {
     id: "UnpinCard",
     service: "Cards",
@@ -2333,11 +2309,7 @@ pub static UNPIN_CARD: Route = Route {
     idempotent: true,
     readonly: false,
     pagination: Pagination::None,
-    retry: Some(Retry {
-        max: 3,
-        base_delay_ms: 1000,
-        retry_on: &[429, 500, 503],
-    }),
+    retry: None,
 };
 
 /// `UnpublishBoard` — `DELETE /{accountId}/boards/{boardId}/publication.json`.

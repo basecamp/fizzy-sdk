@@ -64,7 +64,7 @@
     "method": "POST",
     "path": "/{accountId}/cards.json",
     "pathParams": { "accountId": "999" },
-    "requestBody": { "title": "New Card" },
+    "requestBody": { "title": "New Card", "board_id": "1" },
     "mockResponses": [
       {
         "status": 201,
@@ -74,6 +74,7 @@
     ],
     "assertions": [
       { "type": "statusCode", "expected": 201 },
+      { "type": "requestBodyField", "expected": "board_id" },
       { "type": "noError" }
     ],
     "tags": ["status-codes"]

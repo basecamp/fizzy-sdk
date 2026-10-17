@@ -62,7 +62,7 @@ func (s *AccountService) GetJoinCode(ctx context.Context) (*generated.JoinCode, 
 
 // ResetJoinCode performs the ResetJoinCode operation on an account.
 func (s *AccountService) ResetJoinCode(ctx context.Context) (*Response, error) {
-	return s.client.Delete(ctx, "/account/join_code.json")
+	return s.client.Delete(WithNoRetry(ctx), "/account/join_code.json")
 }
 
 // UpdateEntropy updates an entropy.
