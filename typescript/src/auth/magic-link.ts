@@ -1,128 +1,162 @@
 /**
- * Magic-link passwordless login flow for the Fizzy SDK.
+ * Magic-link passwordless sign-in for the Fizzy SDK.
  *
- * Two-step orchestrator:
- * 1. CreateSession — sends a magic link to the user's email
- * 2. RedeemMagicLink — exchanges the magic link token for a session
+ * Fizzy's sign-in is three requests, each a generated operation:
+ * 1. CreateSession (`POST /session.json`, `{email_address}`) emails a code and answers 201
+ *    with the pending authentication token.
+ * 2. RedeemMagicLink (`POST /session/magic_link.json`, `{code}`) exchanges the code for a
+ *    session token. Fizzy reads the pending sign-in from the `pending_authentication_token`
+ *    cookie, not the body, so the flow sends that cookie itself.
+ * 3. CompleteSignup (`POST /signup/completion.json`, `{full_name}`) finishes a new account,
+ *    when the redemption says one needs it.
+ *
+ * Every request goes through a client from {@link createFizzyClient}, so HTTPS enforcement,
+ * body limits, error mapping and hooks are the client's own.
  */
 
 import type { AuthStrategy } from "../auth-strategy.js";
+import { createFizzyClient, type FizzyClient, type FizzyClientOptions } from "../client.js";
 import { FizzyError } from "../errors.js";
+import { CookieAuth } from "./cookie-auth.js";
+
+/** The cookie a pending sign-in is carried in between creating the session and redeeming the code. */
+const PENDING_COOKIE = "pending_authentication_token";
+/** The cookie a session token is sent back in. */
+const SESSION_COOKIE = "session_token";
 
 /**
- * Result of the magic link request step.
+ * A `Cookie` header value carrying one cookie, its value percent-encoded as Rack decodes it.
  */
-export interface MagicLinkRequestResult {
-  /** Whether the magic link email was sent successfully */
-  sent: boolean;
-  /** User-facing message (e.g., "Check your email") */
-  message: string;
+export function cookieHeader(name: string, value: string): string {
+  return `${name}=${encodeURIComponent(value)}`;
 }
 
-/**
- * Result of the magic link redemption step.
- */
+/** What creating a session answers. */
+export interface MagicLinkRequestResult {
+  /**
+   * The token the pending sign-in waits on. The flow keeps it for {@link MagicLinkFlow.redeem};
+   * a caller that finishes the sign-in in another process hands it to
+   * {@link MagicLinkFlow.resume} there.
+   */
+  pendingAuthenticationToken: string;
+}
+
+/** What redeeming a code answers. */
 export interface MagicLinkRedeemResult {
-  /** The session token to use for subsequent requests */
+  /** The session token, sent back as the `session_token` cookie. */
   sessionToken: string;
-  /** The authentication strategy configured with the session */
+  /** Whether the account is new and needs {@link MagicLinkFlow.completeSignup} before use. */
+  requiresSignupCompletion: boolean;
+  /** An authentication strategy that sends the session cookie, for {@link createFizzyClient}. */
   auth: AuthStrategy;
 }
 
-/**
- * Options for the magic link flow.
- */
-export interface MagicLinkFlowOptions {
-  /** Base URL of the Fizzy API (defaults to https://fizzy.do) */
-  baseUrl?: string;
-  /** User-Agent header for requests */
-  userAgent?: string;
-}
+/** Options for the magic link flow: the client options that apply before there is a credential. */
+export type MagicLinkFlowOptions = Pick<
+  FizzyClientOptions,
+  "baseUrl" | "userAgent" | "requestTimeoutMs" | "hooks"
+>;
+
+/** Sends no credential: there is none yet when a sign-in starts. */
+const noCredentials: AuthStrategy = { authenticate: async () => {} };
 
 /**
- * Orchestrates the magic-link passwordless login flow.
+ * Orchestrates Fizzy's magic-link sign-in.
  *
  * @example
  * ```ts
  * const flow = new MagicLinkFlow();
  *
- * // Step 1: Request the magic link
- * const { sent } = await flow.requestLink("user@example.com");
+ * // Step 1: Fizzy emails a code
+ * await flow.createSession("user@example.com");
  *
- * // Step 2: User clicks the link, you capture the token
- * const { auth } = await flow.redeemToken(token);
+ * // Step 2: the user types the code in
+ * const { auth, requiresSignupCompletion } = await flow.redeem(code);
+ * if (requiresSignupCompletion) await flow.completeSignup("Ada Lovelace");
  *
- * // Step 3: Use the auth strategy with the client
+ * // Step 3: use the session
  * const client = createFizzyClient({ auth });
  * ```
  */
 export class MagicLinkFlow {
-  private readonly baseUrl: string;
-  private readonly userAgent: string;
+  private readonly options: MagicLinkFlowOptions;
+  private pending: string | undefined;
+  private session: string | undefined;
 
   constructor(options?: MagicLinkFlowOptions) {
-    this.baseUrl = options?.baseUrl ?? "https://fizzy.do";
-    this.userAgent = options?.userAgent ?? "fizzy-sdk-ts/0.1.0";
+    this.options = options ?? {};
   }
 
   /**
-   * Step 1: Request a magic link be sent to the user's email.
+   * A flow that picks up where another left off, with the pending token that one handed out
+   * through {@link MagicLinkFlow.pendingToken}.
    */
-  async requestLink(email: string): Promise<MagicLinkRequestResult> {
-    const response = await fetch(`${this.baseUrl}/sessions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "User-Agent": this.userAgent,
-        Accept: "application/json",
-      },
-      body: JSON.stringify({ email }),
-    });
+  static resume(pendingToken: string, options?: MagicLinkFlowOptions): MagicLinkFlow {
+    const flow = new MagicLinkFlow(options);
+    flow.pending = pendingToken;
+    return flow;
+  }
 
-    if (!response.ok) {
-      throw new FizzyError(
-        "api_error",
-        `Magic link request failed: ${response.status} ${response.statusText}`,
-        { httpStatus: response.status },
-      );
-    }
-
-    return { sent: true, message: "Check your email for the magic link" };
+  /** The token the pending sign-in waits on, for a caller that finishes the flow elsewhere. */
+  get pendingToken(): string | undefined {
+    return this.pending;
   }
 
   /**
-   * Step 2: Redeem a magic link token for a session.
+   * Asks Fizzy to email a sign-in code to the address, and keeps the pending token its 201
+   * answer carries for {@link MagicLinkFlow.redeem}.
    */
-  async redeemToken(token: string): Promise<MagicLinkRedeemResult> {
-    const response = await fetch(`${this.baseUrl}/sessions/redeem`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "User-Agent": this.userAgent,
-        Accept: "application/json",
-      },
-      body: JSON.stringify({ token }),
-    });
-
-    if (!response.ok) {
-      throw new FizzyError(
-        "auth_required",
-        `Magic link redemption failed: ${response.status} ${response.statusText}`,
-        { httpStatus: response.status, hint: "The magic link may have expired. Request a new one." },
-      );
+  async createSession(emailAddress: string): Promise<MagicLinkRequestResult> {
+    const answer = await this.client(noCredentials).sessions.create({ emailAddress });
+    const token = answer?.pending_authentication_token;
+    if (typeof token !== "string" || token === "") {
+      throw new FizzyError("api_error", "No pending authentication token in the session response");
     }
+    this.pending = token;
+    return { pendingAuthenticationToken: token };
+  }
 
-    const body = await response.json() as { session_token?: string; token?: string };
-    const sessionToken = body.session_token ?? body.token;
-
-    if (!sessionToken || typeof sessionToken !== "string") {
-      throw new FizzyError("api_error", "No session token in magic link response");
+  /**
+   * Sends the code back with the pending token as its cookie, and answers the session Fizzy
+   * signed in. Without a pending token, from {@link MagicLinkFlow.createSession} or
+   * {@link MagicLinkFlow.resume}, there is nothing to redeem against.
+   */
+  async redeem(code: string): Promise<MagicLinkRedeemResult> {
+    if (!this.pending) {
+      throw new FizzyError("usage", "No sign-in is pending", {
+        hint: "Call createSession first, or resume with the pending token",
+      });
     }
+    const pendingCookie = new CookieAuth(cookieHeader(PENDING_COOKIE, this.pending));
+    const answer = await this.client(pendingCookie).sessions.redeemMagicLink({ code });
+    const sessionToken = answer?.session_token;
+    if (typeof sessionToken !== "string" || sessionToken === "") {
+      throw new FizzyError("api_error", "No session token in the magic link response");
+    }
+    this.session = sessionToken;
+    this.pending = undefined;
+    return {
+      sessionToken,
+      requiresSignupCompletion: answer.requires_signup_completion === true,
+      auth: new CookieAuth(cookieHeader(SESSION_COOKIE, sessionToken)),
+    };
+  }
 
-    // Import CookieAuth dynamically to avoid circular dependency at module level
-    const { CookieAuth } = await import("./cookie-auth.js");
-    const auth = new CookieAuth(sessionToken);
+  /**
+   * Finishes a new account's sign-up under the session {@link MagicLinkFlow.redeem} answered,
+   * or the session token given. Fizzy answers 201 with no body.
+   */
+  async completeSignup(fullName: string, sessionToken?: string): Promise<void> {
+    const token = sessionToken ?? this.session;
+    if (!token) {
+      throw new FizzyError("usage", "No session to complete the sign-up under", {
+        hint: "Redeem the code first, or pass the session token",
+      });
+    }
+    await this.client(new CookieAuth(cookieHeader(SESSION_COOKIE, token))).sessions.completeSignup({ fullName });
+  }
 
-    return { sessionToken, auth };
+  private client(auth: AuthStrategy): FizzyClient {
+    return createFizzyClient({ ...this.options, auth });
   }
 }
