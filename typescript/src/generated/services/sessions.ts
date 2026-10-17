@@ -46,9 +46,9 @@ export class SessionsService extends BaseService {
 
   /**
    * Starts a magic-link sign-in and answers the pending authentication token.
-
-Fizzy answers 201 and also sets the token as the pending_authentication_token cookie, which
-RedeemMagicLink reads.
+   *
+   * Fizzy answers 201 and also sets the token as the pending_authentication_token cookie, which
+   * RedeemMagicLink reads.
    */
   async create(body: CreateSessionRequest): Promise<components["schemas"]["PendingAuthentication"]> {
     return this.request(
@@ -66,11 +66,11 @@ RedeemMagicLink reads.
 
   /**
    * Redeems the code from a magic-link email for a session token.
-
-Fizzy reads the pending sign-in from the pending_authentication_token cookie CreateSession
-set, not from the body, so the request must carry it as
-`Cookie: pending_authentication_token=<token>`. The session_token it answers is sent back as
-`Cookie: session_token=<token>`.
+   *
+   * Fizzy reads the pending sign-in from the pending_authentication_token cookie CreateSession
+   * set, not from the body, so the request must carry it as
+   * `Cookie: pending_authentication_token=<token>`. The session_token it answers is sent back as
+   * `Cookie: session_token=<token>`.
    */
   async redeemMagicLink(body: RedeemMagicLinkRequest): Promise<components["schemas"]["SessionAuthorization"]> {
     return this.request(
