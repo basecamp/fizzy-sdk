@@ -1,23 +1,23 @@
 {
   "profile": "full-sdk",
-  "date": "2026-09-09",
+  "date": "2026-10-17",
   "reviewer": "agent:rubric-audit",
   "criteria": {
     "1A.6": { "pass": true, "note": "All 112 operations generated from Smithy model via six per-language generators (Go, TypeScript, Ruby, Swift, Kotlin, Rust)" },
     "1B.2": { "pass": true, "note": "Request/response types generated from OpenAPI schema, not hand-constructed" },
     "1B.4": { "pass": true, "note": "Optional fields use pointers (Go), optional (TS/Swift/Kotlin), nilable (Ruby), Option (Rust)" },
-    "1B.5": { "pass": true, "note": "ISO 8601 date strings used for all timestamp fields" },
-    "1C.1": { "pass": true, "note": "All API paths verified against Fizzy routes.rb" },
-    "1C.3": { "pass": true, "note": "All paths generated from OpenAPI spec; no manual fmt.Sprintf or string interpolation for paths" },
-    "2A.6": { "pass": true, "note": "Error bodies truncated to 10KB in all languages" },
-    "2D.5": { "pass": true, "note": "Resilience patterns isolated per-client instance, not per-operation" },
+    "1B.5": { "pass": true, "note": "Timestamps are strings in every language; openapi.json types the 29 *_at fields as plain string with no format: date-time, so ISO 8601 rests on the Smithy ISO8601Timestamp type name alone" },
+    "1C.1": { "pass": false, "note": "Generated service paths match the spec, but the hand-written magic-link flows in Go, TypeScript, Ruby, Swift and Kotlin post to /sessions-style paths the spec does not have (it has /session.json and /session/magic_link.json); only Rust uses the generated routes" },
+    "1C.3": { "pass": false, "note": "Service paths are generated in every language, but the hand-written magic-link flows in Go (magic_link.go), TypeScript (auth/magic-link.ts), Ruby (magic_link_flow.rb), Swift (Auth/MagicLinkFlow.swift) and Kotlin (auth/MagicLinkFlow.kt) build their own paths rather than using the generated routes; Rust uses routes::CREATE_SESSION and routes::REDEEM_MAGIC_LINK" },
+    "2A.6": { "pass": false, "note": "Rust keeps a 10 KB prefix of an error body; Go reads at most 1 MB and drops a larger one; Ruby skips parsing past 1 MB after Faraday buffers it; TypeScript, Swift and Kotlin read the whole error body with no cap" },
+    "2D.5": { "pass": true, "note": "Go and Rust hold breaker and bulkhead registries per client instance (keyed by Service.Operation within it) and one rate limiter per client, with no global state; TypeScript, Ruby, Swift and Kotlin ship resilience primitives the client does not apply" },
     "3A.4": { "pass": false, "note": "OAuth PKCE deferred — Fizzy does not implement OAuth" },
     "3A.5": { "pass": false, "note": "OAuth PKCE deferred — Fizzy does not implement OAuth" },
     "3A.6": { "pass": false, "note": "Token auto-refresh deferred — Fizzy uses session tokens, not refresh tokens" },
-    "3C.2": { "pass": true, "note": "Response body limited to 10MB in all languages" },
-    "3C.3": { "pass": true, "note": "Error messages truncated to prevent unbounded memory" },
-    "3C.4": { "pass": true, "note": "Authorization and Cookie headers redacted in all logging hooks" },
-    "4B.5": { "pass": true, "note": "AGENTS.md rule 3 requires unit and conformance tests for every new operation; the shared fixtures hold 127 cases across 5 runners (Go, TypeScript, Ruby, Kotlin, Rust) naming 69 of the 112 operations, with paths, status mapping, retry, idempotency and security behaviors covered for the rest by family" },
-    "4C.4": { "pass": true, "note": "Release workflows are idempotent; Go sub-tag creation checks for existing tags; crates.io publish skips a version already present with the same checksum" }
+    "3C.2": { "pass": false, "note": "Success bodies are capped at 50 MB in Go (while reading) and Ruby (after buffering) and at 10 MiB by default in Rust; TypeScript, Swift and Kotlin have no cap" },
+    "3C.3": { "pass": true, "note": "Error messages truncated to 500 bytes or characters in all six languages; TypeScript, Swift and Kotlin read the full body before truncating (see 3C.2, 2A.6)" },
+    "3C.4": { "pass": true, "note": "Hooks receive method, URL, attempt and result, never headers, so they cannot log Authorization or Cookie; Go, TypeScript, Ruby and Rust also export header-redaction helpers, which only Rust uses (Response Debug)" },
+    "4B.5": { "pass": true, "note": "AGENTS.md rule 3 requires unit and conformance tests for every new operation; the shared fixtures hold 134 cases across 6 runners (Go, TypeScript, Ruby, Swift, Kotlin, Rust) naming 73 of the 112 operations, with paths, status mapping, retry, idempotency and security behaviors covered for the rest by family" },
+    "4C.4": { "pass": true, "note": "Release re-runs are safe: Go checks for an existing go/ tag and compares the go/ tree; TypeScript and Rust check the registry before publishing (Rust also matches the sha256); Ruby and Kotlin treat an already-published error as success; Swift has no publish step" }
   }
 }
