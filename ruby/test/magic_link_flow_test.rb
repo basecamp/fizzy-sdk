@@ -46,6 +46,35 @@ class FizzyMagicLinkFlowTest < Minitest::Test
     assert_equal 2, @requests.size
   end
 
+  # A hook runs before the request is signed, so a sign-in another caller starts from one
+  # must not change the cookie the code already in flight is sent with, nor be cleared by it.
+  def test_redeem_keeps_its_own_cookie_when_another_sign_in_starts_mid_request
+    flow = nil
+    started = false
+    hooks = Object.new
+    hooks.extend(Fizzy::Hooks)
+    hooks.define_singleton_method(:on_request_start) do |info|
+      if info.url.include?("magic_link") && !started
+        started = true
+        flow.create_session(email_address: "other@example.com")
+      end
+    end
+    answers = [ "pend-1", "pend-2" ]
+    flow = flow_with(hooks: hooks) do |stubs|
+      stubs.post("/session.json") { |env| record(env, 201, { pending_authentication_token: answers.shift }) }
+      stubs.post("/session/magic_link.json") do |env|
+        record(env, 200, { session_token: "sess-1", requires_signup_completion: false })
+      end
+    end
+
+    flow.create_session(email_address: "jane@example.com")
+    flow.redeem(code: "ABC123")
+
+    redeem = @requests.find { |request| request[:path] == "/session/magic_link.json" }
+    assert_equal "pending_authentication_token=pend-1", redeem[:headers]["Cookie"]
+    assert_equal "pend-2", flow.pending_token, "the sign-in started meanwhile is still pending"
+  end
+
   def test_redeem_resumes_a_sign_in_another_flow_started
     flow = flow_with(pending_token: "pend-2") do |stubs|
       stubs.post("/session/magic_link.json") do |env|
@@ -98,16 +127,21 @@ class FizzyMagicLinkFlowTest < Minitest::Test
     [ status, { "Content-Type" => "application/json" }, JSON.generate(body) ]
   end
 
-  def flow_with(pending_token: nil)
+  # A flow whose every client, the one it starts with and each it builds to redeem, answers
+  # from the stubs.
+  def flow_with(pending_token: nil, hooks: nil)
     stubs = Faraday::Adapter::Test::Stubs.new
     yield stubs
-    flow = Fizzy::MagicLinkFlow.new(base_url: "https://fizzy.do", pending_token: pending_token)
-    http = flow.instance_variable_get(:@client).http
-    http.instance_variable_set(:@faraday, Faraday.new(url: "https://fizzy.do") { |f|
+    faraday = Faraday.new(url: "https://fizzy.do") { |f|
       f.request :json
       f.response :raise_error
       f.adapter :test, stubs
-    })
+    }
+    flow = Fizzy::MagicLinkFlow.new(base_url: "https://fizzy.do", pending_token: pending_token, hooks: hooks)
+    stub_client = ->(client) { client.http.instance_variable_set(:@faraday, faraday) && client }
+    stub_client.(flow.instance_variable_get(:@client))
+    builder = flow.method(:client_with)
+    flow.define_singleton_method(:client_with) { |auth| stub_client.(builder.(auth)) }
     flow
   end
 end

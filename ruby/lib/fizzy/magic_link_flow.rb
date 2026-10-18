@@ -33,18 +33,22 @@ module Fizzy
     # The token a pending sign-in is waiting on, for a caller that finishes the flow in
     # another process.
     # @return [String, nil]
-    attr_reader :pending_token
 
     # @param base_url [String] Fizzy API base URL
     # @param hooks [Hooks, nil] observability hooks
     # @param pending_token [String, nil] the pending token of a sign-in another flow started
     def initialize(base_url: Config::DEFAULT_BASE_URL, hooks: nil, pending_token: nil)
       @pending_token = pending_token
-      @client = Client.new(
-        config: Config.new(base_url: base_url),
-        auth_strategy: PendingCookieAuth.new(self),
-        hooks: hooks
-      )
+      @lock = Mutex.new
+      @config = Config.new(base_url: base_url)
+      @hooks = hooks
+      @client = client_with(PendingCookieAuth.new(nil))
+    end
+
+    # The pending authentication token of the sign-in under way, or nil before one starts.
+    # @return [String, nil]
+    def pending_token
+      @lock.synchronize { @pending_token }
     end
 
     # Asks Fizzy to email a sign-in code to the address, and keeps the pending token the
@@ -59,7 +63,7 @@ module Fizzy
       raise APIError.new("Fizzy answered no pending authentication token") \
         unless token.is_a?(String) && !token.empty?
 
-      @pending_token = token
+      @lock.synchronize { @pending_token = token }
     end
 
     # Redeems the code from the email, sending back the pending token as the cookie Fizzy
@@ -70,16 +74,19 @@ module Fizzy
     # @raise [UsageError] when no sign-in is pending
     # @raise [AuthError] when Fizzy refuses the code or the pending token
     def redeem(code:)
+      pending = pending_token
       raise UsageError.new("no sign-in is pending; call create_session first, or pass pending_token:") \
-        if @pending_token.nil? || @pending_token.empty?
+        if pending.nil? || pending.empty?
 
-      pending = @pending_token
-      answer = @client.sessions.redeem_magic_link(code: code)
+      # The cookie is bound to the token read here, so a sign-in that starts while this one is
+      # under way (a hook can yield before the request is signed) cannot pair this code with
+      # another's pending token.
+      answer = client_with(PendingCookieAuth.new(pending)).sessions.redeem_magic_link(code: code)
       raise APIError.new("Fizzy answered no session token") \
         unless answer.is_a?(Hash) && answer["session_token"].is_a?(String)
 
       # The sign-in redeemed is consumed; one a create_session started meanwhile is not.
-      @pending_token = nil if @pending_token.equal?(pending)
+      @lock.synchronize { @pending_token = nil if @pending_token.equal?(pending) }
       answer.slice("session_token", "requires_signup_completion")
     end
 
@@ -90,19 +97,24 @@ module Fizzy
       "#{name}=#{encoded}"
     end
 
-    # Sends the flow's pending token, once there is one, as the cookie Fizzy reads the
-    # pending sign-in from, and no other credentials: there are none yet.
+    private
+
+    def client_with(auth_strategy)
+      Client.new(config: @config, auth_strategy: auth_strategy, hooks: @hooks)
+    end
+
+    # Sends one pending token, when given one, as the cookie Fizzy reads the pending sign-in
+    # from, and no other credentials: there are none yet.
     # @api private
     class PendingCookieAuth
       include AuthStrategy
 
-      def initialize(flow)
-        @flow = flow
+      def initialize(token)
+        @token = token
       end
 
       def authenticate(headers)
-        token = @flow.pending_token
-        headers["Cookie"] = MagicLinkFlow.cookie(PENDING_COOKIE, token) unless token.nil? || token.empty?
+        headers["Cookie"] = MagicLinkFlow.cookie(PENDING_COOKIE, @token) unless @token.nil? || @token.empty?
       end
     end
   end

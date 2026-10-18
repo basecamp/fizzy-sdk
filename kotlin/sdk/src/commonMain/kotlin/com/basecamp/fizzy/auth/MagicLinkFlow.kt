@@ -11,6 +11,8 @@ import com.basecamp.fizzy.generated.sessions
 import io.ktor.client.engine.*
 import io.ktor.client.request.*
 import io.ktor.http.*
+import kotlin.concurrent.atomics.AtomicReference
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
 /**
  * Passwordless sign-in with a magic link, on the generated Sessions operations.
@@ -33,21 +35,19 @@ import io.ktor.http.*
  * val client = FizzyClient { auth(CookieAuth(session.sessionToken)) }
  * ```
  */
+@OptIn(ExperimentalAtomicApi::class)
 class MagicLinkFlow(
     private val baseUrl: String = FizzyConfig.DEFAULT_BASE_URL,
     private val engine: HttpClientEngine? = null,
     pendingToken: String? = null,
 ) {
+    private val pending = AtomicReference(pendingToken?.takeIf { it.isNotBlank() })
+
     /** The pending authentication token of the sign-in under way, or null before one starts. */
-    var pendingToken: String? = pendingToken?.takeIf { it.isNotBlank() }
-        private set
+    val pendingToken: String? get() = pending.load()
 
-    /** Carries the pending sign-in's cookie on the requests that need it, and nothing otherwise. */
-    private val pendingAuth = AuthStrategy { request ->
-        this.pendingToken?.let { request.header(HttpHeaders.Cookie, cookie(PENDING_COOKIE, it)) }
-    }
-
-    private val client: FizzyClient = client(pendingAuth)
+    /** Starts a sign-in with no cookie: there is no sign-in yet for one to carry. */
+    private val client: FizzyClient = client { }
 
     private fun client(auth: AuthStrategy): FizzyClient = FizzyClient {
         baseUrl = this@MagicLinkFlow.baseUrl
@@ -82,14 +82,14 @@ class MagicLinkFlow(
      */
     suspend fun requestMagicLink(emailAddress: String): MagicLinkRequest {
         val pending = client.forAccount(ROOT).sessions.create(CreateSessionBody(emailAddress = emailAddress))
-        pendingToken = pending.pendingAuthenticationToken
+        this.pending.store(pending.pendingAuthenticationToken)
         return MagicLinkRequest(pendingAuthenticationToken = pending.pendingAuthenticationToken)
     }
 
     /** Resumes a sign-in another process started, from its [pendingToken]. */
     fun resume(pendingToken: String) {
         require(pendingToken.isNotBlank()) { "Pending token must not be blank" }
-        this.pendingToken = pendingToken
+        pending.store(pendingToken)
     }
 
     /**
@@ -99,16 +99,21 @@ class MagicLinkFlow(
      * @throws FizzyException.Auth when Fizzy refuses the code or the pending sign-in.
      */
     suspend fun redeemMagicLink(code: String): MagicLinkSession {
-        val pending = pendingToken
-        if (pending == null) {
-            throw FizzyException.Usage(
+        val redeeming = pending.load()
+            ?: throw FizzyException.Usage(
                 "No sign-in is pending",
                 hint = "Call requestMagicLink first, or resume with the pending token",
             )
+        // The cookie is bound to the token read here, so a sign-in that starts or resumes while
+        // this one is under way cannot pair this code with another's pending token.
+        val redeemer = client { request -> request.header(HttpHeaders.Cookie, cookie(PENDING_COOKIE, redeeming)) }
+        val session = try {
+            redeemer.forAccount(ROOT).sessions.redeemMagicLink(RedeemMagicLinkBody(code = code))
+        } finally {
+            redeemer.close()
         }
-        val session = client.forAccount(ROOT).sessions.redeemMagicLink(RedeemMagicLinkBody(code = code))
         // The sign-in redeemed is consumed; one a requestMagicLink started meanwhile is not.
-        if (pendingToken == pending) pendingToken = null
+        pending.compareAndSet(redeeming, null)
         return MagicLinkSession(
             sessionToken = session.sessionToken,
             requiresSignupCompletion = session.requiresSignupCompletion,

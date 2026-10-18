@@ -86,6 +86,25 @@ class MagicLinkFlowTest {
         assertTrue(engine.requestHistory.isEmpty(), "nothing is sent without a pending sign-in")
     }
 
+    /**
+     * A sign-in resumed while a redeem is in flight keeps its own token: the redeem sends the
+     * cookie it read when it started, and spends only that one.
+     */
+    @Test
+    fun aSignInResumedMidRedeemIsNeitherSentNorSpentByIt() = runTest {
+        lateinit var flow: MagicLinkFlow
+        val engine = MockEngine { request ->
+            flow.resume("pend-2")
+            respond("""{"session_token":"st-1","requires_signup_completion":false}""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+        }
+        flow = MagicLinkFlow(baseUrl = base, engine = engine, pendingToken = "pend-1")
+
+        flow.redeemMagicLink("ABC123")
+
+        assertEquals("pending_authentication_token=pend-1", engine.requestHistory.single().headers[HttpHeaders.Cookie])
+        assertEquals("pend-2", flow.pendingToken, "the sign-in resumed meanwhile is still pending")
+    }
+
     @Test
     fun aRefusedCodeIsAnAuthError() = runTest {
         val engine = MockEngine {
