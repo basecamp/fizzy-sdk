@@ -99,13 +99,16 @@ class MagicLinkFlow(
      * @throws FizzyException.Auth when Fizzy refuses the code or the pending sign-in.
      */
     suspend fun redeemMagicLink(code: String): MagicLinkSession {
-        if (pendingToken == null) {
+        val pending = pendingToken
+        if (pending == null) {
             throw FizzyException.Usage(
                 "No sign-in is pending",
                 hint = "Call requestMagicLink first, or resume with the pending token",
             )
         }
         val session = client.forAccount(ROOT).sessions.redeemMagicLink(RedeemMagicLinkBody(code = code))
+        // The sign-in redeemed is consumed; one a requestMagicLink started meanwhile is not.
+        if (pendingToken == pending) pendingToken = null
         return MagicLinkSession(
             sessionToken = session.sessionToken,
             requiresSignupCompletion = session.requiresSignupCompletion,

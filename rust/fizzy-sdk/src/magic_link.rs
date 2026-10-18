@@ -136,10 +136,14 @@ impl MagicLinkFlow {
             code: SensitiveString::from(code),
         })?;
         let session: SessionAuthorization = self.client.send(operation).await?;
-        *self
+        // The sign-in redeemed is consumed; one a create_session started meanwhile is not.
+        let mut current = self
             .pending
             .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner) = None;
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if current.as_ref().map(SensitiveString::expose) == Some(pending.expose()) {
+            *current = None;
+        }
         Ok(session)
     }
 }

@@ -99,8 +99,11 @@ func (f *MagicLinkFlow) RedeemMagicLink(ctx context.Context, code string) (*gene
 	if err != nil {
 		return nil, err
 	}
+	// The sign-in redeemed is consumed; one a CreateSession started meanwhile is not.
 	f.mu.Lock()
-	f.pending = ""
+	if f.pending == pending {
+		f.pending = ""
+	}
 	f.mu.Unlock()
 	return session, nil
 }

@@ -62,6 +62,8 @@ describe("MagicLinkFlow", () => {
     const redeemed = await flow.redeem("ABC123");
     expect(redeemed.sessionToken).toBe("st/1=");
     expect(redeemed.requiresSignupCompletion).toBe(false);
+    expect(flow.pendingToken).toBeUndefined();
+    await expect(flow.redeem("ABC123")).rejects.toMatchObject({ code: "usage" });
 
     expect(seen).toEqual([
       { path: "/session.json", body: { email_address: "ada@example.com" }, cookie: null },

@@ -107,8 +107,11 @@ public final class MagicLinkFlow: @unchecked Sendable {
                 message: "No sign-in is pending",
                 hint: "Call start(emailAddress:) first, or resume with the pending token")
         }
-        return try await sessions(auth: CookieHeaderAuth(cookie: (Self.pendingCookie, pending)))
+        let session = try await sessions(auth: CookieHeaderAuth(cookie: (Self.pendingCookie, pending)))
             .redeemMagicLink(req: RedeemMagicLinkRequest(code: code))
+        // The sign-in redeemed is consumed; one a start(emailAddress:) began meanwhile is not.
+        lock.withLock { if self.pending == pending { self.pending = nil } }
+        return session
     }
 
     /// Completes signup for a new person after the code is redeemed. Only needed when

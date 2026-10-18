@@ -55,6 +55,9 @@ class MagicLinkFlowTest {
         assertEquals("/session/magic_link.json", seen[1].url.encodedPath)
         assertEquals(mapOf("code" to "ABC123"), bodyOf(seen[1]).mapValues { it.value.jsonPrimitive.content })
         assertEquals("pending_authentication_token=pend%2F1%2B2%3D", seen[1].headers[HttpHeaders.Cookie])
+        assertNull(flow.pendingToken, "the redeemed sign-in is spent")
+        assertFailsWith<FizzyException.Usage> { flow.redeemMagicLink("ABC123") }
+        assertEquals(2, seen.size)
         flow.close()
     }
 

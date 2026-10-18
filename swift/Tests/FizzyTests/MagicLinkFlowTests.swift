@@ -92,6 +92,9 @@ struct MagicLinkFlowTests {
         #expect(request.httpShouldHandleCookies == false)
         #expect(session.sessionToken == "sess-1")
         #expect(session.requiresSignupCompletion)
+        #expect(flow.pendingToken == nil, "the redeemed sign-in is spent")
+        await #expect(throws: FizzyError.self) { try await flow.redeem(code: "ABC123") }
+        #expect(transport.requests.count == 2)
     }
 
     @Test("A resumed flow redeems against the pending token it was given")

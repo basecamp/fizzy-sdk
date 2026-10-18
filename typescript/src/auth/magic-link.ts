@@ -127,14 +127,16 @@ export class MagicLinkFlow {
         hint: "Call createSession first, or resume with the pending token",
       });
     }
-    const pendingCookie = new CookieAuth(cookieHeader(PENDING_COOKIE, this.pending));
+    const pending = this.pending;
+    const pendingCookie = new CookieAuth(cookieHeader(PENDING_COOKIE, pending));
     const answer = await this.client(pendingCookie).sessions.redeemMagicLink({ code });
     const sessionToken = answer?.session_token;
     if (typeof sessionToken !== "string" || sessionToken === "") {
       throw new FizzyError("api_error", "No session token in the magic link response");
     }
     this.session = sessionToken;
-    this.pending = undefined;
+    // The sign-in redeemed is consumed; one a createSession started meanwhile is not.
+    if (this.pending === pending) this.pending = undefined;
     return {
       sessionToken,
       requiresSignupCompletion: answer.requires_signup_completion === true,

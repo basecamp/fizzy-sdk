@@ -73,10 +73,13 @@ module Fizzy
       raise UsageError.new("no sign-in is pending; call create_session first, or pass pending_token:") \
         if @pending_token.nil? || @pending_token.empty?
 
+      pending = @pending_token
       answer = @client.sessions.redeem_magic_link(code: code)
       raise APIError.new("Fizzy answered no session token") \
         unless answer.is_a?(Hash) && answer["session_token"].is_a?(String)
 
+      # The sign-in redeemed is consumed; one a create_session started meanwhile is not.
+      @pending_token = nil if @pending_token.equal?(pending)
       answer.slice("session_token", "requires_signup_completion")
     end
 

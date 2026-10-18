@@ -41,6 +41,9 @@ class FizzyMagicLinkFlowTest < Minitest::Test
     assert_equal "/session/magic_link.json", redeem[:path]
     assert_equal({ "code" => "ABC123" }, redeem[:body])
     assert_equal "pending_authentication_token=pend%2F1%2B%3D", redeem[:headers]["Cookie"]
+    assert_nil flow.pending_token, "the redeemed sign-in is spent"
+    assert_raises(Fizzy::UsageError) { flow.redeem(code: "ABC123") }
+    assert_equal 2, @requests.size
   end
 
   def test_redeem_resumes_a_sign_in_another_flow_started
