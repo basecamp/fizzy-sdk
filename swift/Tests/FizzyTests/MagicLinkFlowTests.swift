@@ -63,6 +63,19 @@ struct MagicLinkFlowTests {
         #expect(flow.pendingToken == "pend;1")
     }
 
+    @Test("A released flow lets go of its transport: the clients it builds per request do not outlive it")
+    func releasesItsClients() async throws {
+        weak var released: ScriptedMagicLinkTransport?
+        do {
+            let transport = ScriptedMagicLinkTransport(created, ScriptedMagicLinkTransport.Reply(status: 401, body: "{}"))
+            released = transport
+            let flow = MagicLinkFlow(userAgent: "test/1.0", transport: transport)
+            try await flow.start(emailAddress: "jane@example.com")
+            _ = try? await flow.redeem(code: "WRONG")
+        }
+        #expect(released == nil)
+    }
+
     @Test("Redeeming posts the code to /session/magic_link.json with the pending token as an encoded cookie")
     func redeemsTheCode() async throws {
         let transport = ScriptedMagicLinkTransport(created, signedIn)

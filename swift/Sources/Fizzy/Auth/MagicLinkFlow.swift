@@ -87,8 +87,8 @@ public final class MagicLinkFlow: @unchecked Sendable {
     /// - Returns: The pending authentication Fizzy answered.
     @discardableResult
     public func start(emailAddress: String) async throws -> PendingAuthentication {
-        let pendingAuthentication = try await client(auth: CookieHeaderAuth(cookie: nil))
-            .sessions.create(req: CreateSessionRequest(emailAddress: emailAddress))
+        let pendingAuthentication = try await sessions(auth: CookieHeaderAuth(cookie: nil))
+            .create(req: CreateSessionRequest(emailAddress: emailAddress))
         setPending(pendingAuthentication.pendingAuthenticationToken)
         return pendingAuthentication
     }
@@ -107,8 +107,8 @@ public final class MagicLinkFlow: @unchecked Sendable {
                 message: "No sign-in is pending",
                 hint: "Call start(emailAddress:) first, or resume with the pending token")
         }
-        return try await client(auth: CookieHeaderAuth(cookie: (Self.pendingCookie, pending)))
-            .sessions.redeemMagicLink(req: RedeemMagicLinkRequest(code: code))
+        return try await sessions(auth: CookieHeaderAuth(cookie: (Self.pendingCookie, pending)))
+            .redeemMagicLink(req: RedeemMagicLinkRequest(code: code))
     }
 
     /// Completes signup for a new person after the code is redeemed. Only needed when
@@ -118,8 +118,8 @@ public final class MagicLinkFlow: @unchecked Sendable {
     ///   - fullName: The person's full name.
     ///   - sessionToken: The session token ``redeem(code:)`` answered.
     public func completeSignup(fullName: String, sessionToken: String) async throws {
-        try await client(auth: CookieHeaderAuth(cookie: ("session_token", sessionToken)))
-            .sessions.completeSignup(req: CompleteSignupRequest(fullName: fullName))
+        try await sessions(auth: CookieHeaderAuth(cookie: ("session_token", sessionToken)))
+            .completeSignup(req: CompleteSignupRequest(fullName: fullName))
     }
 
     // MARK: - Private
@@ -128,8 +128,13 @@ public final class MagicLinkFlow: @unchecked Sendable {
         lock.withLock { pending = token }
     }
 
-    private func client(auth: CookieHeaderAuth) -> FizzyClient {
-        FizzyClient(auth: auth, userAgent: userAgent, config: FizzyConfig(baseURL: baseURL), transport: transport)
+    /// The sessions service of a client signed with `auth`, built for one request. It is made
+    /// directly rather than through the client's service cache: a cached account holds the
+    /// client that holds it, so a client per request would never be freed, and with it the
+    /// cookie it signs with.
+    private func sessions(auth: CookieHeaderAuth) -> SessionsService {
+        let client = FizzyClient(auth: auth, userAgent: userAgent, config: FizzyConfig(baseURL: baseURL), transport: transport)
+        return SessionsService(accountClient: AccountClient(client: client))
     }
 }
 
