@@ -2,149 +2,141 @@ package fizzy
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
+	"sync"
+
+	"github.com/basecamp/fizzy-sdk/go/pkg/generated"
 )
 
-// MagicLinkFlow orchestrates passwordless login via magic links.
-// The flow is:
-//  1. CreateSession — sends a magic link to the user's email
-//  2. User clicks the magic link in their email
-//  3. RedeemMagicLink — exchanges the magic link token for a session token
+// PendingAuthenticationCookie is the cookie a pending sign-in is carried in between
+// creating the session and redeeming the code.
+const PendingAuthenticationCookie = "pending_authentication_token"
+
+// MagicLinkFlow signs in without a password. Fizzy emails a code to an address and,
+// once the person types it back, answers a session token for CookieAuth.
+//
+// The two steps are one exchange as far as Fizzy is concerned: CreateSession answers a
+// pending authentication token, and RedeemMagicLink has to send it back as the
+// pending_authentication_token cookie or the code is refused. The flow keeps the token
+// between the calls, and hands it out (PendingToken) for a caller that finishes in
+// another process — a CLI that prompts for the code on its next run — which picks it
+// back up with ResumeMagicLinkFlow.
+//
+// Both steps go out through the generated SessionsService routes (/session.json and
+// /session/magic_link.json) and their generated request and response types.
 type MagicLinkFlow struct {
-	baseURL    string
-	httpClient *http.Client
+	client *Client
+
+	mu      sync.Mutex
+	pending string
 }
 
-// NewMagicLinkFlow creates a new magic link flow.
+// NewMagicLinkFlow creates a flow against baseURL. A non-nil httpClient lends its
+// Transport and Timeout; the flow sends no credentials, since there are none yet. Like
+// NewClient, it panics on a base URL that is not HTTPS (localhost aside).
 func NewMagicLinkFlow(baseURL string, httpClient *http.Client) *MagicLinkFlow {
-	if httpClient == nil {
-		httpClient = &http.Client{}
-	}
-	return &MagicLinkFlow{
-		baseURL:    NormalizeBaseURL(baseURL),
-		httpClient: httpClient,
-	}
-}
-
-// CreateSessionRequest is the request body for creating a session.
-type CreateSessionRequest struct {
-	Email string `json:"email"`
-}
-
-// CreateSessionResponse is the response from creating a session.
-type CreateSessionResponse struct {
-	Message string `json:"message"`
-}
-
-// CreateSession initiates the magic link flow by sending a magic link email.
-func (f *MagicLinkFlow) CreateSession(ctx context.Context, email string) (*CreateSessionResponse, error) {
-	body, err := json.Marshal(CreateSessionRequest{Email: email})
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	url := f.baseURL + "/api/v1/sessions"
-	req, err := http.NewRequestWithContext(ctx, "POST", url, strings.NewReader(string(body)))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := f.httpClient.Do(req)
-	if err != nil {
-		return nil, networkError(err, f.baseURL)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	respBody, err := limitedReadAll(resp.Body, MaxResponseBodyBytes)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return nil, ErrAPI(resp.StatusCode, fmt.Sprintf("create session failed: HTTP %d", resp.StatusCode))
-	}
-
-	var result CreateSessionResponse
-	if err := json.Unmarshal(respBody, &result); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w", err)
-	}
-
-	return &result, nil
-}
-
-// RedeemMagicLinkRequest is the request body for redeeming a magic link.
-type RedeemMagicLinkRequest struct {
-	Token string `json:"token"`
-}
-
-// RedeemMagicLinkResponse is the response from redeeming a magic link.
-type RedeemMagicLinkResponse struct {
-	SessionToken string `json:"session_token"`
-	UserID       string `json:"user_id"`
-}
-
-// RedeemMagicLink exchanges a magic link token for a session token.
-func (f *MagicLinkFlow) RedeemMagicLink(ctx context.Context, token string) (*RedeemMagicLinkResponse, error) {
-	body, err := json.Marshal(RedeemMagicLinkRequest{Token: token})
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	url := f.baseURL + "/api/v1/sessions/redeem"
-	req, err := http.NewRequestWithContext(ctx, "POST", url, strings.NewReader(string(body)))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := f.httpClient.Do(req)
-	if err != nil {
-		return nil, networkError(err, f.baseURL)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	respBody, err := limitedReadAll(resp.Body, MaxResponseBodyBytes)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, ErrAPI(resp.StatusCode, fmt.Sprintf("redeem magic link failed: HTTP %d", resp.StatusCode))
-	}
-
-	var result RedeemMagicLinkResponse
-	if err := json.Unmarshal(respBody, &result); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w", err)
-	}
-
-	return &result, nil
-}
-
-// Login performs the full magic link login flow and stores the session token.
-// After calling CreateSession, the caller must obtain the magic link token
-// (e.g., by prompting the user to check their email), then call RedeemMagicLink.
-// This method handles the final step of storing the token.
-func (f *MagicLinkFlow) Login(ctx context.Context, authManager *AuthManager, magicLinkToken string) error {
-	result, err := f.RedeemMagicLink(ctx, magicLinkToken)
-	if err != nil {
-		return err
-	}
-
-	if err := authManager.SaveSessionToken(result.SessionToken); err != nil {
-		return fmt.Errorf("failed to save session token: %w", err)
-	}
-
-	if result.UserID != "" {
-		if err := authManager.SetUserID(result.UserID); err != nil {
-			return fmt.Errorf("failed to save user ID: %w", err)
+	var opts []ClientOption
+	if httpClient != nil {
+		if httpClient.Transport != nil {
+			opts = append(opts, WithTransport(httpClient.Transport))
+		}
+		if httpClient.Timeout > 0 {
+			opts = append(opts, WithTimeout(httpClient.Timeout))
 		}
 	}
+	opts = append(opts, WithAuthStrategy(pendingCookieAuth{}))
+	return &MagicLinkFlow{
+		client: NewClient(&Config{BaseURL: NormalizeBaseURL(baseURL)}, nil, opts...),
+	}
+}
 
+// ResumeMagicLinkFlow creates a flow that picks up where another left off, with the
+// pending token that one handed out through PendingToken.
+func ResumeMagicLinkFlow(baseURL string, httpClient *http.Client, pendingToken string) *MagicLinkFlow {
+	flow := NewMagicLinkFlow(baseURL, httpClient)
+	flow.pending = pendingToken
+	return flow
+}
+
+// CreateSession asks Fizzy to email a sign-in code to emailAddress, and keeps the
+// pending token the answer carries for RedeemMagicLink.
+func (f *MagicLinkFlow) CreateSession(ctx context.Context, emailAddress string) (*generated.PendingAuthentication, error) {
+	pending, _, err := f.client.Sessions().Create(ctx, &generated.CreateSessionRequest{EmailAddress: emailAddress})
+	if err != nil {
+		return nil, err
+	}
+	f.mu.Lock()
+	f.pending = pending.PendingAuthenticationToken
+	f.mu.Unlock()
+	return pending, nil
+}
+
+// PendingToken is the token a pending sign-in is waiting on, or "" when none is, for a
+// caller that finishes the flow in another process.
+func (f *MagicLinkFlow) PendingToken() string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.pending
+}
+
+// RedeemMagicLink sends the code from the email back with the pending token, and
+// answers the session Fizzy signed in. Without a pending token — no CreateSession
+// before it, and none given to ResumeMagicLinkFlow — there is nothing to redeem against.
+func (f *MagicLinkFlow) RedeemMagicLink(ctx context.Context, code string) (*generated.SessionAuthorization, error) {
+	pending := f.PendingToken()
+	if pending == "" {
+		return nil, &Error{
+			Code:    CodeUsage,
+			Message: "no sign-in is pending",
+			Hint:    "call CreateSession first, or resume with the pending token",
+		}
+	}
+	ctx = context.WithValue(ctx, pendingTokenKey{}, pending)
+	session, _, err := f.client.Sessions().RedeemMagicLink(ctx, &generated.RedeemMagicLinkRequest{Code: code})
+	if err != nil {
+		return nil, err
+	}
+	// The sign-in redeemed is consumed; one a CreateSession started meanwhile is not.
+	f.mu.Lock()
+	if f.pending == pending {
+		f.pending = ""
+	}
+	f.mu.Unlock()
+	return session, nil
+}
+
+// Login redeems the code and stores the session token Fizzy answers. When the answer
+// says RequiresSignupCompletion, the caller completes the signup next
+// (SessionsService.CompleteSignup) with that session.
+func (f *MagicLinkFlow) Login(ctx context.Context, authManager *AuthManager, code string) (*generated.SessionAuthorization, error) {
+	session, err := f.RedeemMagicLink(ctx, code)
+	if err != nil {
+		return nil, err
+	}
+	if err := authManager.SaveSessionToken(session.SessionToken); err != nil {
+		return nil, fmt.Errorf("failed to save session token: %w", err)
+	}
+	return session, nil
+}
+
+type pendingTokenKey struct{}
+
+// pendingCookieAuth sends no credentials, except the pending token as the
+// pending_authentication_token cookie on the redeem it is handed to.
+type pendingCookieAuth struct{}
+
+func (pendingCookieAuth) Authenticate(ctx context.Context, req *http.Request) error {
+	if token, ok := ctx.Value(pendingTokenKey{}).(string); ok && token != "" {
+		req.Header.Add("Cookie", PendingAuthenticationCookie+"="+escapeCookieValue(token))
+	}
 	return nil
+}
+
+// escapeCookieValue percent-encodes everything but ASCII letters, digits and -_.~, as
+// Rack unescapes a cookie value; a raw token can carry characters a cookie cannot.
+func escapeCookieValue(value string) string {
+	return strings.ReplaceAll(url.QueryEscape(value), "+", "%20")
 }

@@ -356,7 +356,7 @@ async function dispatch(
         data = await (client as any).sessions.destroy();
         break;
       case "RedeemMagicLink":
-        data = await (client as any).sessions.redeemMagicLink({ token: body.token });
+        data = await (client as any).sessions.redeemMagicLink({ code: body.code });
         break;
       case "CompleteSignup":
         data = await (client as any).sessions.completeSignup({ full_name: body.full_name });

@@ -14,7 +14,7 @@
 sensitive_fields = [
     "AccessToken.token",
     "PendingAuthentication.pending_authentication_token",
-    "RedeemMagicLinkRequestContent.token",
+    "RedeemMagicLinkRequestContent.code",
     "SessionAuthorization.session_token",
     "Webhook.signing_secret",
 ]

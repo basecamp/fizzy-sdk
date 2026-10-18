@@ -506,7 +506,7 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
         )
         "DestroySession" -> account.sessions.destroy()
         "RedeemMagicLink" -> account.sessions.redeemMagicLink(
-            RedeemMagicLinkBody(token = body?.str("token") ?: ""),
+            RedeemMagicLinkBody(code = body?.str("code") ?: ""),
         )
         "CompleteSignup" -> account.sessions.completeSignup(
             CompleteSignupBody(fullName = body?.str("full_name") ?: ""),
