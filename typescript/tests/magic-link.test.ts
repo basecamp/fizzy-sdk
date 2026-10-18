@@ -119,9 +119,9 @@ describe("MagicLinkFlow", () => {
     fizzy(seen, { status: 200, body: { session_token: "st-new", requires_signup_completion: true } });
     const flow = MagicLinkFlow.resume("pend", { baseUrl: BASE_URL });
 
-    const { requiresSignupCompletion } = await flow.redeem("ABC123");
+    const { sessionToken, requiresSignupCompletion } = await flow.redeem("ABC123");
     expect(requiresSignupCompletion).toBe(true);
-    await flow.completeSignup("Ada Lovelace");
+    await flow.completeSignup("Ada Lovelace", sessionToken);
 
     expect(seen[1]).toEqual({
       path: "/signup/completion.json",

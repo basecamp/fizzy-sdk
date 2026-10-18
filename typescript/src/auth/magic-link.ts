@@ -71,8 +71,8 @@ const noCredentials: AuthStrategy = { authenticate: async () => {} };
  * await flow.createSession("user@example.com");
  *
  * // Step 2: the user types the code in
- * const { auth, requiresSignupCompletion } = await flow.redeem(code);
- * if (requiresSignupCompletion) await flow.completeSignup("Ada Lovelace");
+ * const { auth, sessionToken, requiresSignupCompletion } = await flow.redeem(code);
+ * if (requiresSignupCompletion) await flow.completeSignup("Ada Lovelace", sessionToken);
  *
  * // Step 3: use the session
  * const client = createFizzyClient({ auth });
@@ -81,7 +81,6 @@ const noCredentials: AuthStrategy = { authenticate: async () => {} };
 export class MagicLinkFlow {
   private readonly options: MagicLinkFlowOptions;
   private pending: string | undefined;
-  private session: string | undefined;
 
   constructor(options?: MagicLinkFlowOptions) {
     this.options = options ?? {};
@@ -134,7 +133,6 @@ export class MagicLinkFlow {
     if (typeof sessionToken !== "string" || sessionToken === "") {
       throw new FizzyError("api_error", "No session token in the magic link response");
     }
-    this.session = sessionToken;
     // The sign-in redeemed is consumed; one a createSession started meanwhile is not.
     if (this.pending === pending) this.pending = undefined;
     return {
@@ -145,17 +143,18 @@ export class MagicLinkFlow {
   }
 
   /**
-   * Finishes a new account's sign-up under the session {@link MagicLinkFlow.redeem} answered,
-   * or the session token given. Fizzy answers 201 with no body.
+   * Finishes a new account's sign-up under the session token {@link MagicLinkFlow.redeem}
+   * answered. Fizzy answers 201 with no body. The token is the caller's to pass, as in every
+   * SDK's flow: a flow keeps no session of its own, so overlapping sign-ins cannot sign one
+   * person's sign-up under another's session.
    */
-  async completeSignup(fullName: string, sessionToken?: string): Promise<void> {
-    const token = sessionToken ?? this.session;
-    if (!token) {
+  async completeSignup(fullName: string, sessionToken: string): Promise<void> {
+    if (!sessionToken) {
       throw new FizzyError("usage", "No session to complete the sign-up under", {
-        hint: "Redeem the code first, or pass the session token",
+        hint: "Pass the session token redeem answered",
       });
     }
-    await this.client(new CookieAuth(cookieHeader(SESSION_COOKIE, token))).sessions.completeSignup({ fullName });
+    await this.client(new CookieAuth(cookieHeader(SESSION_COOKIE, sessionToken))).sessions.completeSignup({ fullName });
   }
 
   private client(auth: AuthStrategy): FizzyClient {
