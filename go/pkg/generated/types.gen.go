@@ -568,7 +568,8 @@ type Reaction struct {
 
 // RedeemMagicLinkRequestContent defines model for RedeemMagicLinkRequestContent.
 type RedeemMagicLinkRequestContent struct {
-	Token string `json:"token"`
+	// Code The code from the magic-link email.
+	Code string `json:"code"`
 }
 
 // RedeemMagicLinkResponseContent defines model for RedeemMagicLinkResponseContent.

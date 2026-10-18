@@ -3,55 +3,52 @@ import Foundation
 import FoundationNetworking
 #endif
 
-/// Orchestrates passwordless login via magic link.
+/// Signs in without a password: Fizzy emails a code, and the person types it back.
 ///
-/// The flow:
-/// 1. Call `start(email:)` to create a session -- the server sends a magic link email.
-/// 2. The user clicks the link, which contains a token.
-/// 3. Call `redeem(token:)` with the magic link token to get a session token.
+/// The two steps are one exchange as far as Fizzy is concerned. Creating the session answers a
+/// pending authentication token and sets it as the `pending_authentication_token` cookie;
+/// redeeming the code has to send that cookie back or the code is refused. The flow keeps the
+/// token between the calls, sends it as an explicit `Cookie` header rather than leaving it to a
+/// cookie store, and hands it out for a caller that finishes in another process — a CLI that
+/// prompts for the code on its next run — through ``pendingToken`` and
+/// ``resume(pendingToken:baseURL:userAgent:transport:)``.
 ///
 /// ```swift
 /// let flow = MagicLinkFlow(userAgent: "my-app/1.0")
 ///
-/// // Step 1: Request magic link
-/// let pendingToken = try await flow.start(email: "user@example.com")
+/// // Step 1: Fizzy emails a sign-in code.
+/// try await flow.start(emailAddress: "user@example.com")
 ///
-/// // Step 2: User clicks the magic link (out of band)
+/// // Step 2: the person reads the code out of their email.
 ///
-/// // Step 3: Redeem the magic link token
-/// let session = try await flow.redeem(token: magicLinkToken)
-/// // session.sessionToken is now available for CookieAuth
+/// // Step 3: redeem it for a session token.
+/// let session = try await flow.redeem(code: code)
+/// let client = FizzyClient(auth: CookieAuth(sessionToken: session.sessionToken), userAgent: "my-app/1.0")
+///
+/// // A new account finishes signing up with a name.
+/// if session.requiresSignupCompletion {
+///     try await flow.completeSignup(fullName: "Jane Doe", sessionToken: session.sessionToken)
+/// }
 /// ```
-public final class MagicLinkFlow: Sendable {
+///
+/// Every request goes through the generated `SessionsService`, so its paths, bodies and answers
+/// are the model's: `POST /session.json`, `POST /session/magic_link.json` and
+/// `POST /signup/completion.json`.
+public final class MagicLinkFlow: @unchecked Sendable {
+    /// The cookie a pending sign-in is carried in between creating the session and redeeming the code.
+    public static let pendingCookie = "pending_authentication_token"
+
     private let baseURL: String
     private let userAgent: String
     private let transport: any Transport
-
-    /// The response from creating a session (requesting a magic link).
-    public struct PendingSession: Codable, Sendable {
-        /// The pending token returned by CreateSession.
-        public let pendingToken: String
-    }
-
-    /// The response from redeeming a magic link.
-    public struct RedeemResult: Codable, Sendable {
-        /// The session token to use with CookieAuth.
-        public let sessionToken: String
-
-        /// Whether the user needs to complete signup (new account).
-        public let requiresSignupCompletion: Bool
-    }
-
-    /// The response from completing signup.
-    public struct SignupResult: Codable, Sendable {
-        /// The user's name after signup completion.
-        public let name: String
-    }
+    private let lock = NSLock()
+    private var pending: String?
 
     /// Creates a MagicLinkFlow.
     ///
     /// - Parameters:
-    ///   - baseURL: The Fizzy API base URL (default: `https://fizzy.do`).
+    ///   - baseURL: The Fizzy base URL (default: `https://fizzy.do`). It must use HTTPS, except on
+    ///     localhost.
     ///   - userAgent: Required User-Agent identifying your app.
     ///   - transport: Optional custom transport (for testing).
     public init(
@@ -64,125 +61,104 @@ public final class MagicLinkFlow: Sendable {
         self.transport = transport ?? URLSessionTransport()
     }
 
-    /// Step 1: Creates a session by requesting a magic link email.
-    ///
-    /// - Parameter email: The user's email address.
-    /// - Returns: A `PendingSession` with the pending token.
-    public func start(email: String) async throws -> PendingSession {
-        let url = "\(baseURL)/sessions.json"
-
-        guard let requestURL = URL(string: url) else {
-            throw FizzyError.usage(message: "Invalid URL: \(url)", hint: nil)
-        }
-
-        var request = URLRequest(url: requestURL)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
-
-        let body = ["email": email]
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-
-        let (data, response) = try await transport.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw FizzyError.network(message: "Invalid response type", cause: nil)
-        }
-
-        guard httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 else {
-            throw FizzyError.fromHTTPResponse(
-                status: httpResponse.statusCode, data: data,
-                headers: httpResponse.allHeaderFields as? [String: String] ?? [:],
-                requestId: httpResponse.value(forHTTPHeaderField: "X-Request-Id")
-            )
-        }
-
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        return try decoder.decode(PendingSession.self, from: data)
+    /// A flow that picks up where another left off, with the pending token that one handed out
+    /// through ``pendingToken``.
+    public static func resume(
+        pendingToken: String,
+        baseURL: String = FizzyConfig.defaultBaseURL,
+        userAgent: String,
+        transport: (any Transport)? = nil
+    ) -> MagicLinkFlow {
+        let flow = MagicLinkFlow(baseURL: baseURL, userAgent: userAgent, transport: transport)
+        flow.setPending(pendingToken)
+        return flow
     }
 
-    /// Step 3: Redeems a magic link token for a session token.
-    ///
-    /// - Parameter token: The magic link token from the email.
-    /// - Returns: A `RedeemResult` containing the session token.
-    public func redeem(token: String) async throws -> RedeemResult {
-        let url = "\(baseURL)/sessions/redeem.json"
-
-        guard let requestURL = URL(string: url) else {
-            throw FizzyError.usage(message: "Invalid URL: \(url)", hint: nil)
-        }
-
-        var request = URLRequest(url: requestURL)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
-
-        let body = ["token": token]
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-
-        let (data, response) = try await transport.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw FizzyError.network(message: "Invalid response type", cause: nil)
-        }
-
-        guard httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 else {
-            throw FizzyError.fromHTTPResponse(
-                status: httpResponse.statusCode, data: data,
-                headers: httpResponse.allHeaderFields as? [String: String] ?? [:],
-                requestId: httpResponse.value(forHTTPHeaderField: "X-Request-Id")
-            )
-        }
-
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        return try decoder.decode(RedeemResult.self, from: data)
+    /// The token a pending sign-in is waiting on, for a caller that finishes the flow in another
+    /// process; nil before ``start(emailAddress:)``.
+    public var pendingToken: String? {
+        lock.withLock { pending }
     }
 
-    /// Completes signup for a new user after magic link redemption.
+    /// Step 1: asks Fizzy to email a sign-in code to the address, and keeps the pending token the
+    /// answer carries for ``redeem(code:)``.
     ///
-    /// Only needed when `RedeemResult.requiresSignupCompletion` is `true`.
+    /// - Parameter emailAddress: The address the code goes to.
+    /// - Returns: The pending authentication Fizzy answered.
+    @discardableResult
+    public func start(emailAddress: String) async throws -> PendingAuthentication {
+        let pendingAuthentication = try await sessions(auth: CookieHeaderAuth(cookie: nil))
+            .create(req: CreateSessionRequest(emailAddress: emailAddress))
+        setPending(pendingAuthentication.pendingAuthenticationToken)
+        return pendingAuthentication
+    }
+
+    /// Step 3: sends the code back with the pending token, and answers the session Fizzy signed in.
+    ///
+    /// Without a pending token — no ``start(emailAddress:)`` before it, and none given to
+    /// ``resume(pendingToken:baseURL:userAgent:transport:)`` — there is nothing to redeem against,
+    /// and it throws a usage error without sending anything.
+    ///
+    /// - Parameter code: The code from the email.
+    /// - Returns: The session token, for ``CookieAuth``, and whether signup is still to complete.
+    public func redeem(code: String) async throws -> SessionAuthorization {
+        guard let pending = pendingToken else {
+            throw FizzyError.usage(
+                message: "No sign-in is pending",
+                hint: "Call start(emailAddress:) first, or resume with the pending token")
+        }
+        let session = try await sessions(auth: CookieHeaderAuth(cookie: (Self.pendingCookie, pending)))
+            .redeemMagicLink(req: RedeemMagicLinkRequest(code: code))
+        // The sign-in redeemed is consumed; one a start(emailAddress:) began meanwhile is not.
+        lock.withLock { if self.pending == pending { self.pending = nil } }
+        return session
+    }
+
+    /// Completes signup for a new person after the code is redeemed. Only needed when
+    /// ``SessionAuthorization/requiresSignupCompletion`` is true. Fizzy answers 201 with no body.
     ///
     /// - Parameters:
-    ///   - name: The user's display name.
-    ///   - sessionToken: The session token from `redeem(token:)`.
-    /// - Returns: A `SignupResult` confirming the signup.
-    public func completeSignup(name: String, sessionToken: String) async throws -> SignupResult {
-        let url = "\(baseURL)/signup/completion.json"
+    ///   - fullName: The person's full name.
+    ///   - sessionToken: The session token ``redeem(code:)`` answered.
+    public func completeSignup(fullName: String, sessionToken: String) async throws {
+        try await sessions(auth: CookieHeaderAuth(cookie: ("session_token", sessionToken)))
+            .completeSignup(req: CompleteSignupRequest(fullName: fullName))
+    }
 
-        guard let requestURL = URL(string: url) else {
-            throw FizzyError.usage(message: "Invalid URL: \(url)", hint: nil)
+    // MARK: - Private
+
+    private func setPending(_ token: String) {
+        lock.withLock { pending = token }
+    }
+
+    /// The sessions service of a client signed with `auth`, built for one request. It is made
+    /// directly rather than through the client's service cache: a cached account holds the
+    /// client that holds it, so a client per request would never be freed, and with it the
+    /// cookie it signs with.
+    private func sessions(auth: CookieHeaderAuth) -> SessionsService {
+        let client = FizzyClient(auth: auth, userAgent: userAgent, config: FizzyConfig(baseURL: baseURL), transport: transport)
+        return SessionsService(accountClient: AccountClient(client: client))
+    }
+}
+
+/// Sends one cookie, or none, as an explicit `Cookie` header, and keeps any cookie store out of
+/// the request: what goes out is exactly what the flow decided, whatever a shared
+/// `URLSession` has stored for the origin.
+struct CookieHeaderAuth: AuthStrategy {
+    let cookie: (name: String, value: String)?
+
+    func authenticate(_ request: inout URLRequest) async throws {
+        request.httpShouldHandleCookies = false
+        if let cookie {
+            request.setValue("\(cookie.name)=\(Self.encode(cookie.value))", forHTTPHeaderField: "Cookie")
         }
+    }
 
-        var request = URLRequest(url: requestURL)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
-        request.setValue("session_token=\(sessionToken)", forHTTPHeaderField: "Cookie")
-
-        let body = ["name": name]
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-
-        let (data, response) = try await transport.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw FizzyError.network(message: "Invalid response type", cause: nil)
-        }
-
-        guard httpResponse.statusCode >= 200 && httpResponse.statusCode < 300 else {
-            throw FizzyError.fromHTTPResponse(
-                status: httpResponse.statusCode, data: data,
-                headers: httpResponse.allHeaderFields as? [String: String] ?? [:],
-                requestId: httpResponse.value(forHTTPHeaderField: "X-Request-Id")
-            )
-        }
-
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        return try decoder.decode(SignupResult.self, from: data)
+    /// A cookie value escaped as Rack unescapes it: everything but ASCII letters, digits and
+    /// `-._~` is percent-encoded, so a `;` or `,` in a token cannot end the cookie early.
+    static func encode(_ value: String) -> String {
+        var allowed = CharacterSet()
+        allowed.insert(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~")
+        return value.addingPercentEncoding(withAllowedCharacters: allowed) ?? value
     }
 }

@@ -1,78 +1,74 @@
 package com.basecamp.fizzy.auth
 
-import com.basecamp.fizzy.*
-import com.basecamp.fizzy.http.FizzyHttpClient
-import io.ktor.client.*
+import com.basecamp.fizzy.AuthStrategy
+import com.basecamp.fizzy.FizzyClient
+import com.basecamp.fizzy.FizzyConfig
+import com.basecamp.fizzy.FizzyException
+import com.basecamp.fizzy.generated.services.CompleteSignupBody
+import com.basecamp.fizzy.generated.services.CreateSessionBody
+import com.basecamp.fizzy.generated.services.RedeemMagicLinkBody
+import com.basecamp.fizzy.generated.sessions
 import io.ktor.client.engine.*
-import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.request.*
-import io.ktor.client.statement.*
 import io.ktor.http.*
-import kotlinx.serialization.json.*
+import kotlin.concurrent.atomics.AtomicReference
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
 /**
- * Passwordless authentication via magic links.
+ * Passwordless sign-in with a magic link, on the generated Sessions operations.
  *
- * This flow uses an unauthenticated client to:
- * 1. Request a magic link email via [requestMagicLink]
- * 2. Redeem the token from the link via [redeemMagicLink]
- * 3. Optionally complete signup for new users via [completeSignup]
+ * 1. [requestMagicLink] starts a sign-in (`POST /session.json`). Fizzy emails a code and
+ *    answers a pending authentication token, which this flow keeps.
+ * 2. [redeemMagicLink] trades the code from the email for a session token
+ *    (`POST /session/magic_link.json`). Fizzy reads the pending sign-in from the
+ *    `pending_authentication_token` cookie, so the flow sends it as one.
+ * 3. [completeSignup] names a new user when the session says signup is incomplete.
  *
- * The resulting session token can be used with [CookieAuth].
+ * A sign-in that finishes in another process resumes from [pendingToken], passed back as
+ * `pendingToken` when building the flow or with [resume].
  *
  * ```kotlin
- * val flow = MagicLinkFlow(baseUrl = "https://fizzy.do")
- *
- * // Step 1: Request magic link
+ * val flow = MagicLinkFlow(baseUrl = "https://app.fizzy.do")
  * flow.requestMagicLink("user@example.com")
- *
- * // Step 2: User clicks email link, extract token
- * val session = flow.redeemMagicLink(pendingAuthToken)
- *
- * // Step 3: Create authenticated client
- * val client = FizzyClient {
- *     auth(CookieAuth(session.sessionToken))
- * }
+ * val session = flow.redeemMagicLink(codeFromEmail)
+ * if (session.requiresSignupCompletion) flow.completeSignup(session.sessionToken, "Ada Lovelace")
+ * val client = FizzyClient { auth(CookieAuth(session.sessionToken)) }
  * ```
  */
+@OptIn(ExperimentalAtomicApi::class)
 class MagicLinkFlow(
     private val baseUrl: String = FizzyConfig.DEFAULT_BASE_URL,
-    engine: HttpClientEngine? = null,
+    private val engine: HttpClientEngine? = null,
+    pendingToken: String? = null,
 ) {
-    private val json = Json {
-        ignoreUnknownKeys = true
-        isLenient = true
-    }
+    private val pending = AtomicReference(pendingToken?.takeIf { it.isNotBlank() })
 
-    private val httpClient: HttpClient = if (engine != null) {
-        HttpClient(engine) { configureClient() }
-    } else {
-        HttpClient { configureClient() }
-    }
+    /** The pending authentication token of the sign-in under way, or null before one starts. */
+    val pendingToken: String? get() = pending.load()
 
-    private fun HttpClientConfig<*>.configureClient() {
-        expectSuccess = false
-        install(HttpTimeout) {
-            requestTimeoutMillis = 30_000
-            connectTimeoutMillis = 30_000
-            socketTimeoutMillis = 30_000
-        }
+    /** Starts a sign-in with no cookie: there is no sign-in yet for one to carry. */
+    private val client: FizzyClient = client { }
+
+    private fun client(auth: AuthStrategy): FizzyClient = FizzyClient {
+        baseUrl = this@MagicLinkFlow.baseUrl
+        engine = this@MagicLinkFlow.engine
+        auth(auth)
     }
 
     /**
-     * Result of a magic link request.
+     * Result of starting a sign-in.
      *
-     * @property pendingAuthenticationToken Token to use when redeeming the magic link.
+     * @property pendingAuthenticationToken The token [redeemMagicLink] sends back as a cookie.
      */
     data class MagicLinkRequest(
         val pendingAuthenticationToken: String,
     )
 
     /**
-     * Result of redeeming a magic link.
+     * Result of redeeming a magic-link code.
      *
-     * @property sessionToken Session token for authenticated requests.
-     * @property requiresSignupCompletion Whether the user needs to complete signup.
+     * @property sessionToken Session token for [CookieAuth].
+     * @property requiresSignupCompletion Whether the user must still [completeSignup].
      */
     data class MagicLinkSession(
         val sessionToken: String,
@@ -80,108 +76,79 @@ class MagicLinkFlow(
     )
 
     /**
-     * Request a magic link email be sent to the given address.
-     *
-     * @param emailAddress The email to send the magic link to.
-     * @return A [MagicLinkRequest] with the pending authentication token.
+     * Starts a sign-in: Fizzy emails [emailAddress] a code and answers the pending token,
+     * which this flow keeps for [redeemMagicLink]. Fizzy answers the same for an address it
+     * does not know, so the answer says nothing about whether the account exists.
      */
     suspend fun requestMagicLink(emailAddress: String): MagicLinkRequest {
-        val response = httpClient.request("$baseUrl/api/sessions") {
-            method = HttpMethod.Post
-            header(HttpHeaders.ContentType, "application/json")
-            header(HttpHeaders.Accept, "application/json")
-            setBody(buildJsonObject { put("email_address", emailAddress) }.toString())
-        }
+        val pending = client.forAccount(ROOT).sessions.create(CreateSessionBody(emailAddress = emailAddress))
+        this.pending.store(pending.pendingAuthenticationToken)
+        return MagicLinkRequest(pendingAuthenticationToken = pending.pendingAuthenticationToken)
+    }
 
-        if (!response.status.isSuccess()) {
-            throw errorFromResponse(response)
-        }
-
-        val body = json.parseToJsonElement(response.bodyAsText()).jsonObject
-        val token = body["pending_authentication_token"]?.jsonPrimitive?.content
-            ?: throw FizzyException.Api("Missing pending_authentication_token in response", 0)
-
-        return MagicLinkRequest(pendingAuthenticationToken = token)
+    /** Resumes a sign-in another process started, from its [pendingToken]. */
+    fun resume(pendingToken: String) {
+        require(pendingToken.isNotBlank()) { "Pending token must not be blank" }
+        pending.store(pendingToken)
     }
 
     /**
-     * Redeem a magic link token to obtain a session.
+     * Redeems the [code] from the magic-link email for a session.
      *
-     * @param pendingAuthenticationToken The token from the magic link email.
-     * @return A [MagicLinkSession] with the session token.
+     * @throws FizzyException.Usage when no sign-in is pending: call [requestMagicLink] or [resume] first.
+     * @throws FizzyException.Auth when Fizzy refuses the code or the pending sign-in.
      */
-    suspend fun redeemMagicLink(pendingAuthenticationToken: String): MagicLinkSession {
-        val response = httpClient.request("$baseUrl/api/sessions/redeem") {
-            method = HttpMethod.Post
-            header(HttpHeaders.ContentType, "application/json")
-            header(HttpHeaders.Accept, "application/json")
-            setBody(buildJsonObject { put("pending_authentication_token", pendingAuthenticationToken) }.toString())
+    suspend fun redeemMagicLink(code: String): MagicLinkSession {
+        val redeeming = pending.load()
+            ?: throw FizzyException.Usage(
+                "No sign-in is pending",
+                hint = "Call requestMagicLink first, or resume with the pending token",
+            )
+        // The cookie is bound to the token read here, so a sign-in that starts or resumes while
+        // this one is under way cannot pair this code with another's pending token.
+        val redeemer = client { request -> request.header(HttpHeaders.Cookie, cookie(PENDING_COOKIE, redeeming)) }
+        val session = try {
+            redeemer.forAccount(ROOT).sessions.redeemMagicLink(RedeemMagicLinkBody(code = code))
+        } finally {
+            redeemer.close()
         }
-
-        if (!response.status.isSuccess()) {
-            throw errorFromResponse(response)
-        }
-
-        val body = json.parseToJsonElement(response.bodyAsText()).jsonObject
-        val sessionToken = body["session_token"]?.jsonPrimitive?.content
-            ?: throw FizzyException.Api("Missing session_token in response", 0)
-        val requiresSignup = body["requires_signup_completion"]?.jsonPrimitive?.content?.toBoolean() ?: false
-
+        // The sign-in redeemed is consumed; one a requestMagicLink started meanwhile is not.
+        pending.compareAndSet(redeeming, null)
         return MagicLinkSession(
-            sessionToken = sessionToken,
-            requiresSignupCompletion = requiresSignup,
+            sessionToken = session.sessionToken,
+            requiresSignupCompletion = session.requiresSignupCompletion,
         )
     }
 
     /**
-     * Complete signup for a new user after redeeming a magic link.
+     * Completes signup for a new user, signed in with the [sessionToken] [redeemMagicLink] answered.
      *
-     * @param sessionToken The session token from [redeemMagicLink].
-     * @param name The user's display name.
+     * @param fullName The user's full name.
      */
-    suspend fun completeSignup(sessionToken: String, name: String) {
-        val response = httpClient.request("$baseUrl/api/sessions/signup") {
-            method = HttpMethod.Post
-            header(HttpHeaders.ContentType, "application/json")
-            header(HttpHeaders.Accept, "application/json")
-            header("Cookie", "session_token=$sessionToken")
-            setBody(buildJsonObject { put("name", name) }.toString())
-        }
-
-        if (!response.status.isSuccess()) {
-            throw errorFromResponse(response)
-        }
-    }
-
-    /** Clean up the internal HTTP client. */
-    fun close() {
-        httpClient.close()
-    }
-
-    private suspend fun errorFromResponse(response: HttpResponse): FizzyException {
-        val status = response.status.value
-        val requestId = response.headers["X-Request-Id"]
-
-        var message: String = response.status.description.ifEmpty { "Request failed" }
-        var hint: String? = null
-
+    suspend fun completeSignup(sessionToken: String, fullName: String) {
+        val signedIn = client(CookieAuth(sessionToken))
         try {
-            val bodyText = response.bodyAsText()
-            if (bodyText.isNotBlank()) {
-                val jsonBody = json.parseToJsonElement(bodyText)
-                if (jsonBody is kotlinx.serialization.json.JsonObject) {
-                    jsonBody["error"]?.jsonPrimitive?.content?.let {
-                        message = FizzyException.truncateMessage(it)
-                    }
-                    jsonBody["message"]?.jsonPrimitive?.content?.let {
-                        message = FizzyException.truncateMessage(it)
-                    }
-                }
-            }
-        } catch (_: Exception) {
-            // Body is not JSON or empty
+            signedIn.forAccount(ROOT).sessions.completeSignup(CompleteSignupBody(fullName = fullName))
+        } finally {
+            signedIn.close()
         }
+    }
 
-        return FizzyException.fromHttpStatus(status, message, hint, requestId)
+    /** Releases the flow's HTTP client. */
+    fun close() {
+        client.close()
+    }
+
+    internal companion object {
+        const val PENDING_COOKIE = "pending_authentication_token"
+
+        /**
+         * Sessions are root-scoped: the generated operations ignore the account, so any id
+         * reaches them.
+         */
+        const val ROOT = "0"
+
+        /** A cookie pair whose value is percent-encoded, so no character of a token can end it. */
+        fun cookie(name: String, value: String): String = "$name=${value.encodeURLParameter()}"
     }
 }

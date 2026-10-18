@@ -414,7 +414,7 @@ func dispatchOperation(_ tc: TestCase, _ client: FizzyClient) async throws -> Di
     case "DestroySession":
         try await client.sessions.destroy()
     case "RedeemMagicLink":
-        _ = try await client.sessions.redeemMagicLink(req: RedeemMagicLinkRequest(token: rb.stringParam("token")))
+        _ = try await client.sessions.redeemMagicLink(req: RedeemMagicLinkRequest(code: rb.stringParam("code")))
     case "CompleteSignup":
         try await client.sessions.completeSignup(req: CompleteSignupRequest(fullName: rb.stringParam("full_name")))
     case "CompleteJoin":

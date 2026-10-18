@@ -743,7 +743,10 @@ function generateServiceFile(service: ServiceDefinition): string {
   for (const op of service.operations) {
     lines.push("");
     lines.push("  /**");
-    lines.push(`   * ${op.description}`);
+    // A description of several lines keeps the comment's gutter on every one of them.
+    for (const line of op.description.split("\n")) {
+      lines.push(line ? `   * ${line}` : "   *");
+    }
     lines.push("   */");
 
     const methodSig = generateMethodSignature(op, service.types);

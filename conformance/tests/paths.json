@@ -123,7 +123,7 @@
     "requestBody": { "email_address": "test@example.com" },
     "mockResponses": [
       {
-        "status": 200,
+        "status": 201,
         "headers": { "Content-Type": "application/json" },
         "body": { "pending_authentication_token": "pat_12345" }
       }
@@ -293,7 +293,7 @@
     "operation": "RedeemMagicLink",
     "method": "POST",
     "path": "/session/magic_link.json",
-    "requestBody": { "token": "ml_token_123" },
+    "requestBody": { "code": "ABC123" },
     "mockResponses": [
       {
         "status": 200,
@@ -314,7 +314,7 @@
     "path": "/session.json",
     "mockResponses": [
       {
-        "status": 200,
+        "status": 204,
         "headers": { "Content-Type": "application/json" },
         "body": null
       }

@@ -2,9 +2,9 @@
 import Foundation
 
 public struct RedeemMagicLinkRequest: Codable, Sendable {
-    public let token: String
+    public let code: String
 
-    public init(token: String) {
-        self.token = token
+    public init(code: String) {
+        self.code = code
     }
 }

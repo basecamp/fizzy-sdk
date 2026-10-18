@@ -1394,12 +1394,12 @@ pub struct Reaction {
 /// `RedeemMagicLinkRequestContent`. Built by hand, so it derives `Default` and takes `..Default::default()`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct RedeemMagicLinkRequestContent {
-    /// `token`.
+    /// `code`.
     #[serde(
         default,
         deserialize_with = "crate::types::null_as_default::deserialize"
     )]
-    pub token: SensitiveString,
+    pub code: SensitiveString,
 }
 
 /// `RedeemMagicLinkResponseContent`, as the model names it.

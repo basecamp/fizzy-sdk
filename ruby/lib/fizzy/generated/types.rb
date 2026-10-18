@@ -801,11 +801,11 @@ module Fizzy
     end
 
     # @generated
-    RedeemMagicLinkRequestContent = Data.define(:token) do
+    RedeemMagicLinkRequestContent = Data.define(:code) do
       # @param data [Hash] raw JSON response
       def self.from_json(data)
         new(
-          token: data["token"]
+          code: data["code"]
         )
       end
     end
