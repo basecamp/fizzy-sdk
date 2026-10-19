@@ -1,6 +1,6 @@
 [package]
 name = "fizzy-sdk"
-version = "0.2.4"
+version = "0.3.0"
 description = "Official client for Fizzy - https://fizzy.do"
 readme = "README.md"
 documentation = "https://docs.rs/fizzy-sdk"
