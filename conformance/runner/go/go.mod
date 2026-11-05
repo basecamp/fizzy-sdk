@@ -1,6 +1,6 @@
 module github.com/basecamp/fizzy-sdk/conformance/runner/go
 
-go 1.26.9
+go 1.26.10
 
 require github.com/basecamp/fizzy-sdk/go v0.0.0
 
