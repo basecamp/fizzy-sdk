@@ -420,5 +420,33 @@
       { "type": "noError" }
     ],
     "tags": ["request-shapes"]
+  },
+  {
+    "name": "UpdateBoard sends an empty user_ids list",
+    "description": "An empty list clears the board's access list, so it reaches the wire as \"user_ids\": [] rather than being dropped as unset.",
+    "operation": "UpdateBoard",
+    "method": "PATCH",
+    "path": "/{accountId}/boards/{boardId}.json",
+    "pathParams": { "accountId": "999", "boardId": 1 },
+    "requestBody": { "user_ids": [] },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "id": "1",
+          "name": "Board",
+          "all_access": false,
+          "created_at": "2026-01-01T00:00:00Z",
+          "url": "https://fizzy.do/999/boards/1",
+          "user_ids": []
+        }
+      }
+    ],
+    "assertions": [
+      { "type": "requestBodyField", "expected": "user_ids" },
+      { "type": "noError" }
+    ],
+    "tags": ["request-shapes"]
   }
 ]

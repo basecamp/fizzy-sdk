@@ -341,6 +341,7 @@ suspend fun dispatchOperation(tc: TestCase, account: AccountClient): Any? {
             UpdateBoardBody(
                 name = body?.strOrNull("name"),
                 allAccess = body?.boolOrNull("all_access"),
+                userIds = body?.stringListOrNull("user_ids"),
             ),
         )
         "DeleteBoard" -> account.boards.delete(pp.string("boardId"))
