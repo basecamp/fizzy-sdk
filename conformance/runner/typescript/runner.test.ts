@@ -147,7 +147,13 @@ async function dispatch(
         break;
       }
       case "UpdateBoard":
-        data = await (client as any).boards.update(p.boardId as number, body);
+        data = await (client as any).boards.update(p.boardId as number, {
+          name: body.name,
+          allAccess: body.all_access,
+          autoPostponePeriodInDays: body.auto_postpone_period_in_days,
+          publicDescription: body.public_description,
+          userIds: body.user_ids,
+        });
         break;
       case "DeleteBoard":
         data = await (client as any).boards.delete(p.boardId as number);
