@@ -336,13 +336,20 @@ async function dispatch(
         data = await (client as any).webhooks.list(p.boardId as number);
         break;
       case "CreateWebhook":
-        data = await (client as any).webhooks.create(p.boardId as number, body);
+        data = await (client as any).webhooks.create(p.boardId as number, {
+          name: body.name,
+          url: body.url,
+          subscribedActions: body.subscribed_actions,
+        });
         break;
       case "GetWebhook":
         data = await (client as any).webhooks.get(p.boardId as number, p.webhookId as number);
         break;
       case "UpdateWebhook":
-        data = await (client as any).webhooks.update(p.boardId as number, p.webhookId as number, body);
+        data = await (client as any).webhooks.update(p.boardId as number, p.webhookId as number, {
+          name: body.name,
+          subscribedActions: body.subscribed_actions,
+        });
         break;
       case "DeleteWebhook":
         data = await (client as any).webhooks.delete(p.boardId as number, p.webhookId as number);

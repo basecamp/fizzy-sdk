@@ -428,7 +428,7 @@
     "method": "PATCH",
     "path": "/{accountId}/boards/{boardId}.json",
     "pathParams": { "accountId": "999", "boardId": 1 },
-    "requestBody": { "user_ids": [] },
+    "requestBody": { "name": "Board", "user_ids": [] },
     "mockResponses": [
       {
         "status": 200,
@@ -445,6 +445,89 @@
     ],
     "assertions": [
       { "type": "requestBodyField", "expected": "user_ids" },
+      { "type": "noError" }
+    ],
+    "tags": ["request-shapes"]
+  },
+  {
+    "name": "CreateWebhook sends an empty subscribed_actions list",
+    "description": "An empty list is a webhook subscribed to nothing, so it reaches the wire as \"subscribed_actions\": [] rather than being dropped as unset.",
+    "operation": "CreateWebhook",
+    "method": "POST",
+    "path": "/{accountId}/boards/{boardId}/webhooks.json",
+    "pathParams": { "accountId": "999", "boardId": 456 },
+    "requestBody": { "name": "Hook", "url": "https://example.com/hook", "subscribed_actions": [] },
+    "mockResponses": [
+      {
+        "status": 201,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "id": "1",
+          "name": "Hook",
+          "payload_url": "https://example.com/hook",
+          "url": "https://fizzy.do/999/boards/456/webhooks/1",
+          "subscribed_actions": [],
+          "signing_secret": "secret",
+          "active": true,
+          "created_at": "2026-01-01T00:00:00Z",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ],
+    "assertions": [
+      { "type": "requestBodyField", "expected": "subscribed_actions" },
+      { "type": "noError" }
+    ],
+    "tags": ["request-shapes"]
+  },
+  {
+    "name": "UpdateWebhook sends an empty subscribed_actions list",
+    "description": "The list replaces the current subscription, so an empty one reaches the wire as \"subscribed_actions\": [] to unsubscribe from everything, rather than being dropped as unset.",
+    "operation": "UpdateWebhook",
+    "method": "PATCH",
+    "path": "/{accountId}/boards/{boardId}/webhooks/{webhookId}",
+    "pathParams": { "accountId": "999", "boardId": 456, "webhookId": 1 },
+    "requestBody": { "name": "Hook", "subscribed_actions": [] },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "id": "1",
+          "name": "Hook",
+          "payload_url": "https://example.com/hook",
+          "url": "https://fizzy.do/999/boards/456/webhooks/1",
+          "subscribed_actions": [],
+          "signing_secret": "secret",
+          "active": true,
+          "created_at": "2026-01-01T00:00:00Z",
+          "updated_at": "2026-01-01T00:00:00Z"
+        }
+      }
+    ],
+    "assertions": [
+      { "type": "requestBodyField", "expected": "subscribed_actions" },
+      { "type": "noError" }
+    ],
+    "tags": ["request-shapes"]
+  },
+  {
+    "name": "BulkReadNotifications sends an empty notification_ids list",
+    "description": "A list the caller sets, empty or not, reaches the wire as sent rather than being dropped as unset.",
+    "operation": "BulkReadNotifications",
+    "method": "POST",
+    "path": "/{accountId}/notifications/bulk_reading.json",
+    "pathParams": { "accountId": "999" },
+    "requestBody": { "notification_ids": [] },
+    "mockResponses": [
+      {
+        "status": 200,
+        "headers": { "Content-Type": "application/json" },
+        "body": null
+      }
+    ],
+    "assertions": [
+      { "type": "requestBodyField", "expected": "notification_ids" },
       { "type": "noError" }
     ],
     "tags": ["request-shapes"]
