@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/basecamp/fizzy-sdk/go/pkg/fizzy"
+	"github.com/basecamp/fizzy-sdk/go/pkg/generated"
 )
 
 // TestCase represents a single conformance test case.
@@ -543,6 +544,34 @@ func executeList(ctx context.Context, client *fizzy.Client, tc TestCase, path st
 	return &ExecResult{resp: resp, err: err}
 }
 
+// typedRequestBodies are the operations whose fixture body the runner sends
+// through the SDK's generated request type rather than as a raw map, so the
+// case sees what that type's json tags put on the wire. These are the request
+// types with list fields, where an empty list has to reach the server as []
+// and not be dropped as unset.
+var typedRequestBodies = map[string]func() any{
+	"BulkReadNotifications": func() any { return new(generated.BulkReadNotificationsRequest) },
+	"CreateWebhook":         func() any { return new(generated.CreateWebhookRequest) },
+	"UpdateBoard":           func() any { return new(generated.UpdateBoardRequest) },
+	"UpdateWebhook":         func() any { return new(generated.UpdateWebhookRequest) },
+}
+
+// typedBody decodes a fixture's request body into dst, the generated request
+// type, refusing any key the type doesn't have so a fixture can't pass by
+// sending a field the type would drop.
+func typedBody(raw map[string]any, dst any) (any, error) {
+	encoded, err := json.Marshal(raw)
+	if err != nil {
+		return nil, err
+	}
+	dec := json.NewDecoder(strings.NewReader(string(encoded)))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(dst); err != nil {
+		return nil, fmt.Errorf("request body doesn't fit %T: %w", dst, err)
+	}
+	return dst, nil
+}
+
 // executeSingle handles non-list operations (GET, POST, PATCH, PUT, DELETE).
 func executeSingle(ctx context.Context, client *fizzy.Client, tc TestCase, path string, accountID string) *ExecResult {
 	// Wrap ctx with WithNoRetry for operations that have retry_on: null and are not POST
@@ -557,6 +586,13 @@ func executeSingle(ctx context.Context, client *fizzy.Client, tc TestCase, path 
 	var body any
 	if tc.RequestBody != nil {
 		body = tc.RequestBody
+		if typed, ok := typedRequestBodies[tc.Operation]; ok {
+			v, err := typedBody(tc.RequestBody, typed())
+			if err != nil {
+				return &ExecResult{err: err}
+			}
+			body = v
+		}
 	}
 
 	if accountID != "" {

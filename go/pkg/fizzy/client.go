@@ -314,7 +314,9 @@ func (c *Client) GetAll(ctx context.Context, path string) ([]json.RawMessage, er
 
 // GetAllWithLimit fetches pages for a paginated resource up to a limit.
 func (c *Client) GetAllWithLimit(ctx context.Context, path string, limit int) ([]json.RawMessage, error) {
-	var allResults []json.RawMessage
+	// Non-nil from the start, so a list the server sends as [] comes back as an
+	// empty slice (and re-marshals as []) rather than nil.
+	allResults := []json.RawMessage{}
 	baseURL, err := c.buildURL(path)
 	if err != nil {
 		return nil, err

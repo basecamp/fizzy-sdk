@@ -55,7 +55,7 @@ type Activity struct {
 
 // ActivityEventable defines model for ActivityEventable.
 type ActivityEventable struct {
-	Assignees        []User       `json:"assignees,omitempty"`
+	Assignees        []User       `json:"assignees,omitzero"`
 	Board            Board        `json:"board,omitempty"`
 	Body             RichTextBody `json:"body,omitempty"`
 	Card             CardRef      `json:"card,omitempty"`
@@ -76,8 +76,8 @@ type ActivityEventable struct {
 	Postponed        bool         `json:"postponed,omitempty"`
 	ReactionsUrl     string       `json:"reactions_url,omitempty"`
 	Status           string       `json:"status,omitempty"`
-	Steps            []Step       `json:"steps,omitempty"`
-	Tags             []string     `json:"tags,omitempty"`
+	Steps            []Step       `json:"steps,omitzero"`
+	Tags             []string     `json:"tags,omitzero"`
 	Title            string       `json:"title,omitempty"`
 	UpdatedAt        string       `json:"updated_at,omitempty"`
 	Url              string       `json:"url"`
@@ -85,7 +85,7 @@ type ActivityEventable struct {
 
 // ActivityParticulars defines model for ActivityParticulars.
 type ActivityParticulars struct {
-	AssigneeIds []string `json:"assignee_ids,omitempty"`
+	AssigneeIds []string `json:"assignee_ids,omitzero"`
 	Column      string   `json:"column,omitempty"`
 	NewBoard    string   `json:"new_board,omitempty"`
 	NewTitle    string   `json:"new_title,omitempty"`
@@ -115,7 +115,7 @@ type Board struct {
 	PublicDescriptionHtml    string   `json:"public_description_html,omitempty"`
 	PublicUrl                string   `json:"public_url,omitempty"`
 	Url                      string   `json:"url"`
-	UserIds                  []string `json:"user_ids,omitempty"`
+	UserIds                  []string `json:"user_ids,omitzero"`
 }
 
 // BoardAccessUser defines model for BoardAccessUser.
@@ -136,18 +136,18 @@ type BoardAccessUser struct {
 type BoardAccesses struct {
 	AllAccess bool              `json:"all_access"`
 	BoardId   string            `json:"board_id"`
-	Users     []BoardAccessUser `json:"users"`
+	Users     []BoardAccessUser `json:"users,omitzero"`
 }
 
 // BulkReadNotificationsRequestContent defines model for BulkReadNotificationsRequestContent.
 type BulkReadNotificationsRequestContent struct {
 	// NotificationIds Ignored: Notifications::BulkReadingsController reads no ids and marks every unread notification read whatever this holds.
-	NotificationIds []string `json:"notification_ids,omitempty"`
+	NotificationIds []string `json:"notification_ids,omitzero"`
 }
 
 // Card defines model for Card.
 type Card struct {
-	Assignees        []User   `json:"assignees,omitempty"`
+	Assignees        []User   `json:"assignees,omitzero"`
 	Board            Board    `json:"board,omitempty"`
 	Closed           bool     `json:"closed"`
 	Column           Column   `json:"column,omitempty"`
@@ -166,8 +166,8 @@ type Card struct {
 	Postponed        bool     `json:"postponed"`
 	ReactionsUrl     string   `json:"reactions_url,omitempty"`
 	Status           string   `json:"status"`
-	Steps            []Step   `json:"steps,omitempty"`
-	Tags             []string `json:"tags,omitempty"`
+	Steps            []Step   `json:"steps,omitzero"`
+	Tags             []string `json:"tags,omitzero"`
 	Title            string   `json:"title"`
 	Url              string   `json:"url"`
 }
@@ -334,7 +334,7 @@ type CreateWebhookRequestContent struct {
 	Name string `json:"name"`
 
 	// SubscribedActions The events to deliver, from: "card_assigned", "card_closed", "card_postponed", "card_auto_postponed", "card_board_changed", "card_published", "card_reopened", "card_sent_back_to_triage", "card_triaged", "card_unassigned" and "comment_created" (Webhook::PERMITTED_ACTIONS). Unknown actions are dropped silently. A webhook created without any receives no deliveries.
-	SubscribedActions []string `json:"subscribed_actions,omitempty"`
+	SubscribedActions []string `json:"subscribed_actions,omitzero"`
 	Url               string   `json:"url"`
 }
 
@@ -421,7 +421,7 @@ type GetWebhookResponseContent = Webhook
 
 // Identity defines model for Identity.
 type Identity struct {
-	Accounts     []Account `json:"accounts"`
+	Accounts     []Account `json:"accounts,omitzero"`
 	EmailAddress string    `json:"email_address,omitempty"`
 	Id           string    `json:"id"`
 	Name         string    `json:"name,omitempty"`
@@ -677,7 +677,7 @@ type UpdateBoardRequestContent struct {
 	PublicDescription        string `json:"public_description,omitempty"`
 
 	// UserIds Replaces the board's membership: users listed are granted access and every current member not listed loses it. Omit it to leave access unchanged. It can't be sent alone (see the operation).
-	UserIds []string `json:"user_ids,omitempty"`
+	UserIds []string `json:"user_ids,omitzero"`
 }
 
 // UpdateBoardResponseContent defines model for UpdateBoardResponseContent.
@@ -761,7 +761,7 @@ type UpdateWebhookRequestContent struct {
 	Name string `json:"name,omitempty"`
 
 	// SubscribedActions The events to deliver, from: "card_assigned", "card_closed", "card_postponed", "card_auto_postponed", "card_board_changed", "card_published", "card_reopened", "card_sent_back_to_triage", "card_triaged", "card_unassigned" and "comment_created" (Webhook::PERMITTED_ACTIONS). Unknown actions are dropped silently. The list replaces the current subscription.
-	SubscribedActions []string `json:"subscribed_actions,omitempty"`
+	SubscribedActions []string `json:"subscribed_actions,omitzero"`
 }
 
 // UpdateWebhookResponseContent defines model for UpdateWebhookResponseContent.
@@ -781,7 +781,7 @@ type User struct {
 
 // ValidationErrorResponseContent defines model for ValidationErrorResponseContent.
 type ValidationErrorResponseContent struct {
-	Errors  []string `json:"errors,omitempty"`
+	Errors  []string `json:"errors,omitzero"`
 	Message string   `json:"message"`
 }
 
@@ -794,7 +794,7 @@ type Webhook struct {
 	Name              string   `json:"name"`
 	PayloadUrl        string   `json:"payload_url"`
 	SigningSecret     string   `json:"signing_secret"`
-	SubscribedActions []string `json:"subscribed_actions"`
+	SubscribedActions []string `json:"subscribed_actions,omitzero"`
 	UpdatedAt         string   `json:"updated_at,omitempty"`
 	Url               string   `json:"url"`
 }
