@@ -532,16 +532,19 @@ fn seconds_field(value: &str) -> Option<[u8; 2]> {
             bare.push(b);
         }
     }
+    // One pass: a run of whitespace is held until the next byte shows whether a colon sits
+    // on either side of it, and dropped if one does.
     let mut closed: Vec<u8> = Vec::with_capacity(bare.len());
-    for (i, &b) in bare.iter().enumerate() {
-        let space = b.is_ascii_whitespace();
-        let next_colon = bare[i + 1..]
-            .iter()
-            .find(|c| !c.is_ascii_whitespace())
-            .is_some_and(|&c| c == b':');
-        if space && (closed.last() == Some(&b':') || next_colon) {
+    let mut pending = false;
+    for &b in &bare {
+        if b.is_ascii_whitespace() {
+            pending = true;
             continue;
         }
+        if pending && b != b':' && closed.last().is_some_and(|&c| c != b':') {
+            closed.push(b' ');
+        }
+        pending = false;
         closed.push(b);
     }
     closed.split(u8::is_ascii_whitespace).find_map(|token| {
@@ -636,9 +639,11 @@ mod tests {
 
     // The date forms RFC 2822 parsing accepted under chrono, which this replaced, and the
     // ones it refused. A generated differential of the two agrees on IMF-fixdate, a missing
-    // weekday and numeric offsets, and disagrees only on shapes an HTTP-date does not
-    // carry: zone names RFC 2822 does not list, out-of-range offsets, comments, and the
-    // edges of the calendar. Leap seconds disagreed too; `http_date` puts them back.
+    // weekday and numeric offsets. Where both read a date they read the same instant (a leap
+    // second only once `http_date` gives its second back). Which shapes each accepts still
+    // differs, in both directions, on ones an HTTP-date does not carry: zone names RFC 2822
+    // does not list, out-of-range offsets, comments glued to the zone or more than one,
+    // folding whitespace in odd places, and the far ends of the calendar.
     #[test]
     fn retry_after_dates_read_as_rfc_2822() {
         let parse = |s: &str| http_date(s).map(Timestamp::as_second);
@@ -681,6 +686,9 @@ mod tests {
                 "{leap}"
             );
         }
+        // A long run of folding whitespace still closes up around the colon.
+        let spaced = format!("31 Dec 2016 23:59{}:60 GMT", " ".repeat(64_000));
+        assert_eq!(seconds_field(&spaced), Some(*b"60"));
         for not_leap in [
             "Sat, 31 Dec 2016 23:59:59 GMT ( 1:00:60 )",
             "Sat, 31 Dec 2016 23:59:59 GMT (12:60:60)",
