@@ -501,20 +501,65 @@ fn http_date(value: &str) -> Option<jiff::Timestamp> {
     let parsed = jiff::fmt::rfc2822::DateTimeParser::new()
         .parse_timestamp(value)
         .ok()?;
-    let leap = value.split_whitespace().any(|token| {
-        let mut parts = token.split(':');
-        matches!(
-            (parts.next(), parts.next(), parts.next(), parts.next()),
-            (Some(h), Some(m), Some("60"), None)
-                if !h.is_empty() && h.len() <= 2 && h.bytes().all(|b| b.is_ascii_digit())
-                    && m.len() == 2 && m.bytes().all(|b| b.is_ascii_digit())
-        )
-    });
-    if leap {
+    // Offsets are whole minutes, so a parsed leap second still ends in :59.
+    if parsed.as_second().rem_euclid(60) == 59 && seconds_field(value) == Some(*b"60") {
         parsed.checked_add(jiff::SignedDuration::from_secs(1)).ok()
     } else {
         Some(parsed)
     }
+}
+
+/// The seconds of an RFC 2822 date's time of day, as written. RFC 2822 lets comments and
+/// folding whitespace sit inside the date (`23:59 :60`, `GMT (23:59:60)`), so comments are
+/// dropped and whitespace beside a colon is closed up first; after that the time of day is
+/// the only `h:mm:ss` left, since a zone carries no colon.
+fn seconds_field(value: &str) -> Option<[u8; 2]> {
+    let mut bare = Vec::with_capacity(value.len());
+    let (mut depth, mut escaped) = (0usize, false);
+    for &b in value.as_bytes() {
+        if depth > 0 {
+            match b {
+                _ if escaped => escaped = false,
+                b'\\' => escaped = true,
+                b'(' => depth += 1,
+                b')' => depth -= 1,
+                _ => {}
+            }
+        } else if b == b'(' {
+            depth = 1;
+            bare.push(b' ');
+        } else {
+            bare.push(b);
+        }
+    }
+    let mut closed: Vec<u8> = Vec::with_capacity(bare.len());
+    for (i, &b) in bare.iter().enumerate() {
+        let space = b.is_ascii_whitespace();
+        let next_colon = bare[i + 1..]
+            .iter()
+            .find(|c| !c.is_ascii_whitespace())
+            .is_some_and(|&c| c == b':');
+        if space && (closed.last() == Some(&b':') || next_colon) {
+            continue;
+        }
+        closed.push(b);
+    }
+    closed.split(|b| b.is_ascii_whitespace()).find_map(|token| {
+        let mut parts = token.split(|&b| b == b':');
+        match (parts.next(), parts.next(), parts.next(), parts.next()) {
+            (Some(h), Some(m), Some(&[s1, s2]), None)
+                if (1..=2).contains(&h.len())
+                    && h.iter().all(u8::is_ascii_digit)
+                    && m.len() == 2
+                    && m.iter().all(u8::is_ascii_digit)
+                    && s1.is_ascii_digit()
+                    && s2.is_ascii_digit() =>
+            {
+                Some([s1, s2])
+            }
+            _ => None,
+        }
+    })
 }
 
 /// The whole seconds from `now` until `until`, counting a started second as one: the date
@@ -623,6 +668,30 @@ mod tests {
         let now = Timestamp::from_millisecond(1_483_228_798_500).unwrap();
         let until = http_date("Sat, 31 Dec 2016 23:59:60 GMT").unwrap();
         assert_eq!(seconds_until(until, now), Some(2));
+        // Comments and folding whitespace may sit inside the time; only the time of day
+        // decides.
+        for leap in [
+            "Sat, 31 Dec 2016 23:59 :60 GMT",
+            "Sat, 31 Dec 2016 23: 59:60 GMT",
+            "Sat, 31 Dec 2016 23:59:60 GMT (a comment)",
+        ] {
+            assert_eq!(
+                http_date(leap).map(Timestamp::as_second),
+                midnight,
+                "{leap}"
+            );
+        }
+        for not_leap in [
+            "Sat, 31 Dec 2016 23:59:59 GMT ( 1:00:60 )",
+            "Sat, 31 Dec 2016 23:59:59 GMT (12:60:60)",
+            "Sat, 31 Dec 2016 23:59:59 GMT (x (23:59:60))",
+        ] {
+            assert_eq!(
+                http_date(not_leap).map(Timestamp::as_second),
+                Some(1_483_228_799),
+                "{not_leap}"
+            );
+        }
     }
 
     #[test]
