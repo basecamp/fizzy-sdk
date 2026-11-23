@@ -4,7 +4,14 @@ all-features = true
 [advisories]
 version = 2
 yanked = "deny"
-ignore = []
+ignore = [
+  # chrono is unmaintained (no vulnerability is reported, and no maintained
+  # release exists to move to). It is the crate's date and time type: the
+  # generated *_at fields are chrono::DateTime<Utc>, so replacing it with jiff,
+  # as basecamp-sdk did, is a breaking change of its own. Until that lands,
+  # record the advisory here rather than fail every Rust check on it.
+  { id = "RUSTSEC-2026-0543", reason = "chrono unmaintained; it is the SDK's date type, and replacing it is a separate breaking change" },
+]
 
 [licenses]
 version = 2
