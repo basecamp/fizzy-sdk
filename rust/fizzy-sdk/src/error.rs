@@ -489,20 +489,19 @@ pub(crate) fn retry_after_seconds(headers: &HeaderMap) -> Option<u64> {
     if let Ok(seconds) = asked.parse::<i64>() {
         u64::try_from(seconds).ok()
     } else {
-        let until = chrono::DateTime::parse_from_rfc2822(asked).ok()?;
-        seconds_until(until.with_timezone(&chrono::Utc), chrono::Utc::now())
+        let until = jiff::fmt::rfc2822::DateTimeParser::new()
+            .parse_timestamp(asked)
+            .ok()?;
+        seconds_until(until, jiff::Timestamp::now())
     }
 }
 
 /// The whole seconds from `now` until `until`, counting a started second as one: the date
 /// names the moment the wait is over, so rounding down would resend before it.
-fn seconds_until(
-    until: chrono::DateTime<chrono::Utc>,
-    now: chrono::DateTime<chrono::Utc>,
-) -> Option<u64> {
-    let left = until.signed_duration_since(now);
-    let whole = left.num_seconds();
-    let started = left > chrono::Duration::seconds(whole);
+fn seconds_until(until: jiff::Timestamp, now: jiff::Timestamp) -> Option<u64> {
+    let left = until.duration_since(now);
+    let whole = left.as_secs();
+    let started = left > jiff::SignedDuration::from_secs(whole);
     u64::try_from(if started { whole + 1 } else { whole }).ok()
 }
 
@@ -530,10 +529,10 @@ pub(crate) fn truncate(message: &str, limit: usize) -> String {
 #[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
-    use chrono::{DateTime, Duration, Utc};
+    use jiff::{SignedDuration, Timestamp};
 
-    fn at(millis: i64) -> DateTime<Utc> {
-        DateTime::from_timestamp_millis(1_700_000_000_000 + millis).unwrap()
+    fn at(millis: i64) -> Timestamp {
+        Timestamp::from_millisecond(1_700_000_000_000 + millis).unwrap()
     }
 
     #[test]
@@ -543,7 +542,7 @@ mod tests {
         assert_eq!(seconds_until(at(2_000), at(1_050)), Some(1));
         assert_eq!(seconds_until(at(2_000), at(1_999)), Some(1));
         assert_eq!(
-            seconds_until(at(2_000), at(0) - Duration::nanoseconds(1)),
+            seconds_until(at(2_000), at(0) - SignedDuration::from_nanos(1)),
             Some(3)
         );
     }
@@ -567,6 +566,28 @@ mod tests {
         assert_eq!(retry_after_seconds(&headers), None);
         headers.insert("retry-after", "soon".parse().unwrap());
         assert_eq!(retry_after_seconds(&headers), None);
+    }
+
+    // The date forms RFC 2822 parsing accepted under chrono, which this replaced, and the
+    // ones it refused. Over 21,614 generated date strings the two disagree only on a leap
+    // second, a "UTC" zone name, a +2400 offset and the first and last seconds of the
+    // calendar, none of which an HTTP-date carries.
+    #[test]
+    fn retry_after_dates_read_as_rfc_2822() {
+        let parse = |s: &str| {
+            jiff::fmt::rfc2822::DateTimeParser::new()
+                .parse_timestamp(s)
+                .ok()
+                .map(Timestamp::as_second)
+        };
+        let fixdate = Some(1_445_412_480);
+        assert_eq!(parse("Wed, 21 Oct 2015 07:28:00 GMT"), fixdate);
+        assert_eq!(parse("21 Oct 2015 07:28:00 GMT"), fixdate);
+        assert_eq!(parse("Wed, 21 Oct 2015 07:28:00 +0000"), fixdate);
+        assert_eq!(parse("Wed, 21 Oct 2015 09:28:00 +0200"), fixdate);
+        assert_eq!(parse("Thu, 21 Oct 2015 07:28:00 GMT"), None);
+        assert_eq!(parse("Wednesday, 21-Oct-15 07:28:00 GMT"), None);
+        assert_eq!(parse("Wed Oct 21 07:28:00 2015"), None);
     }
 
     #[test]

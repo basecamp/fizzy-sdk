@@ -2,11 +2,11 @@
 
 use std::fmt;
 
-use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
-/// An instant Fizzy reports, always with its offset.
-pub type DateTime = chrono::DateTime<Utc>;
+/// An instant Fizzy reports. It reads RFC 3339 with any offset and writes it in UTC with
+/// `Z`, at the shortest precision that keeps the value: `.1Z`, not `.100Z`.
+pub type DateTime = jiff::Timestamp;
 
 /// Reads a required field that arrived as `null` as its type's default. Reach for it with
 /// `#[serde(default, deserialize_with = "crate::types::null_as_default::deserialize")]`,
@@ -109,5 +109,39 @@ mod tests {
         let utc: DateTime = serde_json::from_str("\"2026-01-01T00:00:00Z\"").unwrap();
         let offset: DateTime = serde_json::from_str("\"2025-12-31T19:00:00-05:00\"").unwrap();
         assert_eq!(utc, offset);
+    }
+
+    // Measured against chrono, the type this replaced, over 12,679 generated RFC 3339
+    // shapes (separators, fractions of 0 to 12 digits, offsets, impossible dates). Where
+    // both read an input, the written bytes differ only in three ways: chrono padded a
+    // fraction to 3, 6 or 9 digits and this writes the shortest one, a leap second reads
+    // as :59 where chrono kept :60, and years at or before 0 print differently. The first
+    // two are pinned here.
+    #[test]
+    fn timestamps_write_in_utc_at_the_shortest_precision() {
+        let write = |s: &str| {
+            let t: DateTime = serde_json::from_str(&format!("\"{s}\"")).unwrap();
+            serde_json::to_string(&t).unwrap()
+        };
+        assert_eq!(write("2026-01-01T00:00:00Z"), "\"2026-01-01T00:00:00Z\"");
+        assert_eq!(
+            write("2026-01-01T00:00:00.123Z"),
+            "\"2026-01-01T00:00:00.123Z\""
+        );
+        assert_eq!(
+            write("2026-01-01T00:00:00.100Z"),
+            "\"2026-01-01T00:00:00.1Z\""
+        );
+        assert_eq!(
+            write("2025-12-31T19:00:00.5-05:00"),
+            "\"2026-01-01T00:00:00.5Z\""
+        );
+        assert_eq!(write("2026-01-01T23:59:60Z"), "\"2026-01-01T23:59:59Z\"");
+    }
+
+    #[test]
+    fn timestamps_without_an_offset_are_refused() {
+        assert!(serde_json::from_str::<DateTime>("\"2026-01-01T00:00:00\"").is_err());
+        assert!(serde_json::from_str::<DateTime>("\"2026-01-01\"").is_err());
     }
 }

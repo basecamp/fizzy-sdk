@@ -4,6 +4,19 @@ Rust-specific notes for the `fizzy-sdk` crate. Release notes for every language 
 the [GitHub releases](https://github.com/basecamp/fizzy-sdk/releases); this file carries
 what a Rust consumer needs to know before upgrading.
 
+## Unreleased
+
+- **Breaking:** dates and times are [jiff](https://docs.rs/jiff/1)'s, not chrono's.
+  chrono is unmaintained ([RUSTSEC-2026-0543](https://rustsec.org/advisories/RUSTSEC-2026-0543)),
+  and basecamp-sdk made the same move. `fizzy_sdk::DateTime` is `jiff::Timestamp`
+  (was `chrono::DateTime<Utc>`), and `fizzy_sdk::jiff` re-exports the crate. Every
+  generated `*_at` field changes type with it.
+- Reading is unchanged for the timestamps Fizzy sends: RFC 3339 with any offset reads to
+  the same instant. Writing is in UTC with `Z` as before, but at the shortest precision
+  that keeps the value, so `.100Z` is now written `.1Z`. A leap second reads as `:59`,
+  and more than nine fractional digits are refused.
+- `Retry-After` dates still parse as RFC 2822.
+
 ## 0.3.0
 
 First release of `fizzy-sdk` on crates.io. The crate is generated from the same Smithy
