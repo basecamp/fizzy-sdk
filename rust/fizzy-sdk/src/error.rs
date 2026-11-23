@@ -544,7 +544,7 @@ fn seconds_field(value: &str) -> Option<[u8; 2]> {
         }
         closed.push(b);
     }
-    closed.split(|b| b.is_ascii_whitespace()).find_map(|token| {
+    closed.split(u8::is_ascii_whitespace).find_map(|token| {
         let mut parts = token.split(|&b| b == b':');
         match (parts.next(), parts.next(), parts.next(), parts.next()) {
             (Some(h), Some(m), Some(&[s1, s2]), None)
