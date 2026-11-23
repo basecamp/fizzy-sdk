@@ -489,10 +489,31 @@ pub(crate) fn retry_after_seconds(headers: &HeaderMap) -> Option<u64> {
     if let Ok(seconds) = asked.parse::<i64>() {
         u64::try_from(seconds).ok()
     } else {
-        let until = jiff::fmt::rfc2822::DateTimeParser::new()
-            .parse_timestamp(asked)
-            .ok()?;
-        seconds_until(until, jiff::Timestamp::now())
+        seconds_until(http_date(asked)?, jiff::Timestamp::now())
+    }
+}
+
+/// An RFC 2822 date as the instant it names. jiff reads a leap second (`23:59:60`) as
+/// `23:59:59`, a second before the moment the date means; chrono, which this replaced,
+/// read it as the second after, and a wait that ended a second early would resend before
+/// the server asked. So a leap second gets its second back.
+fn http_date(value: &str) -> Option<jiff::Timestamp> {
+    let parsed = jiff::fmt::rfc2822::DateTimeParser::new()
+        .parse_timestamp(value)
+        .ok()?;
+    let leap = value.split_whitespace().any(|token| {
+        let mut parts = token.split(':');
+        matches!(
+            (parts.next(), parts.next(), parts.next(), parts.next()),
+            (Some(h), Some(m), Some("60"), None)
+                if !h.is_empty() && h.len() <= 2 && h.bytes().all(|b| b.is_ascii_digit())
+                    && m.len() == 2 && m.bytes().all(|b| b.is_ascii_digit())
+        )
+    });
+    if leap {
+        parsed.checked_add(jiff::SignedDuration::from_secs(1)).ok()
+    } else {
+        Some(parsed)
     }
 }
 
@@ -569,17 +590,13 @@ mod tests {
     }
 
     // The date forms RFC 2822 parsing accepted under chrono, which this replaced, and the
-    // ones it refused. Over 21,614 generated date strings the two disagree only on a leap
-    // second, a "UTC" zone name, a +2400 offset and the first and last seconds of the
-    // calendar, none of which an HTTP-date carries.
+    // ones it refused. A generated differential of the two agrees on IMF-fixdate, a missing
+    // weekday and numeric offsets, and disagrees only on shapes an HTTP-date does not
+    // carry: zone names RFC 2822 does not list, out-of-range offsets, comments, and the
+    // edges of the calendar. Leap seconds disagreed too; `http_date` puts them back.
     #[test]
     fn retry_after_dates_read_as_rfc_2822() {
-        let parse = |s: &str| {
-            jiff::fmt::rfc2822::DateTimeParser::new()
-                .parse_timestamp(s)
-                .ok()
-                .map(Timestamp::as_second)
-        };
+        let parse = |s: &str| http_date(s).map(Timestamp::as_second);
         let fixdate = Some(1_445_412_480);
         assert_eq!(parse("Wed, 21 Oct 2015 07:28:00 GMT"), fixdate);
         assert_eq!(parse("21 Oct 2015 07:28:00 GMT"), fixdate);
@@ -588,6 +605,24 @@ mod tests {
         assert_eq!(parse("Thu, 21 Oct 2015 07:28:00 GMT"), None);
         assert_eq!(parse("Wednesday, 21-Oct-15 07:28:00 GMT"), None);
         assert_eq!(parse("Wed Oct 21 07:28:00 2015"), None);
+    }
+
+    #[test]
+    fn a_leap_second_date_names_the_second_after_it() {
+        let midnight = Some(1_483_228_800);
+        assert_eq!(
+            http_date("Sat, 31 Dec 2016 23:59:60 GMT").map(Timestamp::as_second),
+            midnight
+        );
+        assert_eq!(
+            http_date("Sat, 31 Dec 2016 23:59:59 GMT").map(Timestamp::as_second),
+            Some(1_483_228_799)
+        );
+        // Half a second before the leap second, the wait is two whole seconds, as chrono
+        // counted it, not one.
+        let now = Timestamp::from_millisecond(1_483_228_798_500).unwrap();
+        let until = http_date("Sat, 31 Dec 2016 23:59:60 GMT").unwrap();
+        assert_eq!(seconds_until(until, now), Some(2));
     }
 
     #[test]
