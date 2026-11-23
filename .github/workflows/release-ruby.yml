@@ -121,7 +121,7 @@ jobs:
           fi
 
       # rubygems-await used to run here. It reads the compact index through
-      # Bundler's CompactIndexClient; Bundler 4.1, which `gem exec` installs
+      # Bundler's CompactIndexClient; Bundler 4.1.0, which `gem exec` installs
       # beside it, moved that class out of the Bundler namespace, and the
       # fallback then asks RubyGems' cache for a method it does not have. It
       # crashes on every poll, so it times out after a push that worked, as
