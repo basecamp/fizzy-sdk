@@ -57,6 +57,10 @@ pub use pagination::Page;
 pub use types::{DateTime, SensitiveString};
 pub use version::{API_VERSION, VERSION};
 
+/// The date and time crate [`DateTime`] comes from, so callers can build and read one
+/// without naming a version of their own.
+pub use jiff;
+
 /// The request and response types Fizzy speaks, generated from the model.
 pub mod models {
     pub use crate::generated::types::*;

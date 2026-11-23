@@ -489,20 +489,88 @@ pub(crate) fn retry_after_seconds(headers: &HeaderMap) -> Option<u64> {
     if let Ok(seconds) = asked.parse::<i64>() {
         u64::try_from(seconds).ok()
     } else {
-        let until = chrono::DateTime::parse_from_rfc2822(asked).ok()?;
-        seconds_until(until.with_timezone(&chrono::Utc), chrono::Utc::now())
+        seconds_until(http_date(asked)?, jiff::Timestamp::now())
     }
+}
+
+/// An RFC 2822 date as the instant it names. jiff reads a leap second (`23:59:60`) as
+/// `23:59:59`, a second before the moment the date means; chrono, which this replaced,
+/// read it as the second after, and a wait that ended a second early would resend before
+/// the server asked. So a leap second gets its second back.
+fn http_date(value: &str) -> Option<jiff::Timestamp> {
+    let parsed = jiff::fmt::rfc2822::DateTimeParser::new()
+        .parse_timestamp(value)
+        .ok()?;
+    // Offsets are whole minutes, so a parsed leap second still ends in :59.
+    if parsed.as_second().rem_euclid(60) == 59 && seconds_field(value) == Some(*b"60") {
+        parsed.checked_add(jiff::SignedDuration::from_secs(1)).ok()
+    } else {
+        Some(parsed)
+    }
+}
+
+/// The seconds of an RFC 2822 date's time of day, as written. RFC 2822 lets comments and
+/// folding whitespace sit inside the date (`23:59 :60`, `GMT (23:59:60)`), so comments are
+/// dropped and whitespace beside a colon is closed up first; after that the time of day is
+/// the only `h:mm:ss` left, since a zone carries no colon.
+fn seconds_field(value: &str) -> Option<[u8; 2]> {
+    let mut bare = Vec::with_capacity(value.len());
+    let (mut depth, mut escaped) = (0usize, false);
+    for &b in value.as_bytes() {
+        if depth > 0 {
+            match b {
+                _ if escaped => escaped = false,
+                b'\\' => escaped = true,
+                b'(' => depth += 1,
+                b')' => depth -= 1,
+                _ => {}
+            }
+        } else if b == b'(' {
+            depth = 1;
+            bare.push(b' ');
+        } else {
+            bare.push(b);
+        }
+    }
+    // One pass: a run of whitespace is held until the next byte shows whether a colon sits
+    // on either side of it, and dropped if one does.
+    let mut closed: Vec<u8> = Vec::with_capacity(bare.len());
+    let mut pending = false;
+    for &b in &bare {
+        if b.is_ascii_whitespace() {
+            pending = true;
+            continue;
+        }
+        if pending && b != b':' && closed.last().is_some_and(|&c| c != b':') {
+            closed.push(b' ');
+        }
+        pending = false;
+        closed.push(b);
+    }
+    closed.split(u8::is_ascii_whitespace).find_map(|token| {
+        let mut parts = token.split(|&b| b == b':');
+        match (parts.next(), parts.next(), parts.next(), parts.next()) {
+            (Some(h), Some(m), Some(&[s1, s2]), None)
+                if (1..=2).contains(&h.len())
+                    && h.iter().all(u8::is_ascii_digit)
+                    && m.len() == 2
+                    && m.iter().all(u8::is_ascii_digit)
+                    && s1.is_ascii_digit()
+                    && s2.is_ascii_digit() =>
+            {
+                Some([s1, s2])
+            }
+            _ => None,
+        }
+    })
 }
 
 /// The whole seconds from `now` until `until`, counting a started second as one: the date
 /// names the moment the wait is over, so rounding down would resend before it.
-fn seconds_until(
-    until: chrono::DateTime<chrono::Utc>,
-    now: chrono::DateTime<chrono::Utc>,
-) -> Option<u64> {
-    let left = until.signed_duration_since(now);
-    let whole = left.num_seconds();
-    let started = left > chrono::Duration::seconds(whole);
+fn seconds_until(until: jiff::Timestamp, now: jiff::Timestamp) -> Option<u64> {
+    let left = until.duration_since(now);
+    let whole = left.as_secs();
+    let started = left > jiff::SignedDuration::from_secs(whole);
     u64::try_from(if started { whole + 1 } else { whole }).ok()
 }
 
@@ -530,10 +598,10 @@ pub(crate) fn truncate(message: &str, limit: usize) -> String {
 #[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
-    use chrono::{DateTime, Duration, Utc};
+    use jiff::{SignedDuration, Timestamp};
 
-    fn at(millis: i64) -> DateTime<Utc> {
-        DateTime::from_timestamp_millis(1_700_000_000_000 + millis).unwrap()
+    fn at(millis: i64) -> Timestamp {
+        Timestamp::from_millisecond(1_700_000_000_000 + millis).unwrap()
     }
 
     #[test]
@@ -543,7 +611,7 @@ mod tests {
         assert_eq!(seconds_until(at(2_000), at(1_050)), Some(1));
         assert_eq!(seconds_until(at(2_000), at(1_999)), Some(1));
         assert_eq!(
-            seconds_until(at(2_000), at(0) - Duration::nanoseconds(1)),
+            seconds_until(at(2_000), at(0) - SignedDuration::from_nanos(1)),
             Some(3)
         );
     }
@@ -567,6 +635,71 @@ mod tests {
         assert_eq!(retry_after_seconds(&headers), None);
         headers.insert("retry-after", "soon".parse().unwrap());
         assert_eq!(retry_after_seconds(&headers), None);
+    }
+
+    // The date forms RFC 2822 parsing accepted under chrono, which this replaced, and the
+    // ones it refused. A generated differential of the two agrees on IMF-fixdate, a missing
+    // weekday and numeric offsets. Where both read a date they read the same instant (a leap
+    // second only once `http_date` gives its second back). Which shapes each accepts still
+    // differs, in both directions, on ones an HTTP-date does not carry: zone names RFC 2822
+    // does not list, out-of-range offsets, comments glued to the zone or more than one,
+    // folding whitespace in odd places, and the far ends of the calendar.
+    #[test]
+    fn retry_after_dates_read_as_rfc_2822() {
+        let parse = |s: &str| http_date(s).map(Timestamp::as_second);
+        let fixdate = Some(1_445_412_480);
+        assert_eq!(parse("Wed, 21 Oct 2015 07:28:00 GMT"), fixdate);
+        assert_eq!(parse("21 Oct 2015 07:28:00 GMT"), fixdate);
+        assert_eq!(parse("Wed, 21 Oct 2015 07:28:00 +0000"), fixdate);
+        assert_eq!(parse("Wed, 21 Oct 2015 09:28:00 +0200"), fixdate);
+        assert_eq!(parse("Thu, 21 Oct 2015 07:28:00 GMT"), None);
+        assert_eq!(parse("Wednesday, 21-Oct-15 07:28:00 GMT"), None);
+        assert_eq!(parse("Wed Oct 21 07:28:00 2015"), None);
+    }
+
+    #[test]
+    fn a_leap_second_date_names_the_second_after_it() {
+        let midnight = Some(1_483_228_800);
+        assert_eq!(
+            http_date("Sat, 31 Dec 2016 23:59:60 GMT").map(Timestamp::as_second),
+            midnight
+        );
+        assert_eq!(
+            http_date("Sat, 31 Dec 2016 23:59:59 GMT").map(Timestamp::as_second),
+            Some(1_483_228_799)
+        );
+        // Half a second before the leap second, the wait is two whole seconds, as chrono
+        // counted it, not one.
+        let now = Timestamp::from_millisecond(1_483_228_798_500).unwrap();
+        let until = http_date("Sat, 31 Dec 2016 23:59:60 GMT").unwrap();
+        assert_eq!(seconds_until(until, now), Some(2));
+        // Comments and folding whitespace may sit inside the time; only the time of day
+        // decides.
+        for leap in [
+            "Sat, 31 Dec 2016 23:59 :60 GMT",
+            "Sat, 31 Dec 2016 23: 59:60 GMT",
+            "Sat, 31 Dec 2016 23:59:60 GMT (a comment)",
+        ] {
+            assert_eq!(
+                http_date(leap).map(Timestamp::as_second),
+                midnight,
+                "{leap}"
+            );
+        }
+        // A long run of folding whitespace still closes up around the colon.
+        let spaced = format!("31 Dec 2016 23:59{}:60 GMT", " ".repeat(64_000));
+        assert_eq!(seconds_field(&spaced), Some(*b"60"));
+        for not_leap in [
+            "Sat, 31 Dec 2016 23:59:59 GMT ( 1:00:60 )",
+            "Sat, 31 Dec 2016 23:59:59 GMT (12:60:60)",
+            "Sat, 31 Dec 2016 23:59:59 GMT (x (23:59:60))",
+        ] {
+            assert_eq!(
+                http_date(not_leap).map(Timestamp::as_second),
+                Some(1_483_228_799),
+                "{not_leap}"
+            );
+        }
     }
 
     #[test]
